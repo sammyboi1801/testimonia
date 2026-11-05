@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Data never lives in the repo (see docs/DATA_MODEL.md §2)
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+/raw/
+/data/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Node (web front-end)
+node_modules/
+web/dist/

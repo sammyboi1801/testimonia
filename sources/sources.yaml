@@ -1,0 +1,439 @@
+# =====================================================================================
+#  Testimonia — data source manifest
+#
+#  Every dataset the build downloads. The ingest pipeline reads this file; the app's
+#  Credits page is generated from it. ONLY openly licensed data may be listed under
+#  `sources:` — PD, CC0, CC-BY, CC-BY-SA (ShareAlike ⇒ the published core.db is CC BY-SA 4.0).
+#
+#  Fields: id, name, url, download (how the build fetches it), license, attribution,
+#          share_alike, feeds (core tables), phase (build phase), notes.
+#  Status of each line was verified on 2026-11-05 unless marked `verify: true`.
+# =====================================================================================
+
+sources:
+
+  # ---------------------------------------------------------------- foundation
+  - id: btb
+    name: Bruhman Translator's Bible
+    url: https://github.com/revjude/BTB
+    download: git clone (local vault D:\Obsidian\BTB)
+    license: CC-BY-SA-4.0
+    attribution: "Bruhman Translator's Bible (BTB), https://github.com/revjude/BTB, CC BY-SA 4.0"
+    share_alike: true
+    feeds: [verse.red_letter, heading, verse_note, quotation, topic, topic_ref, verse_date, period, lexicon_entry]
+    phase: 0
+    notes: >
+      Use BTB for what is unique to it: pericopes, BTB chronology (era/period/date/order),
+      concordance topics, TSK footnotes, scripture-quoting-scripture links, compiled lexicon articles.
+      Word-level data is taken from STEPBible directly. Its LXX (Apostolic Bible Polyglot) is NOT
+      used until its licence is confirmed — see `verify` list below.
+
+  - id: stepbible-tagnt
+    name: STEPBible TAGNT (Translators Amalgamated Greek NT)
+    url: https://github.com/STEPBible/STEPBible-Data
+    download: raw files "Translators Amalgamated OT+NT/TAGNT *.txt"
+    license: CC-BY-4.0
+    attribution: "STEPBible.org / Tyndale House Cambridge, CC BY 4.0"
+    feeds: [token, lemma, variant_unit, variant_reading, variant_witness]
+    phase: 0
+    notes: Word-level NT with edition membership (NA28/27, SBL, THGNT, WH, Tregelles, TR, Byz) + variant notes. STEP book codes → OSIS map needed.
+
+  - id: stepbible-tahot
+    name: STEPBible TAHOT (Translators Amalgamated Hebrew OT)
+    url: https://github.com/STEPBible/STEPBible-Data
+    download: raw files "Translators Amalgamated OT+NT/TAHOT *.txt"
+    license: CC-BY-4.0
+    attribution: "STEPBible.org / Tyndale House Cambridge, CC BY 4.0"
+    feeds: [token, lemma, variant_unit, variant_reading, variant_witness]
+    phase: 0
+    notes: Leningrad text with Qere/Ketiv and variant codes (Aleppo, BHS, Cairensis, DSS, LXX-retroverted…).
+
+  - id: stepbible-tvtms
+    name: STEPBible TVTMS (versification mapping)
+    url: https://github.com/STEPBible/STEPBible-Data
+    download: raw file "Versification/TVTMS*.txt"
+    license: CC-BY-4.0
+    attribution: "STEPBible.org / Tyndale House Cambridge, CC BY 4.0"
+    feeds: [versification, verse_map]
+    phase: 0
+
+  - id: stepbible-lexicons
+    name: STEPBible TBESG / TBESH lexicons and TIPNR proper names
+    url: https://github.com/STEPBible/STEPBible-Data
+    download: raw files "Lexicons/*", "Proper Nouns/TIPNR*"
+    license: CC-BY-4.0
+    attribution: "STEPBible.org / Tyndale House Cambridge, CC BY 4.0"
+    feeds: [lemma, lexicon, lexicon_entry, person, place, person_ref, place_ref]
+    phase: 0
+
+  - id: oshb
+    name: Open Scriptures Hebrew Bible (WLC + morphology)
+    url: https://github.com/openscriptures/morphhb
+    download: git clone
+    license: "PD (WLC text) + CC-BY-4.0 (lemmas/morphology)"
+    attribution: "Open Scriptures Hebrew Bible, CC BY 4.0; Westminster Leningrad Codex (public domain)"
+    feeds: [edition_verse, token]
+    phase: 0
+
+  - id: ebible
+    name: eBible.org translations (VPL XML)
+    url: https://ebible.org/Scriptures/translations.csv
+    download: "https://ebible.org/Scriptures/{id}_vpl.zip"
+    license: per-translation (PD or CC-BY-SA; filtered at build from translations.csv)
+    attribution: "Texts from eBible.org — see per-edition credits"
+    feeds: [edition, edition_verse]
+    phase: 0
+    editions:   # id: licence, notes
+      eng-kjv:      { license: PD, notes: "KJV + Apocrypha (14 books)" }
+      eng-web:      { license: PD, notes: "World English Bible with deuterocanon" }
+      engbsb:       { license: CC0-1.0, notes: "Berean Standard Bible (CC0 since 2023-04-30)" }
+      eng-asv:      { license: PD }
+      engylt:       { license: PD, notes: "Young's Literal" }
+      engDBY:       { license: PD, notes: "Darby" }
+      engwebster:   { license: PD }
+      englsv:       { license: CC-BY-SA-4.0, notes: "Literal Standard Version, Covenant Press" }
+      enggnv:       { license: PD, notes: "Geneva 1599" }
+      engtnt:       { license: PD, notes: "Tyndale NT" }
+      engDRA:       { license: PD, notes: "Douay-Rheims (Challoner) — Vulgate versification" }
+      eng-Brenton:  { license: PD, notes: "Brenton English Septuagint — LXX versification" }
+      latVUC:       { license: PD, notes: "Clementine Vulgate — Vulgate versification" }
+
+  - id: crosswire-pd
+    name: CrossWire SWORD modules (public-domain texts only)
+    url: https://crosswire.org/sword/modules/
+    download: "https://crosswire.org/ftpmirror/pub/sword/packages/rawzip/{Module}.zip (read with pysword)"
+    license: PD
+    attribution: "Texts via the CrossWire Bible Society SWORD project"
+    feeds: [edition, edition_verse]
+    phase: 0
+    editions: { Murdock: "Peshitta NT (Murdock 1852)", Etheridge: "Peshitta NT (Etheridge 1849)", Rotherham: "Rotherham Emphasized", Weymouth: "Weymouth NT" }
+
+  - id: openbible-xref
+    name: OpenBible.info cross references
+    url: https://www.openbible.info/labs/cross-references/
+    download: https://a.openbible.info/data/cross-references.zip
+    license: CC-BY-4.0
+    attribution: "Cross references from OpenBible.info, CC BY"
+    feeds: [crossref]
+    phase: 0
+
+  # ---------------------------------------------------------------- early Christian literature
+  - id: ccel-schaff
+    name: CCEL ThML — Ante-Nicene Fathers 1–9, Nicene & Post-Nicene Fathers series 1 & 2
+    url: https://www.ccel.org/
+    download: "https://www.ccel.org/ccel/schaff/{anf01..anf09,npnf101..npnf114,npnf201..npnf214}.xml — fetched on the user's machine at build time"
+    license: PD (translations 1885–1900)
+    attribution: "Philip Schaff (ed.), Ante-Nicene / Nicene and Post-Nicene Fathers; digital text courtesy of the Christian Classics Ethereal Library"
+    feeds: [work, work_edition, work_section, citation, person]
+    phase: 1
+    notes: >
+      Texts are public domain, but CCEL asks permission before republishing its files. Until permission
+      is granted: the repo ships only the downloader; nothing derived from CCEL markup is committed or
+      included in the published core.db. scripRef osisRef attributes give exact verse citations.
+
+  - id: hcf-commentaries
+    name: HistoricalChristianFaith Commentaries-Database
+    url: https://github.com/HistoricalChristianFaith/Commentaries-Database
+    download: https://github.com/HistoricalChristianFaith/Commentaries-Database/releases/download/latest/commentaries.sqlite
+    license: PD (public-domain dedication)
+    attribution: "Historical Christian Faith Commentaries Database (public domain)"
+    feeds: [commentary, commentary_entry, person]
+    phase: 1
+    notes: Fathers → Aquinas → Reformers, keyed by verse, with years. EXCLUDE authors whose excerpts are claimed as fair use (modern copyrighted authors) — filter by year < 1928 and the FAIR USE list.
+
+  - id: catena-aurea
+    name: Thomas Aquinas, Catena Aurea (Newman translation, 1841)
+    url: https://www.ccel.org/ccel/aquinas/catena1.xml
+    download: as ccel-schaff (build-time fetch) or Wikisource
+    license: PD
+    attribution: "Catena Aurea, trans. J.H. Newman (1841), public domain"
+    feeds: [commentary, commentary_entry]
+    phase: 1
+
+  - id: first1kgreek
+    name: Open Greek and Latin — First1KGreek
+    url: https://github.com/OpenGreekAndLatin/First1KGreek
+    download: sparse git checkout of selected data/tlgNNNN folders
+    license: CC-BY-SA-4.0
+    attribution: "Open Greek and Latin Project, First1KGreek, CC BY-SA 4.0"
+    share_alike: true
+    feeds: [work_edition, work_section, citation]
+    phase: 1
+    notes: Greek originals of the fathers (Apostolic Fathers, Justin, Clement, Origen, Hippolytus, Eusebius…), some with <bibl> scripture tags.
+
+  - id: perseus-greek
+    name: Perseus canonical-greekLit (incl. Lake's Apostolic Fathers English)
+    url: https://github.com/PerseusDL/canonical-greekLit
+    download: sparse git checkout
+    license: CC-BY-SA-4.0
+    attribution: "Perseus Digital Library, CC BY-SA 4.0"
+    share_alike: true
+    feeds: [work_edition, work_section]
+    phase: 1
+
+  - id: perseus-latin
+    name: Perseus canonical-latinLit + OGL csel-dev (Tertullian, Cyprian, Lactantius, Augustine…)
+    url: https://github.com/PerseusDL/canonical-latinLit
+    download: sparse git checkout
+    license: CC-BY-SA-4.0
+    attribution: "Perseus Digital Library / Open Greek and Latin, CC BY-SA 4.0"
+    share_alike: true
+    feeds: [work_edition, work_section]
+    phase: 1
+
+  - id: mattison
+    name: Mark M. Mattison public-domain translations (gospels.net)
+    url: https://www.gospels.net/
+    download: HTML pages (one-time fetch, stored in raw/)
+    license: PD (explicit public-domain dedication on each page)
+    attribution: "Translations by Mark M. Mattison, public domain"
+    feeds: [work, work_edition, work_section]
+    phase: 1
+    notes: Gospel of Thomas, Mary, Judas, Philip, Truth, Peter, Egerton, Secret Book of James, Infancy Gospels, Secret Mark…
+
+  - id: james-1924
+    name: M. R. James, The Apocryphal New Testament (1924)
+    url: https://archive.org/details/JAMESApocryphalNewTestament1924
+    download: archive.org djvu.txt + Wikisource subpages
+    license: PD (US since 2020; author d. 1936)
+    attribution: "M. R. James, The Apocryphal New Testament (Oxford, 1924), public domain"
+    feeds: [work, work_edition, work_section]
+    phase: 1
+    notes: OCR text requires cleaning.
+
+  - id: charles-apot
+    name: R. H. Charles, Apocrypha and Pseudepigrapha of the Old Testament (1913)
+    url: https://archive.org/details/apocryphapseudep01charuoft
+    download: archive.org OCR text
+    license: PD
+    attribution: "R. H. Charles (ed.), APOT (Oxford, 1913), public domain"
+    feeds: [work, work_edition, work_section]
+    phase: 1
+    notes: 1 Enoch, Jubilees, Testaments of the XII, Psalms of Solomon, 2 Baruch, 4 Ezra, Fragments of a Zadokite Work (= Damascus Document).
+
+  - id: gutenberg-pd
+    name: Project Gutenberg (selected PD works)
+    url: https://www.gutenberg.org/
+    download: plain-text/HTML per ebook id
+    license: PD
+    attribution: "Project Gutenberg"
+    feeds: [work, work_edition, work_section]
+    phase: 1
+    notes: "Pistis Sophia (Horner 1924, #76266); Aquinas Summa Theologica (1920); Josephus (Whiston); Philo (Yonge)"
+
+  - id: wikisource
+    name: Wikisource (selected PD texts)
+    url: https://en.wikisource.org/
+    download: MediaWiki API
+    license: PD texts (Wikisource contributions CC-BY-SA)
+    attribution: "Wikisource contributors"
+    share_alike: true
+    feeds: [work_section]
+    phase: 1
+    notes: Muratorian fragment, Sibylline Oracles (Terry), gaps in ANF/James.
+
+  # ---------------------------------------------------------------- textual criticism
+  - id: sblgnt-apparatus
+    name: SBLGNT and apparatus
+    url: https://github.com/Faithlife/SBLGNT
+    download: git clone (data/sblgnt, data/sblgntapp)
+    license: CC-BY-4.0
+    attribution: "SBL Greek New Testament, Society of Biblical Literature & Logos/Faithlife, CC BY 4.0"
+    feeds: [edition, edition_verse, variant_unit, variant_reading, variant_witness]
+    phase: 2
+
+  - id: byzantine-rp
+    name: Robinson-Pierpont Byzantine Majority Text (2005/2018)
+    url: https://github.com/byztxt/byzantine-majority-text
+    download: git clone
+    license: PD
+    attribution: "Robinson & Pierpont, The New Testament in the Original Greek: Byzantine Textform (public domain)"
+    feeds: [edition, edition_verse, variant_reading]
+    phase: 2
+
+  - id: cntr
+    name: Center for New Testament Restoration — manuscript transcriptions
+    url: https://github.com/Center-for-New-Testament-Restoration/transcriptions
+    download: git clone
+    license: CC-BY-SA-4.0
+    attribution: "Center for New Testament Restoration, CC BY-SA 4.0"
+    share_alike: true
+    feeds: [edition (kind=manuscript), edition_verse, manuscript_coverage]
+    phase: 2
+    notes: ~130 early papyri/majuscules + early fathers/versions. CNTR WEBSITE metadata is NOT open — use transcriptions only.
+
+  - id: intf-transcriptions
+    name: INTF NTVMR TEI transcriptions
+    url: https://ntvmr.uni-muenster.de/
+    download: transcript API (teiraw), cached once, ~1 req/s
+    license: CC-BY-4.0 (stated in each TEI header)
+    attribution: "Institut für Neutestamentliche Textforschung, Münster, CC BY 4.0"
+    feeds: [edition (kind=manuscript), edition_verse]
+    phase: 2
+    notes: Transcriptions only. The Liste metadata endpoint has NO stated licence → not used.
+
+  - id: wikipedia-manuscripts
+    name: Wikipedia manuscript lists (NT papyri, uncials, minuscules, LXX codices, DSS)
+    url: https://en.wikipedia.org/wiki/List_of_New_Testament_papyri
+    download: "index.php?action=raw for each list page"
+    license: CC-BY-SA-4.0
+    attribution: "Wikipedia contributors, CC BY-SA 4.0"
+    share_alike: true
+    feeds: [manuscript, manuscript_coverage, dating]
+    phase: 2
+    notes: Replaces INTF Liste metadata for dates, contents, institutions.
+
+  - id: wikidata
+    name: Wikidata
+    url: https://query.wikidata.org/
+    download: SPARQL queries (stored in sources/queries/*.rq), results cached in raw/
+    license: CC0-1.0
+    attribution: "Wikidata (CC0)"
+    feeds: [external_id, person, dating, event, manuscript, place]
+    phase: 2
+
+  - id: mam-aleppo
+    name: Miqra according to the Masorah (Aleppo-based Hebrew text)
+    url: https://github.com/bdenckla/MAM-basics
+    download: git clone
+    license: CC-BY-SA-4.0
+    attribution: "Miqra according to the Masorah (MAM), via Hebrew Wikisource, CC BY-SA 4.0"
+    share_alike: true
+    feeds: [edition, edition_verse]
+    phase: 2
+
+  - id: lxx-swete
+    name: Septuagint, Swete edition (digital)
+    url: https://github.com/sleeptillseven/LXX-Swete
+    download: git clone
+    license: CC-BY-SA-4.0
+    attribution: "LXX Swete digital edition, CC BY-SA 4.0"
+    share_alike: true
+    feeds: [edition, edition_verse, token]
+    phase: 2
+    verify: true   # confirm licence file & data quality before relying on it
+
+  - id: ubs-open
+    name: UBS open-licensed resources (dictionaries, parallels, HOTTP, routes, realia)
+    url: https://github.com/ubsicap/ubs-open-license
+    download: git clone
+    license: CC-BY-SA-4.0
+    attribution: "United Bible Societies, CC BY-SA 4.0"
+    share_alike: true
+    feeds: [lexicon, lexicon_entry, semantic_domain, lemma_sense, parallel_group, parallel_member,
+            quotation, variant_unit, variant_reading, geo_feature]
+    phase: 3
+    notes: HOTTP = OT text-critical decisions with A–D ratings (OT variant layer).
+
+  - id: macula-greek
+    name: Clear Bible MACULA Greek (SBLGNT & Nestle1904 syntax, glosses, domains, referents)
+    url: https://github.com/Clear-Bible/macula-greek
+    download: git clone (tsv + lowfat xml)
+    license: CC-BY-4.0
+    attribution: "MACULA Greek Linguistic Datasets, Biblica / Clear Bible, CC BY 4.0"
+    feeds: [token, syntax_node, lemma]
+    phase: 3
+
+  - id: macula-hebrew
+    name: Clear Bible MACULA Hebrew (WLC syntax, SDBH domains, LXX equivalents)
+    url: https://github.com/Clear-Bible/macula-hebrew
+    download: "git clone + LFS file WLC/tsv/macula-hebrew.tsv"
+    license: CC-BY-4.0
+    attribution: "MACULA Hebrew Linguistic Datasets, Biblica / Clear Bible, CC BY 4.0"
+    feeds: [token, syntax_node, lemma, alignment]
+    phase: 3
+
+  # ---------------------------------------------------------------- context: people, places, chronology
+  - id: theographic
+    name: Theographic Bible Metadata
+    url: https://github.com/robertrouse/theographic-bible-metadata
+    download: git clone (json)
+    license: CC-BY-SA-4.0
+    attribution: "Theographic Bible Metadata by Robert Rouse, CC BY-SA 4.0"
+    share_alike: true
+    feeds: [person, person_relation, person_ref, place, place_ref, event, event_participant, event_ref, dating, verse_date]
+    phase: 4
+    notes: Ussher year per verse (from TSK) and Jones event chronology → two chronology_systems.
+
+  - id: openbible-geo
+    name: OpenBible.info Bible Geocoding Data
+    url: https://github.com/openbibleinfo/Bible-Geocoding-Data
+    download: git clone (data/ancient.jsonl, modern.jsonl)
+    license: CC-BY-4.0
+    attribution: "Bible geocoding data from OpenBible.info, CC BY 4.0"
+    feeds: [place, place_ref]
+    phase: 4
+
+  - id: pleiades
+    name: Pleiades gazetteer of ancient places
+    url: https://pleiades.stoa.org/
+    download: https://atlantides.org/downloads/pleiades/dumps/pleiades-places-latest.csv.gz
+    license: CC-BY-3.0
+    attribution: "Pleiades, CC BY 3.0"
+    feeds: [place, external_id]
+    phase: 4
+
+  - id: itinere
+    name: Itiner-e — Roman road network
+    url: https://doi.org/10.5281/zenodo.17122148
+    download: Zenodo archive
+    license: CC-BY-4.0
+    attribution: "Itiner-e, CC BY 4.0"
+    feeds: [geo_feature]
+    phase: 4
+
+  - id: helloao-commentaries
+    name: HelloAO Free Use Bible API — public-domain commentaries
+    url: https://bible.helloao.org/
+    download: "per-chapter JSON (api/c/{id}/{book}/{ch}.json)"
+    license: PD (Henry, JFB, Clarke, Gill, Keil-Delitzsch, Calvin); Tyndale Open Study Notes CC-BY-SA-4.0
+    attribution: "Commentaries via the HelloAO Free Use Bible API"
+    feeds: [commentary, commentary_entry]
+    phase: 4
+
+  - id: testimonia-curated
+    name: Testimonia curated tables (this repository, curated/)
+    url: (this repo)
+    download: (in repo)
+    license: CC-BY-SA-4.0
+    attribution: "Testimonia contributors, CC BY-SA 4.0"
+    share_alike: true
+    feeds: [chronology_system, period, dating, office_holding, event, canon_list, canon_list_item, canon_tradition, canon_book, work, person]
+    phase: 0
+    notes: Hand-encoded from public-domain primary sources and CC BY-SA Wikipedia tables (cited per row).
+
+# Live APIs — queried at runtime, cached in user.db, never bundled.
+live_apis:
+  - { id: openalex, url: "https://api.openalex.org", license: CC0-1.0, notes: "free key recommended ($1/day budget)" }
+  - { id: crossref, url: "https://api.crossref.org", license: "metadata facts", notes: "mailto= polite pool" }
+  - { id: doaj,     url: "https://doaj.org/api",      license: CC-BY-SA-4.0 }
+  - { id: internet-archive, url: "https://archive.org/advancedsearch.php", notes: "PD scholarly books (Tischendorf, Swete, Westcott-Hort)" }
+
+# Pending research / licence verification before use.
+verify:
+  - btb-lxx: "BTB's LXX derives from the Apostolic Bible Polyglot (© Charles Van der Pool?) — confirm licence; else use Swete + Brenton."
+  - ccel-permission: "Ask CCEL for permission to redistribute ThML-derived data (would let core.db ship the ANF/NPNF library + scripRef index)."
+  - dss: "Dead Sea Scrolls — research in progress (open metadata/text/translations)."
+  - dare-tiles: "DARE / AWMC map tile licences (CC BY 4.0 vs older NC terms)."
+
+# Explicitly excluded (not open). Kept here so nobody re-adds them.
+excluded:
+  - { id: etcbc-dss,      reason: "CC BY-NC" }
+  - { id: etcbc-bhsa,     reason: "CC BY-NC" }
+  - { id: etcbc-peshitta, reason: "CC BY-NC" }
+  - { id: dt-ucph-sp,     reason: "Samaritan Pentateuch data, CC BY-NC" }
+  - { id: ccat-catss,     reason: "Rahlfs LXX / CATSS: signed user agreement, non-commercial, no redistribution" }
+  - { id: lxx-rahlfs-eliranwong, reason: "CC BY-NC-SA (derived from CCAT)" }
+  - { id: sinaiticus-project, reason: "CC BY-NC-SA 3.0" }
+  - { id: intf-liste,     reason: "no licence stated for manuscript metadata" }
+  - { id: cntr-website,   reason: "all rights reserved (transcriptions repo is fine)" }
+  - { id: biblindex,      reason: "no data licence; OAuth-gated" }
+  - { id: thgnt,          reason: "Tyndale House GNT standalone text/apparatus not openly licensed (readings available via TAGNT)" }
+  - { id: earlychristianwritings, reason: "© Peter Kirby — link only" }
+  - { id: christian-history-org,  reason: "© Paul Pavao — link only" }
+  - { id: newadvent,      reason: "© New Advent LLC" }
+  - { id: nets,           reason: "© Oxford UP" }
+  - { id: lamsa,          reason: "© HarperCollins" }
+  - { id: jubilee2000, reason: "non-commercial only" }
+  - { id: leb,            reason: "non-commercial only" }
+  - { id: nag-hammadi-library-in-english, reason: "© Robinson et al. — link only" }
