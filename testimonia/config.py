@@ -25,6 +25,7 @@ DATA_DIR = _path("TESTIMONIA_DATA", Path.home() / "TestimoniaData")
 RAW_DIR = _path("TESTIMONIA_RAW", DATA_DIR / "raw")  # pinned source downloads
 BUILD_DIR = _path("TESTIMONIA_BUILD", DATA_DIR / "build")  # generated core.db
 CORE_DB = _path("TESTIMONIA_CORE_DB", BUILD_DIR / "core.db")
+AI_DB = _path("TESTIMONIA_AI_DB", BUILD_DIR / "ai.db")  # optional: embeddings, AI cache, proposals
 USER_DIR = _path("TESTIMONIA_USER", DATA_DIR / "user")
 USER_DB = _path("TESTIMONIA_USER_DB", USER_DIR / "user.db")
 NOTES_DIR = _path("TESTIMONIA_NOTES", USER_DIR / "notes")  # markdown notes (Obsidian-compatible)

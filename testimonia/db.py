@@ -1,9 +1,13 @@
-"""SQLite connection helpers, core-schema creation and user-database migrations.
+"""SQLite connection helpers, schema creation and user-database migrations.
 
-* ``core.db`` is a build artifact: :func:`create_core` writes the current schema into a fresh file.
-  Its version is ``PRAGMA user_version`` from ``schema/core.sql``; a mismatch means "rebuild".
+Three databases, two lifecycles:
+
+* ``core.db`` (reference data) and ``ai.db`` (embeddings, AI cache, proposals) are **derived**:
+  :func:`create_derived` writes the current schema into a fresh file, and :func:`open_derived`
+  refuses a file whose ``PRAGMA user_version`` differs from the schema file — "rebuild it".
 * ``user.db`` holds user data and is upgraded in place by :func:`migrate_user`, which applies
   ``schema/user_migrations/NNNN_*.sql`` files in order, each in its own transaction.
+* Add-on modules contribute ``schema/modules/<name>.sql`` to core.db via :func:`install_module`.
 """
 
 from __future__ import annotations
@@ -12,13 +16,17 @@ import re
 import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
+from datetime import UTC, datetime
 from pathlib import Path
 
-from .config import CORE_DB, SCHEMA_DIR, USER_DB
+from .config import AI_DB, CORE_DB, SCHEMA_DIR, USER_DB
 
 CORE_SCHEMA = SCHEMA_DIR / "core.sql"
+AI_SCHEMA = SCHEMA_DIR / "ai.sql"
 USER_MIGRATIONS = SCHEMA_DIR / "user_migrations"
+MODULES_DIR = SCHEMA_DIR / "modules"
 _MIGRATION_NAME = re.compile(r"^(\d{4})_[a-z0-9_]+\.sql$")
+_MODULE_NAME = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
 class SchemaError(RuntimeError):
@@ -43,34 +51,107 @@ def connect(path: Path | str, *, readonly: bool = False) -> sqlite3.Connection:
 # ---------------------------------------------------------------------------- core
 
 
-def core_schema_version() -> int:
-    m = re.search(r"PRAGMA\s+user_version\s*=\s*(\d+)", CORE_SCHEMA.read_text(encoding="utf-8"))
+def schema_version(schema_file: Path) -> int:
+    """The ``PRAGMA user_version`` declared in a schema file."""
+    m = re.search(r"PRAGMA\s+user_version\s*=\s*(\d+)", schema_file.read_text(encoding="utf-8"))
     if not m:
-        raise SchemaError("schema/core.sql does not declare PRAGMA user_version")
+        raise SchemaError(f"{schema_file.name} does not declare PRAGMA user_version")
     return int(m.group(1))
 
 
-def create_core(path: Path | str = CORE_DB) -> sqlite3.Connection:
-    """Create a fresh core database (any existing file at ``path`` is replaced)."""
+def core_schema_version() -> int:
+    return schema_version(CORE_SCHEMA)
+
+
+def create_derived(path: Path | str, schema_file: Path) -> sqlite3.Connection:
+    """Create a fresh derived database from ``schema_file`` (an existing file is replaced)."""
     path = Path(path)
     for suffix in ("", "-wal", "-shm"):
         Path(f"{path}{suffix}").unlink(missing_ok=True)
     con = connect(path)
-    con.executescript(CORE_SCHEMA.read_text(encoding="utf-8"))
+    con.executescript(schema_file.read_text(encoding="utf-8"))
+    return con
+
+
+def open_derived(path: Path | str, schema_file: Path, *, readonly: bool = True) -> sqlite3.Connection:
+    """Open a derived database, verifying it was built with the current schema version."""
+    if not Path(path).exists():
+        raise SchemaError(f"{Path(path).name} not found at {path} — run the build first")
+    con = connect(path, readonly=readonly)
+    found = con.execute("PRAGMA user_version").fetchone()[0]
+    expected = schema_version(schema_file)
+    if found != expected:
+        con.close()
+        raise SchemaError(f"{Path(path).name} has schema v{found}, code expects v{expected} — rebuild it")
+    return con
+
+
+def create_core(path: Path | str = CORE_DB) -> sqlite3.Connection:
+    """Create a fresh core database and register the 'core' module."""
+    con = create_derived(path, CORE_SCHEMA)
+    con.execute(
+        "INSERT INTO module (id, version, schema_version, description, installed_at) VALUES (?,?,?,?,?)",
+        ("core", _package_version(), core_schema_version(), "Testimonia core schema", _now()),
+    )
+    con.commit()
     return con
 
 
 def open_core(path: Path | str = CORE_DB) -> sqlite3.Connection:
     """Open an existing core database read-only, verifying its schema version."""
-    if not Path(path).exists():
-        raise SchemaError(f"core database not found at {path} — run the build first")
-    con = connect(path, readonly=True)
-    found = con.execute("PRAGMA user_version").fetchone()[0]
-    expected = core_schema_version()
-    if found != expected:
-        con.close()
-        raise SchemaError(f"core.db schema v{found}, code expects v{expected} — rebuild core.db")
-    return con
+    return open_derived(path, CORE_SCHEMA)
+
+
+def create_ai(path: Path | str = AI_DB) -> sqlite3.Connection:
+    """Create a fresh (optional) AI database: chunks, embeddings, AI cache, proposals."""
+    return create_derived(path, AI_SCHEMA)
+
+
+def open_ai(path: Path | str = AI_DB, *, readonly: bool = False) -> sqlite3.Connection:
+    return open_derived(path, AI_SCHEMA, readonly=readonly)
+
+
+# ---------------------------------------------------------------------------- modules
+
+
+def available_modules() -> list[str]:
+    return sorted(p.stem for p in MODULES_DIR.glob("*.sql")) if MODULES_DIR.exists() else []
+
+
+def install_module(con: sqlite3.Connection, name: str, version: str = "1") -> None:
+    """Apply ``schema/modules/<name>.sql`` to a core database and record it in ``module``.
+
+    A module file must declare ``PRAGMA user_version = N`` (its own schema version) and should
+    prefix its tables with the module name. Installing the same module twice is an error.
+    """
+    if not _MODULE_NAME.match(name):
+        raise SchemaError(f"invalid module name {name!r}")
+    file = MODULES_DIR / f"{name}.sql"
+    if not file.exists():
+        raise SchemaError(f"module schema not found: {file}")
+    if con.execute("SELECT 1 FROM module WHERE id = ?", (name,)).fetchone():
+        raise SchemaError(f"module {name!r} is already installed")
+    module_version = schema_version(file)
+    core_version = con.execute("PRAGMA user_version").fetchone()[0]
+    # Module scripts must not change the core version, so strip their PRAGMA user_version line.
+    sql = re.sub(r"PRAGMA\s+user_version\s*=\s*\d+\s*;", "", file.read_text(encoding="utf-8"))
+    con.executescript(sql)
+    con.execute(f"PRAGMA user_version = {int(core_version)}")
+    con.execute(
+        "INSERT INTO module (id, version, schema_version, description, installed_at) VALUES (?,?,?,?,?)",
+        (name, version, module_version, None, _now()),
+    )
+    con.commit()
+
+
+def _now() -> str:
+    return datetime.now(UTC).isoformat(timespec="seconds")
+
+
+def _package_version() -> str:
+    from . import __version__
+
+    return __version__
 
 
 @contextmanager

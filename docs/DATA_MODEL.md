@@ -34,8 +34,10 @@ source feeds which table.
 ```
 Testimonia/                      ← git repository (code + schema + curated data; no bulk data)
 ├── schema/
-│   ├── core.sql                 ← core database schema
-│   └── user.sql                 ← user database schema
+│   ├── core.sql                 ← core database schema (derived; versioned, rebuilt on change)
+│   ├── ai.sql                   ← optional AI database: chunks, embeddings, AI cache, proposals
+│   ├── user_migrations/         ← user database: 0001_initial.sql, 0002_ai_conversations.sql, …
+│   └── modules/                 ← add-on feature schemas (see modules/README.md)
 ├── sources/
 │   ├── sources.yaml             ← every dataset: URL, licence, attribution, tables fed, phase
 │   └── queries/*.rq             ← Wikidata SPARQL queries used by the build
@@ -53,6 +55,7 @@ Testimonia/                      ← git repository (code + schema + curated dat
 │   └── book_meta.csv            (Hebrew/Greek/Latin names, genres)
 ├── testimonia/                  ← Python package
 │   ├── books.py, refs.py        ← book table, reference parser, vkey helpers
+│   ├── uri.py                   ← universal URIs (verse:John.1.18, person:irenaeus, …)
 │   ├── db.py, config.py
 │   ├── fetch.py                 ← downloads sources into raw/ (pinned versions, sha256)
 │   ├── build.py                 ← runs ingest modules in dependency order, builds FTS, validates
@@ -63,6 +66,7 @@ Testimonia/                      ← git repository (code + schema + curated dat
 TestimoniaData/                  ← data directory (outside the repo; C:\Users\Sam\TestimoniaData)
 ├── raw/<source_id>/<version>/   ← untouched downloads (git clones, zips, API caches)
 ├── build/core.db                ← generated (≈3–6 GB with FTS)
+├── build/ai.db                  ← optional, generated (embeddings: size depends on model)
 └── user/
     ├── user.db                  ← highlights, plans, translations, settings, API cache
     └── notes/                   ← your markdown notes (open the folder as an Obsidian vault)
@@ -295,8 +299,21 @@ Modelled as:
   War Scroll, pesharim, Hodayot, Temple Scroll…) with public-domain translations where they exist
   (e.g. Schechter's 1910 *Fragments of a Zadokite Work* / Charles 1913 for the Damascus Document).
 
-Open-data availability is being researched (the main DSS text dataset, ETCBC/dss, is CC BY-NC
-and therefore excluded).
+What open data allows (researched 2026-11-05):
+
+| Feature | Open source | Coverage |
+|---|---|---|
+| Scroll catalogue + "attested at Qumran" per verse | Wikipedia *List of the Dead Sea Scrolls* (CC BY-SA) | ~436 manuscripts; ~200 biblical scrolls with verse contents; palaeographic dates (→ `manuscript.script` + dating window) |
+| DSS readings in OT text criticism | UBS HOTTP (CC BY-SA); TAHOT (CC BY) | 15 HOTTP entries cite Qumran explicitly (1QIsᵃ, 4QSam…); famous cases (Deut 32:8, 32:43, Ps 22:17, Ps 145:13 nun line, Isa 53:11) covered |
+| Scroll text | Hebrew Wikisource (CC BY-SA) community transcriptions | 11QPsᵃ, 1QpHab, 1QS, 1QM, 11QT, MMT, 3Q15, CD and a few others |
+| Sectarian texts in English | Schechter 1910 / Charles 1913 (PD) | Damascus Document only |
+| Images, other translations | Leon Levy Library, modern editions | **link only** (copyrighted) |
+
+Not openly available anywhere: the full text of 1QIsaᵃ, 4QSamᵃ or the 4QDeut scrolls, and any
+English translation of the major sectarian scrolls other than the Damascus Document. The ETCBC
+`dss` dataset remains CC BY-NC and the SQE database has no data licence, so both are excluded.
+These gaps are good candidates for future community or AI-assisted work (with review), which
+the extensibility layer (§13) is designed to hold.
 
 ---
 
@@ -304,12 +321,19 @@ and therefore excluded).
 
 | Table | Purpose |
 |---|---|
-| `note` | index of markdown notes in `notes/` (anchored to verse ranges, works, people, manuscripts) |
+| `note` | index of markdown notes in `notes/`, each anchored to any URI (verse range, work section, person, manuscript…) |
 | `my_translation` | your own translation verse by verse (replaces BTB pericope note lines) |
-| `highlight`, `collection`, `collection_item` | highlights, passage lists, study sets |
+| `highlight`, `tagging`, `collection`, `collection_item` | highlights, tags on anything, passage lists / study sets / outlines |
 | `reading_plan`, `reading_progress` | canonical, chronological, fathers' reading plans |
 | `history`, `workspace`, `setting` | navigation, saved layouts, preferences |
 | `api_cache` | cached OpenAlex/Crossref/DOAJ/Internet Archive responses |
+| `ai_conversation`, `ai_message`, `ai_feedback` | AI study-assistant chats, with retrieved context and citations as URIs (migration 0002) |
+
+Every user table references core data by **URI**, never by core rowid, so rebuilding core.db
+never breaks user data. User rows carry a uuid, `created_at`/`updated_at` and a `deleted`
+tombstone, so multi-device sync can be added later (last-write-wins per row) without a migration.
+User schema changes are numbered migrations (`schema/user_migrations/NNNN_*.sql`), applied in
+order in their own transactions; an older app refuses to open a newer user.db.
 
 Notes are plain markdown with YAML front-matter, so the `notes/` folder can be opened directly
 in Obsidian. The app re-indexes files whose mtime changed.
@@ -353,3 +377,63 @@ Combined with `variant_witness` (who reads θεός vs υἱός) this produces 
 | `citation` | 0.1 M |
 | `syntax_node` | 1.5 M |
 | **core.db with FTS** | **≈ 3–6 GB** |
+
+---
+
+## 13. Extensibility & AI
+
+The schema is designed so new features — including AI — can be added without redesign.
+
+### 13.1 Universal URIs
+Every item has a URI `<type>:<id>[#<fragment>]` ([`testimonia/uri.py`](../testimonia/uri.py)):
+`verse:John.1.18`, `verse:John.1.18-John.1.20`, `person:irenaeus`, `work:irenaeus.haer`,
+`section:irenaeus.haer@anf#3.11.6`, `ms:GA:P66`, `lemma:G3439`, `edition:kjv`, `note:<uuid>`.
+URIs connect core.db, user.db, ai.db, markdown notes, links in the UI and AI citations.
+The `entity` view lists every named item with its URI and title (universal search / grounding).
+A new kind of entity only needs a new URI type.
+
+### 13.2 Extension points in core.db
+| Need | Mechanism |
+|---|---|
+| New property on any item | `entity_attr (uri, key, value JSON, lang, confidence, source_id)` |
+| New relationship between items | `entity_link (src, rel, dst, weight, confidence, review, source_id)` — a knowledge graph |
+| Multilingual names / UI data | `label (uri, lang, field, text)` |
+| Images, audio, facsimiles | `media` + `entity_link` |
+| A whole new feature with its own tables | a module: `schema/modules/<name>.sql`, recorded in `module` |
+| New data source | a `sources.yaml` entry + `testimonia/ingest/<source>.py` |
+
+### 13.3 Machine-generated data is always labelled
+- `source.kind` is `dataset`, `curated`, `machine` or `api`; machine sources record `method`
+  and `model`. `source.public = 0` keeps a source out of public builds.
+- Inferred rows (`citation`, `quotation`, `crossref`, `dating`, `entity_link`) carry
+  `confidence` (0–1) and `review` (`accepted` / `unreviewed` / `rejected`).
+- The UI can therefore always show *who* claims something (scholar, dataset, algorithm, AI) and
+  filter out unreviewed machine output.
+
+### 13.4 ai.db (optional, rebuildable — `schema/ai.sql`)
+| Table | Purpose |
+|---|---|
+| `embedding_model` | each embedding model (provider, dimension, distance); several can coexist |
+| `chunk` | retrievable units (scripture windows, work sections, commentary, lexicon, user notes) with URI, scripture range, **date**, author — so retrieval can be restricted, e.g. to pre-Nicene sources |
+| `embedding` | float32 vectors per (chunk, model); optional `sqlite-vec` index created at runtime |
+| `fts_chunk` | keyword index for hybrid (BM25 + vector) retrieval |
+| `ai_cache` | cached outputs keyed by task + model + prompt version + inputs |
+| `ai_run`, `ai_proposal` | batch AI jobs and their proposals (allusions, links, datings…) awaiting review |
+
+Workflow for AI-discovered knowledge: **AI proposes** (`ai_proposal`) → **a person reviews** →
+accepted items are exported to `curated/` (citing the evidence) → they enter core.db in the next
+build, attributed to a `machine` or `curated` source. Nothing an AI produces enters the
+reference data unreviewed.
+
+### 13.5 AI conversations
+`user.db` stores assistant conversations (`ai_conversation`, `ai_message`, `ai_feedback`).
+Each assistant message records the URIs it was given (`context_uris`) and the URIs it cited
+(`citations`), so answers can always be checked against the real texts.
+
+### 13.6 Planned AI features this supports
+- Ask questions of the library with cited answers ("How did pre-Nicene writers read Gen 1:26?").
+- Era-aware retrieval (only sources before AD 325, or before a chosen date).
+- Explain a variant, a manuscript, a word study, or a passage in context.
+- Suggest allusions to scripture in ancient works; propose datings or links — always as reviewable proposals.
+- Semantic search across translations, fathers and notes; "similar passages".
+- Drafting help for your own translation, grounded in the lexicons and interlinear.

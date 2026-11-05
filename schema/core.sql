@@ -15,11 +15,26 @@
 --                     'GA:P66', 'kjv'), so URLs and curated CSV files stay readable.
 --  * Every data row carries source_id → source(id): licence & attribution are tracked per row,
 --    which lets us generate the credits page and a licence-filtered public build.
+--  * URIs  TEXT     = universal references to ANY item, "<type>:<id>[#<fragment>]":
+--                     verse:John.1.18  verse:John.1.18-John.1.20  person:irenaeus  work:irenaeus.haer
+--                     section:irenaeus.haer@anf#3.11.6  ms:GA:P66  lemma:G3439  edition:kjv  note:<uuid>
+--                     Used by entity_link, entity_attr, ai.db chunks, user notes and AI citations
+--                     (see testimonia/uri.py). Adding a new kind of entity = adding a new <type>.
+--
+--  Extensibility
+--  -------------
+--  * New properties  → entity_attr (typed key/value per entity) before adding columns.
+--  * New relations   → entity_link (typed edges between any two URIs) before adding tables.
+--  * New features    → a module: schema/modules/<name>.sql + ingest code, registered in `module`.
+--                      Module tables are prefixed with the module name (e.g. audio_*, syntax_*).
+--  * Machine-made data (AI, heuristics) comes from a source with kind='machine' and carries
+--    confidence + review status, so it is always distinguishable from scholarly data.
+--  * Embeddings / AI caches live in ai.db (schema/ai.sql), never here.
 -- =====================================================================================
 
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
-PRAGMA user_version = 1;   -- core schema version: bump on every change (core.db is rebuilt, never migrated)
+PRAGMA user_version = 2;   -- core schema version: bump on every change (core.db is rebuilt, never migrated)
 
 -- =====================================================================================
 -- §1  PROVENANCE & LICENSING
@@ -37,10 +52,83 @@ CREATE TABLE source (
   share_alike   INTEGER NOT NULL DEFAULT 0 CHECK (share_alike IN (0, 1)),
   fetched_at    TEXT,
   sha256        TEXT,
+  kind          TEXT NOT NULL DEFAULT 'dataset'
+                CHECK (kind IN ('dataset','curated','machine','api')),
+                -- dataset = published open data; curated = hand-encoded in curated/;
+                -- machine = produced by an algorithm or AI model (see method/model);
+                -- api = metadata from a live API snapshot
+  method        TEXT,                      -- machine sources: 'citation-extractor', 'llm-allusion-tagger'
+  model         TEXT,                      -- machine sources: model name + version, e.g. 'claude-opus-5-5'
+  public        INTEGER NOT NULL DEFAULT 1 CHECK (public IN (0, 1)),  -- 0 = excluded from --public builds
   notes         TEXT
 ) STRICT;
 
 CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT) STRICT;   -- build date, schema version, etc.
+
+-- Add-on modules (future features) that contributed tables/data to this build.
+CREATE TABLE module (
+  id             TEXT PRIMARY KEY,         -- 'core','syntax','audio','maps','ai-annotations'
+  version        TEXT NOT NULL,
+  schema_version INTEGER NOT NULL,
+  description    TEXT,
+  installed_at   TEXT
+) STRICT;
+
+-- Generic typed properties for any entity — lets new features attach data without schema changes.
+CREATE TABLE entity_attr (
+  uri         TEXT NOT NULL,               -- 'person:irenaeus', 'ms:GA:P66', 'verse:John.1.18'
+  key         TEXT NOT NULL,               -- namespaced: 'bio.birthplace', 'ms.leaves', 'audio.url'
+  value       TEXT NOT NULL,               -- JSON-encoded value
+  lang        TEXT NOT NULL DEFAULT '',    -- '' = language-neutral
+  confidence  REAL CHECK (confidence BETWEEN 0 AND 1),
+  source_id   TEXT NOT NULL REFERENCES source(id),
+  CHECK (json_valid(value)),
+  PRIMARY KEY (uri, key, lang, source_id)
+) STRICT, WITHOUT ROWID;
+CREATE INDEX entity_attr_key ON entity_attr(key);
+
+-- Generic typed relationships between any two items (knowledge graph). Specific tables
+-- (person_ref, citation, crossref…) stay for hot paths; this holds the long tail and
+-- anything discovered later — including machine/AI-proposed links pending review.
+CREATE TABLE entity_link (
+  id          INTEGER PRIMARY KEY,
+  src         TEXT NOT NULL,               -- URI
+  rel         TEXT NOT NULL,               -- 'alludes_to','disciple_of','located_at','depicts','same_as',
+                                           -- 'responds_to','quotes','attests','refutes','mentions'
+  dst         TEXT NOT NULL,               -- URI
+  weight      REAL,                        -- strength / votes / similarity
+  confidence  REAL CHECK (confidence BETWEEN 0 AND 1),
+  review      TEXT NOT NULL DEFAULT 'accepted'
+              CHECK (review IN ('accepted','unreviewed','rejected')),
+  note        TEXT,
+  source_id   TEXT NOT NULL REFERENCES source(id)
+) STRICT;
+CREATE INDEX entity_link_src ON entity_link(src, rel);
+CREATE INDEX entity_link_dst ON entity_link(dst, rel);
+
+-- Names/labels in other languages for any entity (multilingual UI: Tamil, Spanish, Greek…).
+CREATE TABLE label (
+  uri         TEXT NOT NULL,
+  lang        TEXT NOT NULL,               -- BCP-47: 'ta', 'es', 'grc', 'he'
+  field       TEXT NOT NULL DEFAULT 'name',-- 'name','title','summary'
+  text        TEXT NOT NULL,
+  source_id   TEXT REFERENCES source(id),
+  PRIMARY KEY (uri, lang, field)
+) STRICT, WITHOUT ROWID;
+
+-- Media assets (images, audio, map tiles packs, manuscript facsimile links) — always with licence via source.
+CREATE TABLE media (
+  id          TEXT PRIMARY KEY,
+  kind        TEXT NOT NULL CHECK (kind IN ('image','audio','video','map','document','iiif')),
+  url         TEXT,                        -- remote URL (link only) …
+  path        TEXT,                        -- … or path relative to the data dir (bundled)
+  mime        TEXT,
+  title       TEXT,
+  credit      TEXT,                        -- per-item credit line when it differs from the source
+  source_id   TEXT NOT NULL REFERENCES source(id),
+  CHECK (url IS NOT NULL OR path IS NOT NULL)
+) STRICT;
+-- media is attached to items through entity_link (rel = 'depicts' / 'audio_of' / 'facsimile_of').
 
 -- External identifiers for any entity (Wikidata QID, Pleiades, TLG, CPG, Gregory-Aland, Trismegistos…)
 CREATE TABLE external_id (
@@ -336,6 +424,8 @@ CREATE TABLE manuscript (
   material    TEXT,                        -- 'papyrus','parchment','paper'
   date_from   INTEGER, date_to INTEGER,    -- astronomical years (window)
   date_label  TEXT,                        -- 'c. 200', 'III/IV', 'mid-2nd c. BC'
+  script      TEXT,                        -- palaeographic script/period: 'Herodian','Hasmonean','paleo-Hebrew',
+                                           -- 'biblical majuscule','minuscule' (often the only dating evidence)
   contents    TEXT,                        -- human-readable summary
   text_type   TEXT,                        -- 'Alexandrian','Byzantine','Western','proto-MT','pre-Samaritan'…
   institution TEXT, city TEXT, country TEXT, shelfmark TEXT,
@@ -481,6 +571,8 @@ CREATE TABLE dating (
   circa       INTEGER NOT NULL DEFAULT 0 CHECK (circa IN (0, 1)),
   label       TEXT,                        -- as the source states it: '~AD 26–27', 'c. 1446 BC'
   basis       TEXT,                        -- why: 'internal evidence','palaeography','C14','tradition'
+  confidence  REAL CHECK (confidence BETWEEN 0 AND 1),   -- NULL = not applicable / curated
+  review      TEXT NOT NULL DEFAULT 'accepted' CHECK (review IN ('accepted','unreviewed','rejected')),
   source_id   TEXT REFERENCES source(id),
   CHECK (start_year IS NOT NULL OR end_year IS NOT NULL),
   CHECK (start_year IS NULL OR end_year IS NULL OR start_year <= end_year),
@@ -584,6 +676,8 @@ CREATE TABLE citation (
   kind          TEXT CHECK (kind IN ('quotation','allusion','reference','comment')),
   reading       TEXT,                      -- the wording the author used (text-critical value!)
   snippet       TEXT,                      -- surrounding text
+  confidence    REAL CHECK (confidence BETWEEN 0 AND 1),   -- NULL = not applicable / curated
+  review        TEXT NOT NULL DEFAULT 'accepted' CHECK (review IN ('accepted','unreviewed','rejected')),
   source_id     TEXT NOT NULL REFERENCES source(id)
 ) STRICT;
 CREATE INDEX citation_range ON citation(start_vkey, end_vkey);
@@ -625,6 +719,8 @@ CREATE TABLE crossref (
   src_start   INTEGER NOT NULL, src_end INTEGER NOT NULL,
   dst_start   INTEGER NOT NULL, dst_end INTEGER NOT NULL,
   votes       INTEGER,                     -- OpenBible relevance votes
+  confidence  REAL CHECK (confidence BETWEEN 0 AND 1),   -- NULL = not applicable / curated
+  review      TEXT NOT NULL DEFAULT 'accepted' CHECK (review IN ('accepted','unreviewed','rejected')),
   source_id   TEXT NOT NULL REFERENCES source(id)
 ) STRICT;
 CREATE INDEX crossref_src ON crossref(src_start);
@@ -654,6 +750,8 @@ CREATE TABLE quotation (
   dst_start   INTEGER NOT NULL, dst_end INTEGER NOT NULL,     -- the quoted passage
   kind        TEXT CHECK (kind IN ('quotation','allusion','echo')),
   via         TEXT,                        -- 'LXX','MT','both','unclear'
+  confidence  REAL CHECK (confidence BETWEEN 0 AND 1),   -- NULL = not applicable / curated
+  review      TEXT NOT NULL DEFAULT 'accepted' CHECK (review IN ('accepted','unreviewed','rejected')),
   source_id   TEXT NOT NULL REFERENCES source(id)
 ) STRICT;
 CREATE INDEX quotation_src ON quotation(src_start);
@@ -774,3 +872,20 @@ FROM citation c
 UNION ALL
 SELECT mc.start_vkey, mc.end_vkey, 'manuscript', m.id, m.date_from, m.date_to, m.date_label
 FROM manuscript_coverage mc JOIN manuscript m ON m.id = mc.manuscript_id;
+
+-- Registry of every named item with its URI (verses are addressed as verse:<osis> and not listed).
+-- Used for universal search, link resolution, and grounding AI answers in real entities.
+CREATE VIEW entity AS
+SELECT 'person:' || id AS uri, 'person' AS type, id, name AS title, summary FROM person
+UNION ALL SELECT 'place:' || id, 'place', id, name, summary FROM place
+UNION ALL SELECT 'event:' || id, 'event', id, title, description FROM event
+UNION ALL SELECT 'work:' || id, 'work', id, title, summary FROM work
+UNION ALL SELECT 'ms:' || id, 'manuscript', id, COALESCE(name, sigla, id), contents FROM manuscript
+UNION ALL SELECT 'lemma:' || id, 'lemma', id, lemma, gloss FROM lemma
+UNION ALL SELECT 'edition:' || id, 'edition', id, title, description FROM edition
+UNION ALL SELECT 'book:' || osis, 'book', osis, name, NULL FROM book
+UNION ALL SELECT 'topic:' || id, 'topic', id, name, NULL FROM topic
+UNION ALL SELECT 'period:' || id, 'period', id, name, description FROM period
+UNION ALL SELECT 'canon:' || id, 'canon_list', id, name, description FROM canon_list
+UNION ALL SELECT 'commentary:' || id, 'commentary', id, title, NULL FROM commentary
+UNION ALL SELECT 'media:' || id, 'media', id, title, NULL FROM media;

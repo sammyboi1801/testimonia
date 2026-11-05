@@ -19,7 +19,10 @@ def test_migrate_fresh_and_idempotent(tmp_path):
     con = db.migrate_user(path)
     latest = db.user_migrations()[-1][0]
     assert con.execute("PRAGMA user_version").fetchone()[0] == latest
-    con.execute("INSERT INTO my_translation (vkey, text) VALUES (43001018, 'No one has ever seen God…')")
+    con.execute(
+        "INSERT INTO my_translation (id, vkey, text, created_at, updated_at) "
+        "VALUES ('t1', 43001018, 'No one has ever seen God…', 'now', 'now')"
+    )
     con.commit()
     con.close()
     con = db.migrate_user(path)  # second run applies nothing and keeps data

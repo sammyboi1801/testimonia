@@ -283,6 +283,56 @@ sources:
     phase: 2
     notes: Replaces INTF Liste metadata for dates, contents, institutions.
 
+  # ---------------------------------------------------------------- Dead Sea Scrolls
+  - id: wikipedia-dss
+    name: Wikipedia "List of the Dead Sea Scrolls" (+ per-cave lists, Murabba'at, Nahal Hever, Masada)
+    url: https://en.wikipedia.org/wiki/List_of_the_Dead_Sea_Scrolls
+    download: "index.php?action=raw for the list page and each per-cave page"
+    license: CC-BY-SA-4.0
+    attribution: "Wikipedia contributors, CC BY-SA 4.0"
+    share_alike: true
+    feeds: [manuscript, manuscript_coverage, dating]
+    phase: 2
+    notes: >
+      ~436 rows (siglum, name, language, script/date label, description); ~202 biblical rows give
+      chapter:verse contents → manuscript_coverage ("this verse is attested at Qumran in …").
+      Dates are mostly palaeographic labels (Herodian / Hasmonean) → manuscript.script + a dating
+      window per label. Cave 4 list is incomplete (stops at 4Q576). Leon Levy URLs kept as links only.
+
+  - id: hewikisource-dss
+    name: Hebrew Wikisource — Dead Sea Scrolls transcriptions (מגילות מדבר יהודה)
+    url: https://he.wikisource.org/wiki/מגילות_מדבר_יהודה
+    download: MediaWiki API
+    license: CC-BY-SA-4.0
+    attribution: "Hebrew Wikisource contributors, CC BY-SA 4.0"
+    share_alike: true
+    feeds: [edition (kind=manuscript), edition_verse, work_section]
+    phase: 2
+    notes: >
+      Community transcriptions: 11QPsᵃ (incl. the Ps 145 nun line), 1QpHab, 1QS, 1QM, 3Q15, 4Q521,
+      4Q175, 4Q162, 4Q109, 11QT, MMT, CD. Several are partial/work-in-progress — label in the UI as
+      "community transcription". No 1QIsaᵃ / 4QSamᵃ / 4QDeut available openly.
+
+  - id: schechter-1910
+    name: S. Schechter, Fragments of a Zadokite Work (1910) — Damascus Document, Hebrew + English
+    url: https://archive.org/details/SchechterFragmentsOfAZadokiteWork1910
+    download: archive.org OCR text + PDF
+    license: PD
+    attribution: "S. Schechter, Documents of Jewish Sectaries vol. 1 (Cambridge, 1910), public domain"
+    feeds: [work, work_edition, work_section]
+    phase: 1
+    notes: Also in Charles APOT vol. 2 (1913) pp. 785–834 (archive.org apocryphapseudep02charuoft).
+
+  - id: hathitrust-1qs-1951
+    name: Burrows (ed.), The Dead Sea Scrolls of St. Mark's Monastery vol. 2 fasc. 2 (1951) — 1QS transcription
+    url: https://babel.hathitrust.org/cgi/pt?id=mdp.39015090351985
+    download: HathiTrust full view (pdus) — requires OCR of Hebrew plates/transcription
+    license: PD (US, HathiTrust rights 'pdus')
+    attribution: "M. Burrows (ed.), ASOR, 1951 — public domain in the US"
+    feeds: [edition (kind=manuscript), work_section]
+    phase: 5
+    notes: Optional, high effort (Hebrew OCR). US-only PD status.
+
   - id: wikidata
     name: Wikidata
     url: https://query.wikidata.org/
@@ -413,12 +463,16 @@ live_apis:
 verify:
   - btb-lxx: "BTB's LXX derives from the Apostolic Bible Polyglot (© Charles Van der Pool?) — confirm licence; else use Swete + Brenton."
   - ccel-permission: "Ask CCEL for permission to redistribute ThML-derived data (would let core.db ship the ANF/NPNF library + scripRef index)."
-  - dss: "Dead Sea Scrolls — research in progress (open metadata/text/translations)."
+  - brownlee-1951: "Brownlee, The Dead Sea Manual of Discipline (ASOR 1951, English 1QS) — no renewal found, possibly PD; no digital copy located."
+  - burrows-1950-v1: "Burrows, St. Mark's Monastery vol. 1 (1950, 1QIsaᵃ + 1QpHab) — probably PD by non-renewal; only a restricted archive.org lending copy found."
   - dare-tiles: "DARE / AWMC map tile licences (CC BY 4.0 vs older NC terms)."
 
 # Explicitly excluded (not open). Kept here so nobody re-adds them.
 excluded:
-  - { id: etcbc-dss,      reason: "CC BY-NC" }
+  - { id: etcbc-dss,      reason: "CC BY-NC (re-checked 2026-11-05)" }
+  - { id: leon-levy-dss,  reason: "© Israel Antiquities Authority — deep links only" }
+  - { id: sqe-data,       reason: "Scripta Qumranica Electronica database: no data licence (code is MIT); third-party 'MIT' dumps have doubtful chain of rights" }
+  - { id: dss-modern-translations, reason: "Vermes, Wise/Abegg/Cook, García Martínez, Burrows 1955/1958 (renewed), Gaster 1956 (renewed), Dupont-Sommer — copyrighted" }
   - { id: etcbc-bhsa,     reason: "CC BY-NC" }
   - { id: etcbc-peshitta, reason: "CC BY-NC" }
   - { id: dt-ucph-sp,     reason: "Samaritan Pentateuch data, CC BY-NC" }
