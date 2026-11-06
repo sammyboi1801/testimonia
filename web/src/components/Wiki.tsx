@@ -1,4 +1,5 @@
 import { useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useWiki } from "../api";
 
 export function wikiUrl(title: string): string {
@@ -36,32 +37,45 @@ export function WikiCard({ title, compact = false }: { title: string; compact?: 
   );
 }
 
-/** Wrap a name: resting on it shows the Wikipedia summary in a small card; clicking opens the article. */
+/** Wrap a name: resting on it shows the Wikipedia summary in a small card; clicking opens the article.
+ *  The card is rendered at page level (a portal), so panels that clip or scroll never hide it. */
 export function WikiHover({ title, children }: { title: string | null | undefined; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ left: number; top: number; up: boolean } | null>(null);
   const timer = useRef<number | undefined>(undefined);
+  const anchor = useRef<HTMLSpanElement>(null);
   if (!title) return <>{children}</>;
+  const show = () => {
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      const r = anchor.current?.getBoundingClientRect();
+      if (!r) return;
+      const up = r.bottom + 260 > window.innerHeight;
+      setPos({ left: Math.max(8, Math.min(r.left, window.innerWidth - 356)), top: up ? r.top - 6 : r.bottom + 6, up });
+    }, 300);
+  };
+  const hide = () => {
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setPos(null), 180);
+  };
   return (
-    <span
-      className="wiki-hover"
-      onMouseEnter={() => {
-        window.clearTimeout(timer.current);
-        timer.current = window.setTimeout(() => setOpen(true), 350);
-      }}
-      onMouseLeave={() => {
-        window.clearTimeout(timer.current);
-        timer.current = window.setTimeout(() => setOpen(false), 150);
-      }}
-    >
+    <span className="wiki-hover" ref={anchor} onMouseEnter={show} onMouseLeave={hide}>
       {children}
       <a className="wiki-link" href={wikiUrl(title)} target="_blank" rel="noreferrer" title={`${title} on Wikipedia`} onClick={(e) => e.stopPropagation()}>
         W
       </a>
-      {open && (
-        <span className="wiki-pop" role="tooltip">
-          <WikiCard title={title} compact />
-        </span>
-      )}
+      {pos &&
+        createPortal(
+          <span
+            className={`wiki-pop${pos.up ? " up" : ""}`}
+            role="tooltip"
+            style={{ left: pos.left, top: pos.top }}
+            onMouseEnter={() => window.clearTimeout(timer.current)}
+            onMouseLeave={hide}
+          >
+            <WikiCard title={title} compact />
+          </span>,
+          document.body,
+        )}
     </span>
   );
 }

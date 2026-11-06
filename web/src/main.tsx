@@ -35,6 +35,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { TopBar } from "./components/TopBar";
+import { BookPage } from "./pages/BookPage";
 import { LibraryPage } from "./pages/LibraryPage";
 import { ReadPage } from "./pages/ReadPage";
 import { SearchPage } from "./pages/SearchPage";
@@ -52,6 +53,7 @@ function App() {
         <Route path="/read/:book/:chapter" element={<ReadPage />} />
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/library/:edition/:ord" element={<WorkPage />} />
+        <Route path="/book/:book" element={<BookPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

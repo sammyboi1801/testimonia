@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { Chapter, Meta, RefResult, SearchResults, SectionView, Timeline, Toc, VerseGuide, WikiSummary, WordStudy, WorkSummary } from "./types";
+import type { BookGuide, Chapter, Meta, RefResult, SearchResults, SectionView, Timeline, Toc, VerseGuide, WikiSummary, WordStudy, WorkSummary } from "./types";
 
 export class ApiError extends Error {
   constructor(
@@ -66,6 +66,9 @@ export async function wikiSummary(title: string): Promise<WikiSummary> {
 }
 export const useWiki = (title: string | null | undefined, enabled = true) =>
   useQuery({ queryKey: ["wiki", title], queryFn: () => wikiSummary(title!), enabled: !!title && enabled, staleTime: Infinity, gcTime: Infinity, retry: 0 });
+
+export const useBookGuide = (osis: string) =>
+  useQuery({ queryKey: ["book", osis], queryFn: () => getJson<BookGuide>(`/api/book/${encodeURIComponent(osis)}`), ...FOREVER });
 
 export const useWorks = () => useQuery({ queryKey: ["works"], queryFn: () => getJson<WorkSummary[]>("/api/works"), ...FOREVER });
 

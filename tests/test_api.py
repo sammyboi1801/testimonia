@@ -190,3 +190,15 @@ def test_chapter_marks_keep_witnesses_apart(client):
     v18 = next(v for v in client.get("/api/chapter/John/1").json()["verses"] if v["verse"] == 18)
     assert v18["marks"]["fathers"] == 1
     assert v18["marks"]["witnesses"] == 1
+
+
+def test_book_guide(client):
+    g = client.get("/api/book/John").json()
+    assert g["book"]["name"] == "John"
+    assert g["book"]["wikipedia"] == "Gospel of John"
+    assert g["stats"]["verses"] == 3
+    assert g["quoted"][0]["osis"] == "John.1.18"
+    assert g["quoted"][0]["n"] == 1  # Irenaeus; Josephus is not counted among the fathers
+    assert [r["name"] for r in g["readers"]] == ["Irenaeus"]
+    assert g["witnesses"][0]["author"] == "Flavius Josephus"
+    assert client.get("/api/book/Nope").status_code == 404

@@ -100,7 +100,6 @@
 }
 .tl-item { transition: opacity 0.15s ease, transform 0.15s ease; }
 .tl-item:hover .tl-label, .tl-item.on .tl-label, .tl-item.hot .tl-label { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
-.tl-canvas.hovering .tl-item:not(.hot):not(.on) { opacity: 0.4; }
 .tl-item.hot { transform: translateY(-1px); z-index: 2; }
 .tl-item.hot .tl-life, .tl-item.hot .tl-span { filter: saturate(1.3) brightness(0.95); }
 .tl-label { font-family: var(--font-text); }
@@ -168,7 +167,8 @@
   line-height: 13px; vertical-align: 3px; color: var(--muted); border: 1px solid var(--rule); border-radius: 2px; background-image: none;
 }
 .wiki-link:hover { color: var(--accent); border-color: var(--accent); }
-.wiki-pop { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; font-weight: 400; text-transform: none; letter-spacing: 0; font-variant: normal; }
+.wiki-pop { position: fixed; z-index: 120; display: block; font-weight: 400; text-transform: none; letter-spacing: 0; font-variant: normal; font-family: var(--font-ui); animation: tl-pop 0.12s ease-out; }
+.wiki-pop.up { transform: translateY(-100%); animation-name: fade-in; }
 
 /* ------------------------------------------------------------------ work introduction */
 .about-work { margin: 0 0 26px; padding: 0 0 18px; border-bottom: 1px solid var(--rule); }
@@ -329,3 +329,24 @@ body.resizing iframe, body.resizing .word-card { pointer-events: none; }
   .workspace { grid-template-columns: minmax(0, 1fr); }
   .workspace > .splitter { display: none; }
 }
+
+/* hover: highlight only the item under the pointer; the year cursor moves without re-rendering */
+.tl-cursor { left: 0; will-change: transform; }
+.tl-item.hot .tl-label { color: var(--ink); }
+.tl-eras.two { height: 44px; }
+.tl-eras.two .tl-era { top: 22px; height: 22px; }
+.tl-eras.two .tl-era.upper { top: 0; }
+.tl-hovercard { pointer-events: none; }
+
+/* study panel can be hidden; a slim rail brings it back */
+.guide { position: relative; }
+.panel-hide { position: absolute; top: 10px; right: 10px; z-index: 2; font-size: 18px; line-height: 1; }
+.workspace.panel-closed { grid-template-columns: minmax(0, 1fr) 0 30px; }
+.workspace.panel-closed > .splitter, .workspace.panel-closed > .guide { display: none; }
+.panel-rail {
+  border: 0; border-left: 1px solid var(--rule); background: var(--panel); color: var(--muted); padding: 0; cursor: pointer;
+  writing-mode: vertical-rl; font-size: 12.5px; letter-spacing: 0.04em; transition: color 0.15s ease, background-color 0.15s ease;
+}
+.panel-rail:hover { color: var(--accent); background: var(--panel-2); }
+.panel-rail span { display: inline-block; padding: 16px 0; }
+.book-more { display: inline-block; margin-top: 4px; }

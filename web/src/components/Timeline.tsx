@@ -107,7 +107,8 @@ export function TimelineView() {
   const [range, setRange] = useState<Range>(PRESETS[0]!.range);
   const [selected, setSelected] = useState<Item | null>(null);
   const [hover, setHover] = useState<{ item: Item; x: number; y: number } | null>(null);
-  const [hoverYear, setHoverYear] = useState<number | null>(null);
+  const hoverTimer = useRef<number | undefined>(undefined);
+  const cursor = useRef<HTMLSpanElement>(null);
   const [hidden, setHidden] = useState<Set<string>>(new Set(["anonymous"]));
   const [showEvents, setShowEvents] = useState(true);
   const [find, setFind] = useState("");
@@ -239,14 +240,20 @@ export function TimelineView() {
   }
   function onPointerMove(e: RPointerEvent) {
     const rect = box.current!.getBoundingClientRect();
-    setHoverYear(Math.round(yearAt(e.clientX - rect.left)));
-    if (hover) setHover({ ...hover, x: e.clientX, y: e.clientY });
+    const c = cursor.current;
+    if (c) {
+      const px = e.clientX - rect.left;
+      c.style.display = drag.current?.moved ? "none" : "block";
+      c.style.transform = `translateX(${px}px)`;
+      c.firstElementChild!.textContent = formatYear(Math.round(yearAt(px)));
+    }
     const d = drag.current;
     if (!d) return;
     const dx = e.clientX - d.x;
     const dy = e.clientY - d.y;
     if (!d.moved && Math.hypot(dx, dy) > 4) {
       d.moved = true;
+      window.clearTimeout(hoverTimer.current);
       setHover(null);
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     }
@@ -262,8 +269,16 @@ export function TimelineView() {
   const click = (item: Item) => {
     if (!drag.current?.moved) choose(item);
   };
-  const enter = (item: Item, e: { clientX: number; clientY: number }) => setHover({ item, x: e.clientX, y: e.clientY });
-  const leave = () => setHover(null);
+  const enter = (item: Item, e: { currentTarget: EventTarget }) => {
+    if (drag.current?.moved) return;
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    window.clearTimeout(hoverTimer.current);
+    hoverTimer.current = window.setTimeout(() => setHover({ item, x: r.left, y: r.bottom }), 220);
+  };
+  const leave = () => {
+    window.clearTimeout(hoverTimer.current);
+    setHover(null);
+  };
 
   function onFind(text: string) {
     setFind(text);
@@ -344,7 +359,7 @@ export function TimelineView() {
         </div>
 
         <div
-          className={`tl-canvas${hotId ? " hovering" : ""}`}
+          className="tl-canvas"
           ref={box}
           tabIndex={0}
           onKeyDown={onKey}
@@ -353,20 +368,22 @@ export function TimelineView() {
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
           onPointerLeave={() => {
-            setHoverYear(null);
-            setHover(null);
+            if (cursor.current) cursor.current.style.display = "none";
+            leave();
           }}
         >
           <div className="tl-head">
-            <div className="tl-eras">
-              {data.eras.map((er) => {
+            <div className={`tl-eras${data.eras.some((er, i) => i > 0 && er.start < data.eras[i - 1]!.end) ? " two" : ""}`}>
+              {data.eras.map((er, i) => {
                 const l = Math.max(0, x(er.start));
                 const r = Math.min(width, x(er.end));
                 if (r <= 0 || l >= width) return null;
+                // a band that overlaps the next one (the Second Temple runs on to AD 70) sits on its own row
+                const overlaps = data.eras.some((o, j) => j !== i && o.start < er.end && er.start < o.end && j > i);
                 return (
                   <button
                     key={er.id}
-                    className={`tl-era ${er.id}`}
+                    className={`tl-era ${er.id}${overlaps ? " upper" : ""}`}
                     style={{ left: l, width: r - l }}
                     title={`${er.name} (${formatYear(er.start)}–${er.end}) — click to zoom`}
                     onClick={() => !drag.current?.moved && animateTo([er.start - (er.end - er.start) * 0.04, er.end + (er.end - er.start) * 0.04])}
@@ -432,11 +449,9 @@ export function TimelineView() {
                   style={{ left: x(item.start), width: Math.max(x(item.end) - x(item.start), 0) }}
                 />
               ))}
-              {hoverYear !== null && !drag.current?.moved && (
-                <span className="tl-cursor" style={{ left: x(hoverYear) }}>
-                  <span>{formatYear(hoverYear)}</span>
-                </span>
-              )}
+              <span className="tl-cursor" ref={cursor} style={{ display: "none" }}>
+                <span />
+              </span>
               {all
                 .filter((g) => !hidden.has(g.id))
                 .map((g) => {
@@ -512,7 +527,7 @@ function Bar({
   on: boolean;
   hot: boolean;
   onClick: () => void;
-  onEnter: (e: { clientX: number; clientY: number }) => void;
+  onEnter: (e: { currentTarget: EventTarget }) => void;
   onLeave: () => void;
 }) {
   const left = x(item.start);
@@ -556,8 +571,9 @@ function Bar({
 
 function HoverCard({ item, x, y }: { item: Item; x: number; y: number }) {
   const note = itemNote(item);
-  const left = Math.min(x + 14, window.innerWidth - 300);
-  const top = y + 18 + 140 > window.innerHeight ? y - 120 : y + 18;
+  // anchored just below the item (above it near the bottom of the window), never following the pointer
+  const left = Math.max(8, Math.min(x, window.innerWidth - 296));
+  const top = y + 6 + 150 > window.innerHeight ? y - 176 : y + 6;
   return (
     <div className="tl-hovercard" style={{ left, top }} role="tooltip">
       <strong>{item.label}</strong>

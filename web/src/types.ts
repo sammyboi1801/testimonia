@@ -298,3 +298,17 @@ export interface SearchResults {
   works?: { edition_id: string; ord: number; cite: string | null; section_title: string | null; work_title: string; author: string | null; snippet: string }[];
   lexicon?: { id: string; lemma: string; translit: string | null; gloss: string | null }[];
 }
+
+export interface BookGuide {
+  book: Book & { orig_language: string | null };
+  stats: { verses: number; chapters: number; words: number; variants: number; citations: number };
+  outline: { title: string; start_vkey: number; end_vkey: number; osis: string; chapter: number }[];
+  quoted: { vkey: number; osis: string; n: number; pre_nicene: number; text: string | null }[];
+  readers: { id: string; name: string; year: number | null; n: number }[];
+  quotations: { here: string; other: string; direction: "quotes" | "quoted_by" }[];
+  variants: { significance: string; n: number }[];
+  notable_variants: { start_vkey: number; osis: string; label: string }[];
+  chronology: { start: number | null; end: number | null } | null;
+  periods: { id: string; name: string; verses: number; osis: string }[];
+  witnesses: { osis: string; author: string; work_title: string; cite: string | null; snippet: string | null; edition_id: string | null; section_ord: number | null }[];
+}

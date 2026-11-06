@@ -367,6 +367,124 @@ def morph(request: Request, code: str) -> dict[str, Any]:
 # ----------------------------------------------------------------------------- library
 
 
+@router.get("/book/{osis}")
+def book_guide(request: Request, osis: str, preview: str = "bsb") -> dict[str, Any]:
+    """Everything about one book of the Bible: introduction, outline, its use by the fathers, OT/NT links,
+    textual history and narrative chronology."""
+    s = store(request)
+    b = s.one(
+        "SELECT osis, name, testament, hebrew_name, greek_name, latin_name, genre, ord, orig_language, "
+        "(SELECT value FROM external_id x WHERE x.entity_type = 'book' AND x.entity_id = book.osis "
+        "AND x.scheme = 'wikipedia') AS wikipedia FROM book WHERE osis = ?",
+        (osis,),
+    )
+    if b is None:
+        raise HTTPException(404, f"unknown book {osis!r}")
+    lo, hi = b["ord"] * 1_000_000, b["ord"] * 1_000_000 + 999_999
+    span = (lo, hi)
+
+    def text(k: int) -> str | None:
+        r = s.one(
+            "SELECT text FROM edition_verse WHERE vkey = ? AND edition_id IN (?, 'kjva', 'web') "
+            "ORDER BY edition_id = ? DESC LIMIT 1",
+            (k, preview, preview),
+        )
+        return r["text"] if r else None
+
+    stats = s.one(
+        "SELECT (SELECT count(*) FROM verse WHERE vkey BETWEEN ? AND ? AND verse > 0) AS verses, "
+        "(SELECT max(chapter) FROM verse WHERE vkey BETWEEN ? AND ?) AS chapters, "
+        "(SELECT count(*) FROM token WHERE vkey BETWEEN ? AND ? AND edition_id IN ('tagnt', 'tahot')) AS words, "
+        "(SELECT count(*) FROM variant_unit WHERE start_vkey BETWEEN ? AND ?) AS variants, "
+        "(SELECT count(*) FROM citation c JOIN work w ON w.id = c.work_id WHERE c.start_vkey BETWEEN ? AND ? "
+        "AND w.category NOT IN ('jewish', 'pagan')) AS citations",
+        span * 5,
+    )
+    outline = s.all(
+        "SELECT h.title, h.start_vkey, h.end_vkey FROM heading h WHERE h.scheme = 'btb-pericope' "
+        "AND h.start_vkey BETWEEN ? AND ? ORDER BY h.start_vkey",
+        span,
+    )
+    for h in outline:
+        h["osis"] = _osis(h["start_vkey"])
+        h["chapter"] = (h["start_vkey"] // 1000) % 1000
+    # most-quoted verses by the church fathers (pre-Nicene counted separately)
+    quoted = s.all(
+        "SELECT c.start_vkey AS vkey, count(*) AS n, sum(c.year <= 325) AS pre_nicene FROM citation c "
+        "JOIN work w ON w.id = c.work_id WHERE c.start_vkey BETWEEN ? AND ? AND c.end_vkey - c.start_vkey < 3 "
+        "AND w.category NOT IN ('jewish', 'pagan') GROUP BY c.start_vkey ORDER BY n DESC LIMIT 12",
+        span,
+    )
+    for q in quoted:
+        q["osis"] = _osis(q["vkey"])
+        q["text"] = text(q["vkey"])
+    readers = s.all(
+        "SELECT c.author_id AS id, p.name, min(c.year) AS year, count(*) AS n FROM citation c "
+        "JOIN work w ON w.id = c.work_id JOIN person p ON p.id = c.author_id "
+        "WHERE c.start_vkey BETWEEN ? AND ? AND w.category NOT IN ('jewish', 'pagan') "
+        "GROUP BY c.author_id ORDER BY n DESC LIMIT 12",
+        span,
+    )
+    links = s.all(
+        "SELECT src_start, dst_start, kind FROM quotation WHERE src_start BETWEEN ? AND ? "
+        "UNION SELECT src_start, dst_start, kind FROM quotation WHERE dst_start BETWEEN ? AND ? ORDER BY 1",
+        span * 2,
+    )
+    quotes = []
+    for q in links:
+        inside = lo <= q["src_start"] <= hi
+        here, other = (q["src_start"], q["dst_start"]) if inside else (q["dst_start"], q["src_start"])
+        quotes.append({"here": _osis(here), "other": _osis(other), "direction": "quotes" if inside else "quoted_by"})
+    variants = s.all(
+        "SELECT significance, count(*) AS n FROM variant_unit WHERE start_vkey BETWEEN ? AND ? "
+        "GROUP BY significance ORDER BY n DESC",
+        span,
+    )
+    notable = s.all(
+        "SELECT start_vkey, label FROM variant_unit WHERE start_vkey BETWEEN ? AND ? AND significance = 'meaning' "
+        "ORDER BY start_vkey LIMIT 40",
+        span,
+    )
+    for v in notable:
+        v["osis"] = _osis(v["start_vkey"])
+    when = s.one(
+        "SELECT min(COALESCE(start_year, end_year)) AS start, max(COALESCE(end_year, start_year)) AS end "
+        "FROM verse_date WHERE vkey BETWEEN ? AND ? "
+        "AND system_id = 'btb'",
+        span,
+    )
+    periods = s.all(
+        "SELECT p.id, p.name, count(*) AS verses, min(vp.vkey) AS first FROM verse_period vp "
+        "JOIN period p ON p.id = vp.period_id WHERE vp.vkey BETWEEN ? AND ? AND p.parent_id IS NOT NULL "
+        "GROUP BY p.id ORDER BY first",
+        span,
+    )
+    for pr in periods:
+        pr["osis"] = _osis(pr["first"])
+    witnesses = s.all(
+        "SELECT c.start_vkey, p.name AS author, w.title AS work_title, c.cite, c.snippet, c.edition_id, "
+        "c.section_ord FROM citation c JOIN work w ON w.id = c.work_id JOIN person p ON p.id = c.author_id "
+        "WHERE c.start_vkey BETWEEN ? AND ? AND w.category IN ('jewish', 'pagan') AND c.kind = 'reference' "
+        "ORDER BY c.start_vkey",
+        span,
+    )
+    for w_ in witnesses:
+        w_["osis"] = _osis(w_["start_vkey"])
+    return {
+        "book": b,
+        "stats": stats,
+        "outline": outline,
+        "quoted": quoted,
+        "readers": readers,
+        "quotations": quotes,
+        "variants": variants,
+        "notable_variants": notable,
+        "chronology": when,
+        "periods": periods,
+        "witnesses": witnesses,
+    }
+
+
 @router.get("/works")
 def works(request: Request) -> list[dict[str, Any]]:
     return store(request).all(

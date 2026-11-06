@@ -55,3 +55,47 @@
 .story-event-row { display: flex; align-items: flex-start; gap: 2px; }
 .story-event-row .wiki-hover { margin-top: 9px; }
 .story-person .wiki-hover { grid-column: 1; }
+
+/* ------------------------------------------------------------------ book page (About this book) */
+.book-page { padding-inline: max(24px, calc((100% - 1180px) / 2)); }
+.book-back { display: inline-block; margin-bottom: 10px; font-size: 13.5px; }
+.book-hero { display: grid; grid-template-columns: minmax(260px, 360px) minmax(0, 1fr); gap: 18px 32px; align-items: start; padding-bottom: 22px; border-bottom: 1px solid var(--rule); }
+.book-hero h1 { margin: 2px 0 6px; font-size: calc(46px * var(--display-size)); }
+.book-hero .btn { display: inline-block; margin-top: 10px; }
+.book-hero .wiki-card { margin: 18px 0 0; }
+.bk-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 0 40px; margin-top: 18px; }
+.book-col h2 { margin: 10px 0 12px; font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(24px * var(--display-size)); }
+.book-block { padding: 14px 0 16px; border-bottom: 1px solid var(--rule); }
+.book-block:last-child { border-bottom: 0; }
+.book-block h3 {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 10px;
+  font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(20px * var(--display-size));
+}
+.book-block h3 .count { font-family: var(--font-ui); font-size: 12px; font-weight: 400; color: var(--muted); }
+
+.book-outline { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.book-outline li { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 6px 0; border-bottom: 1px dotted var(--rule); }
+.bo-num { font-family: var(--font-display); font-size: 22px; text-align: right; color: var(--numeral); background-image: none; }
+.bo-num:hover { color: var(--accent); }
+.bo-heads { display: flex; flex-wrap: wrap; gap: 2px 18px; font-family: var(--font-text); font-size: 16.5px; }
+.bo-heads .small { font-family: var(--font-ui); font-size: 11px; }
+
+.book-periods { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-family: var(--font-text); font-size: 16px; }
+.book-quoted { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.bq-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-family: var(--font-text); font-size: 16px; }
+.book-quoted p { margin: 2px 0 0; font-family: var(--font-text); font-size: 15px; line-height: 1.4; color: var(--ink-soft); }
+.book-readers { display: grid; gap: 4px; }
+.br-row { display: grid; grid-template-columns: 170px minmax(0, 1fr) 54px; gap: 10px; align-items: center; color: var(--ink-soft); background-image: none; }
+.br-row:hover { color: var(--ink); }
+.br-name { font-family: var(--font-text); font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.br-bar { height: 6px; border-radius: 3px; background: var(--panel-2); overflow: hidden; }
+.br-bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.br-n { font-size: 12px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums lining-nums; }
+.bq-link { font-family: var(--font-text); font-size: 15px; padding: 1px 0; }
+.book-variants { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 2px; font-size: 13.5px; color: var(--ink-soft); }
+.book-variants strong { display: inline-block; min-width: 46px; text-align: right; margin-right: 6px; color: var(--variant); font-variant-numeric: tabular-nums lining-nums; }
+.book-notable { display: flex; flex-wrap: wrap; gap: 2px 10px; margin: 6px 0 0; font-size: 13.5px; }
+
+@media (max-width: 980px) {
+  .book-hero, .bk-layout { grid-template-columns: minmax(0, 1fr); }
+}

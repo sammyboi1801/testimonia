@@ -4,7 +4,7 @@ import { useMeta, useSection, useTimeline, useToc } from "../api";
 import { Html } from "../components/Html";
 import { Splitter } from "../components/Splitter";
 import { useSettings } from "../settings";
-import { WikiCard } from "../components/Wiki";
+import { WikiCard, WikiHover } from "../components/Wiki";
 import { CATEGORY_LABELS, ERA_LABELS, formatYear, osisLabel, verseUrl } from "../lib";
 import type { Book, SectionView, Toc } from "../types";
 
@@ -149,7 +149,7 @@ function Context({ toc, section, books, base }: { toc: Toc; section?: SectionVie
         <section className="ctx-block">
           <div className="about-label">The author</div>
           <h3>
-            {e.author}
+            <WikiHover title={e.author_wikipedia}>{e.author}</WikiHover>
             {lived && <span className="muted"> · {lived}</span>}
           </h3>
           {e.author_summary && <p className="ctx-summary">{e.author_summary}</p>}
