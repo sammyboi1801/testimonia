@@ -1,11 +1,20 @@
 import { useSearchParams } from "react-router-dom";
 import { Bookshelf } from "../components/Bookshelf";
+import { StoryView } from "../components/Story";
 import { TimelineView } from "../components/Timeline";
+
+type View = "shelf" | "timeline" | "story";
+const VIEWS: { id: View; label: string; hint: string }[] = [
+  { id: "shelf", label: "Bookshelf", hint: "Authors by era" },
+  { id: "timeline", label: "Timeline", hint: "Zoomable chart of people and events" },
+  { id: "story", label: "Story", hint: "Century by century, top to bottom" },
+];
 
 export function LibraryPage() {
   const [params, setParams] = useSearchParams();
-  const view = params.get("view") === "timeline" ? "timeline" : "shelf";
-  const setView = (v: "shelf" | "timeline") =>
+  const raw = params.get("view");
+  const view: View = raw === "timeline" || raw === "story" ? raw : "shelf";
+  const setView = (v: View) =>
     setParams(
       (p) => {
         const n = new URLSearchParams(p);
@@ -18,19 +27,18 @@ export function LibraryPage() {
     );
 
   return (
-    <div className={view === "timeline" ? "page page-wide" : "page page-shelf"}>
+    <div className={view === "timeline" ? "page page-wide" : view === "story" ? "page page-story" : "page page-shelf"}>
       <div className="library-head">
         <h1>Library</h1>
         <div className="seg view-switch" role="tablist" aria-label="View">
-          <button className={view === "shelf" ? "on" : ""} onClick={() => setView("shelf")}>
-            Bookshelf
-          </button>
-          <button className={view === "timeline" ? "on" : ""} onClick={() => setView("timeline")}>
-            Timeline
-          </button>
+          {VIEWS.map((v) => (
+            <button key={v.id} className={view === v.id ? "on" : ""} title={v.hint} onClick={() => setView(v.id)}>
+              {v.label}
+            </button>
+          ))}
         </div>
       </div>
-      {view === "timeline" ? <TimelineView /> : <Bookshelf />}
+      {view === "timeline" ? <TimelineView /> : view === "story" ? <StoryView /> : <Bookshelf />}
     </div>
   );
 }

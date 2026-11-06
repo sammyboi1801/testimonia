@@ -37,9 +37,7 @@ function groups(t: Timeline): Group[] {
     label: a.name,
   });
   const work = (w: TimelineWork): Item => ({ kind: "work", id: `w:${w.id}`, w, start: w.date_from ?? 0, end: w.date_to ?? w.date_from ?? 0, label: w.title });
-  const event = (e: TimelineEvent): Item => ({ kind: "event", id: `e:${e.id}`, e, start: e.start, end: e.end, label: e.title });
   return [
-    { id: "events", label: "Events", items: t.events.filter((e) => !e.major).map(event) },
     { id: "outside", label: "Jewish & Roman writers", items: t.authors.filter(outside).map(author) },
     { id: "fathers", label: "Church fathers", items: t.authors.filter((a) => !outside(a)).map(author) },
     { id: "anonymous", label: "Anonymous writings & councils", items: t.works.map(work) },
@@ -110,7 +108,8 @@ export function TimelineView() {
   const [selected, setSelected] = useState<Item | null>(null);
   const [hover, setHover] = useState<{ item: Item; x: number; y: number } | null>(null);
   const [hoverYear, setHoverYear] = useState<number | null>(null);
-  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const [hidden, setHidden] = useState<Set<string>>(new Set(["anonymous"]));
+  const [showEvents, setShowEvents] = useState(true);
   const [find, setFind] = useState("");
   const box = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLDivElement>(null);
@@ -151,6 +150,14 @@ export function TimelineView() {
   const all = useMemo(() => (data ? groups(data) : []), [data]);
   const everything = useMemo(() => all.flatMap((g) => g.items), [all]);
   const milestones = useMemo(() => (data?.events ?? []).filter((e) => e.major), [data]);
+  const minorEvents = useMemo(() => (data?.events ?? []).filter((e) => !e.major), [data]);
+  // how much of an author the library holds (Scripture citations + works): decides who shows when zoomed out
+  const weight = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const a of data?.authors ?? []) m.set(`a:${a.id}`, a.works.reduce((n, w) => n + w.citations, 0) + a.works.length * 40);
+    for (const w of data?.works ?? []) m.set(`w:${w.id}`, w.citations + 40);
+    return m;
+  }, [data]);
 
   // ?sel=a:josephus (author), w:<work id> or e:<event id> opens that item — links can point at a person or event
   const [params, setParams] = useSearchParams();
@@ -167,7 +174,7 @@ export function TimelineView() {
   );
   useEffect(() => {
     if (!sel || !everything.length) return;
-    const item = everything.find((i) => i.id === sel) ?? milestoneItem(milestones, sel);
+    const item = everything.find((i) => i.id === sel) ?? milestoneItem(data?.events ?? [], sel);
     if (item && item.id !== selected?.id) focus(item);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sel, everything]);
@@ -192,14 +199,16 @@ export function TimelineView() {
       const r = rangeRef.current;
       const rect = el.getBoundingClientRect();
       const w = rect.width;
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey) {
-        e.preventDefault();
-        const d = ((e.shiftKey ? e.deltaY : e.deltaX) / w) * (r[1] - r[0]);
-        setRange(clamp([r[0] + d, r[1] + d]));
+      if (!(e.ctrlKey || e.metaKey)) {
+        // plain wheel scrolls the rows as usual; sideways (trackpad) or Shift + wheel moves through time
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey) {
+          e.preventDefault();
+          const d = ((e.shiftKey ? e.deltaY : e.deltaX) / w) * (r[1] - r[0]);
+          setRange(clamp([r[0] + d, r[1] + d]));
+        }
         return;
       }
-      if (e.altKey) return; // Alt + wheel scrolls the rows instead
-      e.preventDefault();
+      e.preventDefault(); // Ctrl + wheel (and trackpad pinch) zooms around the pointer
       window.cancelAnimationFrame(anim.current ?? 0);
       const at = r[0] + ((e.clientX - rect.left) / w) * (r[1] - r[0]);
       const f = Math.exp(Math.max(-0.5, Math.min(0.5, e.deltaY * 0.0015)));
@@ -260,7 +269,7 @@ export function TimelineView() {
     setFind(text);
     const q = text.trim().toLowerCase();
     if (q.length < 3) return;
-    const exact = [...everything, ...milestones.map(asItem)].find((i) => i.label.toLowerCase() === q);
+    const exact = [...everything, ...(data?.events ?? []).map(asItem)].find((i) => i.label.toLowerCase() === q);
     if (exact) {
       focus(exact, true);
       choose(exact);
@@ -274,7 +283,9 @@ export function TimelineView() {
   const ticks: number[] = [];
   for (let y = Math.ceil(from / step) * step; y <= to; y += step) ticks.push(y);
   const placedMilestones = pack(milestones.map(asItem), x).filter(({ item }) => x(item.end) > -150 && x(item.start) < width + 20);
-  const milestoneLanes = Math.max(1, ...placedMilestones.map((p) => p.lane + 1));
+  const milestoneLanes = Math.min(3, Math.max(1, ...placedMilestones.map((p) => p.lane + 1)));
+  // level of detail: the wider the view, the fewer (and more important) names
+  const budget = span > 900 ? 10 : span > 500 ? 14 : span > 300 ? 22 : span > 170 ? 36 : Infinity;
   const hotId = hover?.item.id ?? null;
 
   return (
@@ -303,11 +314,15 @@ export function TimelineView() {
             aria-label="Find on the timeline"
           />
           <datalist id="tl-names">
-            {[...everything, ...milestones.map(asItem)].map((i) => (
+            {[...everything, ...(data?.events ?? []).map(asItem)].map((i) => (
               <option key={i.id} value={i.label} />
             ))}
           </datalist>
           <span className="tl-groups">
+            <label>
+              <input type="checkbox" checked={showEvents} onChange={() => setShowEvents(!showEvents)} />
+              Events
+            </label>
             {all.map((g) => (
               <label key={g.id}>
                 <input
@@ -372,16 +387,37 @@ export function TimelineView() {
               {placedMilestones.map(({ item, lane }) => (
                 <button
                   key={item.id}
-                  className={`tl-flag${selected?.id === item.id ? " on" : ""}${hotId === item.id ? " hot" : ""}`}
-                  style={{ left: x(item.start), top: 3 + lane * 24 }}
+                  className={`tl-flag${lane > 2 ? " mini" : ""}${selected?.id === item.id ? " on" : ""}${hotId === item.id ? " hot" : ""}`}
+                  style={{ left: x(item.start), top: 3 + Math.min(lane, 2) * 24 }}
                   onClick={() => click(item)}
                   onPointerEnter={(e) => enter(item, e)}
                   onPointerLeave={leave}
+                  aria-label={item.label}
                 >
-                  {item.label}
+                  {lane > 2 ? "" : item.label}
                 </button>
               ))}
             </div>
+            {showEvents && (
+              <div className="tl-evticks">
+                {minorEvents.map((e) => {
+                  const item = asItem(e);
+                  const l = x(e.start);
+                  if (l < -10 || l > width + 10) return null;
+                  return (
+                    <button
+                      key={e.id}
+                      className={`tl-evtick ev-${e.kind}${selected?.id === item.id ? " on" : ""}${hotId === item.id ? " hot" : ""}`}
+                      style={{ left: l, width: Math.max(x(e.end) - l, 0) }}
+                      onClick={() => click(item)}
+                      onPointerEnter={(ev) => enter(item, ev)}
+                      onPointerLeave={leave}
+                      aria-label={e.title}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="tl-body" ref={body}>
@@ -404,12 +440,20 @@ export function TimelineView() {
               {all
                 .filter((g) => !hidden.has(g.id))
                 .map((g) => {
-                  const placed = pack(g.items, x).filter(({ item }) => x(item.end) > -260 && x(item.start) < width + 50);
+                  const inView = g.items.filter((item) => x(item.end) > -260 && x(item.start) < width + 50);
+                  const ranked = g.id === "outside" ? inView : [...inView].sort((a, b) => (weight.get(b.id) ?? 0) - (weight.get(a.id) ?? 0));
+                  const keep = new Set(ranked.slice(0, budget).map((i) => i.id));
+                  if (selected) keep.add(selected.id);
+                  const shown = inView.filter((i) => keep.has(i.id));
+                  const placed = pack(shown, x);
                   const lanes = Math.max(1, ...placed.map((p) => p.lane + 1));
                   return (
                     <section key={g.id} className={`tl-group tl-${g.id}`}>
                       <h4>
-                        {g.label} <span className="count">{placed.length}</span>
+                        {g.label}{" "}
+                        <span className="count">
+                          {shown.length < inView.length ? `${shown.length} of ${inView.length} here \u2014 zoom in for more` : inView.length}
+                        </span>
                       </h4>
                       <div className="tl-lanes" style={{ height: lanes * LANE }}>
                         {placed.map(({ item, lane }) => (
@@ -434,7 +478,7 @@ export function TimelineView() {
         </div>
         <Overview data={data} range={range} onRange={(r) => setRange(clamp(r))} />
         <p className="muted small tl-hint">
-          Scroll to zoom · drag to move · click an era to zoom to it · ← → and + − on the keyboard · click anything to read about it
+          Ctrl + scroll to zoom · drag to move · drag the edges of the window below to zoom · click an era to zoom to it · ← → and + − keys · click anything to read about it
         </p>
       </div>
       {selected && <Detail item={selected} onClose={() => choose(null)} />}
@@ -534,25 +578,40 @@ function Overview({ data, range, onRange }: { data: Timeline; range: Range; onRa
   const ref = useRef<HTMLDivElement>(null);
   const [lo, hi] = LIMITS;
   const pct = (y: number) => ((y - lo) / (hi - lo)) * 100;
-  const dragging = useRef(false);
-  function move(clientX: number) {
-    const rect = ref.current!.getBoundingClientRect();
-    const at = lo + ((clientX - rect.left) / rect.width) * (hi - lo);
-    const half = (range[1] - range[0]) / 2;
-    onRange([at - half, at + half]);
+  // dragging the window moves the view; dragging either edge resizes it (= zooms)
+  const drag = useRef<{ mode: "move" | "left" | "right"; x: number; range: Range } | null>(null);
+  const yearsPerPx = () => (hi - lo) / (ref.current?.getBoundingClientRect().width || 1);
+  function start(e: RPointerEvent, mode: "move" | "left" | "right") {
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    drag.current = { mode, x: e.clientX, range };
+  }
+  function move(e: RPointerEvent) {
+    const d = drag.current;
+    if (!d) return;
+    const dy = (e.clientX - d.x) * yearsPerPx();
+    const [a, b] = d.range;
+    if (d.mode === "move") onRange([a + dy, b + dy]);
+    else if (d.mode === "left") onRange([Math.min(a + dy, b - 12), b]);
+    else onRange([a, Math.max(b + dy, a + 12)]);
   }
   return (
     <div
       className="tl-overview"
       ref={ref}
-      title="The whole span — click or drag to move the view"
+      title="The whole span — drag the window to move, drag its edges to zoom, click to jump"
       onPointerDown={(e) => {
-        dragging.current = true;
+        const rect = ref.current!.getBoundingClientRect();
+        const at = lo + ((e.clientX - rect.left) / rect.width) * (hi - lo);
+        const half = (range[1] - range[0]) / 2;
+        const next: Range = [at - half, at + half];
+        onRange(next);
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-        move(e.clientX);
+        drag.current = { mode: "move", x: e.clientX, range: next };
       }}
-      onPointerMove={(e) => dragging.current && move(e.clientX)}
-      onPointerUp={() => (dragging.current = false)}
+      onPointerMove={move}
+      onPointerUp={() => (drag.current = null)}
+      onPointerCancel={() => (drag.current = null)}
     >
       {data.eras.map((er) => (
         <span key={er.id} className={`ov-era ${er.id}`} style={{ left: `${pct(er.start)}%`, width: `${pct(er.end) - pct(er.start)}%` }} />
@@ -565,7 +624,16 @@ function Overview({ data, range, onRange }: { data: Timeline; range: Range; onRa
         .map((e) => (
           <span key={e.id} className="ov-mile" style={{ left: `${pct(e.start)}%` }} />
         ))}
-      <span className="ov-window" style={{ left: `${pct(range[0])}%`, width: `${pct(range[1]) - pct(range[0])}%` }} />
+      <span
+        className="ov-window"
+        style={{ left: `${pct(range[0])}%`, width: `${pct(range[1]) - pct(range[0])}%` }}
+        onPointerDown={(e) => start(e, "move")}
+        onPointerMove={move}
+        onPointerUp={() => (drag.current = null)}
+      >
+        <i className="ov-handle left" onPointerDown={(e) => start(e, "left")} onPointerMove={move} onPointerUp={() => (drag.current = null)} />
+        <i className="ov-handle right" onPointerDown={(e) => start(e, "right")} onPointerMove={move} onPointerUp={() => (drag.current = null)} />
+      </span>
       {[0, 500, 1000].map((y) => (
         <span key={y} className="ov-tick" style={{ left: `${pct(y)}%` }}>
           {y === 0 ? "AD 1" : y}
@@ -625,7 +693,7 @@ export function WorkRow({ w }: { w: TimelineWork }) {
   );
 }
 
-function WorkDetail({ w }: { w: TimelineWork }) {
+export function WorkDetail({ w }: { w: TimelineWork }) {
   return (
     <>
       <h2>{w.title}</h2>
@@ -645,7 +713,7 @@ function WorkDetail({ w }: { w: TimelineWork }) {
   );
 }
 
-function EventDetail({ e }: { e: TimelineEvent }) {
+export function EventDetail({ e }: { e: TimelineEvent }) {
   return (
     <>
       <h2>{e.title}</h2>

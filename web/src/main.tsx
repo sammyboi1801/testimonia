@@ -28,6 +28,7 @@ import "./styles.css";
 import "./layout.css";
 import "./settings.css";
 import "./timeline.css";
+import "./story.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";

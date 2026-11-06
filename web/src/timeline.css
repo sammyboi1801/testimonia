@@ -241,3 +241,34 @@ b.cn { font-family: var(--font-ui); font-size: 0.7em; color: var(--numeral); mar
 .shelf-drawer h2 { margin: 0 34px 4px 0; font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(26px * var(--display-size)); }
 .shelf-drawer .sub { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
 .shelf-drawer h3 { margin: 18px 0 6px; font-size: 13px; color: var(--ink-soft); }
+
+/* calm timeline: thin life lines, quiet works, event ticks under the axis, small milestone markers */
+.tl-life { height: 3px; border-radius: 2px; }
+.tl-floruit { top: -2px; height: 7px; border-radius: 4px; }
+.tl-span, .tl-span.window, .tl-ev .tl-span.window { height: 3px; background: color-mix(in srgb, var(--tl-anon) 70%, transparent); }
+.tl-work.cat-council .tl-span { background: color-mix(in srgb, var(--tl-council) 70%, transparent); }
+.tl-item { height: 20px; }
+.tl-flag.mini { width: 10px; padding: 0; border-radius: 0 3px 3px 0; }
+.tl-evticks { position: relative; height: 14px; border-top: 1px solid var(--rule); }
+.tl-evtick {
+  position: absolute; top: 3px; height: 8px; min-width: 3px; padding: 0; border: 0; border-radius: 2px;
+  margin-left: -1px; background: color-mix(in srgb, var(--ink-soft) 55%, transparent); cursor: pointer;
+}
+.tl-evtick.ev-persecution { background: #a33a2a; }
+.tl-evtick.ev-council { background: var(--tl-council); }
+.tl-evtick.ev-canon, .tl-evtick.ev-literary { background: var(--accent); }
+.tl-evtick.ev-manuscript { background: var(--tl-pagan); }
+.tl-evtick:hover, .tl-evtick.hot, .tl-evtick.on { transform: scaleY(1.5); outline: 1px solid var(--ink); }
+.tl-group h4 .count { text-transform: none; font-variant: normal; letter-spacing: 0; }
+
+/* overview window: drag to move, drag the edges to zoom */
+.tl-overview { height: 30px; }
+.ov-window { cursor: grab; touch-action: none; }
+.ov-window:active { cursor: grabbing; }
+.ov-handle {
+  position: absolute; top: 3px; bottom: 3px; width: 8px; border-radius: 3px; cursor: ew-resize;
+  background: var(--accent); opacity: 0.85;
+}
+.ov-handle.left { left: -6px; }
+.ov-handle.right { right: -6px; }
+.ov-handle:hover { opacity: 1; transform: scaleX(1.25); }

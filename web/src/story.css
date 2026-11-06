@@ -1,0 +1,53 @@
+/* Library › Story: the centuries as chapters, events down a rail, writers beneath. Design tokens only. */
+
+.page-story { padding-inline: max(24px, calc((100% - 900px) / 2)); }
+.story { position: relative; }
+.story-index {
+  position: sticky; top: -24px; z-index: 5; display: flex; flex-wrap: wrap; gap: 2px 4px; margin: 0 -8px 8px; padding: 10px 8px 8px;
+  background: var(--bg); border-bottom: 1px solid var(--rule);
+}
+.story-index a { padding: 2px 9px; border-radius: var(--pill); font-size: 13px; color: var(--ink-soft); background-image: none; }
+.story-index a:hover { background: var(--panel-2); color: var(--ink); }
+
+.story-chapter { padding: 26px 0 14px; scroll-margin-top: 40px; }
+.story-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 14px; }
+.story-head h2 { margin: 0; font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(30px * var(--display-size)); }
+.story-head span { font-size: 13px; color: var(--muted); font-variant-numeric: lining-nums; }
+
+.story-events { list-style: none; margin: 0 0 6px; padding: 0 0 0 18px; border-left: 2px solid var(--rule); display: grid; gap: 2px; }
+.story-events li { position: relative; display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.story-events li::before {
+  content: ""; position: absolute; left: -24px; top: 9px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--panel); border: 2px solid var(--muted);
+}
+.story-events li.major::before { width: 12px; height: 12px; left: -26px; top: 7px; background: var(--accent); border-color: var(--accent); }
+.story-events li.ev-persecution::before { border-color: #a33a2a; }
+.story-events li.major.ev-persecution::before { background: #a33a2a; }
+.story-year { font-size: 12.5px; color: var(--muted); text-align: right; font-variant-numeric: lining-nums; white-space: nowrap; }
+.story-event {
+  display: grid; gap: 1px; padding: 5px 8px; margin-left: -8px; text-align: left; border: 0; border-radius: var(--radius);
+  background: transparent; color: var(--ink-soft); font-size: 13px; transition: background-color 0.15s ease;
+}
+.story-event strong { font-family: var(--font-text); font-size: 16.5px; font-weight: 500; color: var(--ink); }
+.major .story-event strong { font-weight: 600; font-size: 18px; }
+.story-event:hover { background: var(--panel); }
+.story-event:hover strong { text-decoration: underline; text-underline-offset: 4px; }
+
+.story-sub {
+  margin: 18px 0 8px; font-size: 12px; font-weight: 600; color: var(--muted);
+  text-transform: var(--label-transform); font-variant: var(--label-variant); letter-spacing: var(--label-tracking);
+}
+.story-people { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 6px 18px; }
+.story-person { display: grid; grid-template-columns: auto 1fr; gap: 0 8px; align-items: baseline; padding: 4px 0; border-bottom: 1px dotted var(--rule); }
+.story-name { grid-column: 1; padding: 0; border: 0; background: transparent; text-align: left; font-family: var(--font-text); font-size: 17px; color: var(--ink); }
+.story-name:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 4px; }
+.story-dates { grid-column: 2; justify-self: end; font-size: 12px; color: var(--muted); font-variant-numeric: lining-nums; }
+.story-work { grid-column: 1 / -1; font-family: var(--font-text); font-size: 14px; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.story-work span { font-style: normal; color: var(--muted); font-size: 12px; }
+.trad-jewish .story-name::after, .trad-pagan .story-name::after {
+  content: "Jewish"; margin-left: 6px; padding: 0 5px; border: 1px solid var(--rule); border-radius: var(--pill);
+  font-family: var(--font-ui); font-size: 10.5px; color: var(--muted); vertical-align: 2px;
+}
+.trad-pagan .story-name::after { content: "Roman"; }
+.story-works { margin: 0; font-family: var(--font-text); font-size: 15px; line-height: 1.7; color: var(--muted); }
+.story-works .link-btn { font-family: var(--font-text); font-size: 15px; }
