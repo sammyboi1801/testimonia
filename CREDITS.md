@@ -371,15 +371,17 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 
 - **Source:** <https://github.com/Clear-Bible/macula-greek>
 - **Licence:** CC-BY-4.0
-- **Credit:** MACULA Greek Linguistic Datasets, Biblica / Clear Bible, CC BY 4.0
-- **Used for:** `token`, `syntax_node`, `lemma`
+- **Credit:** MACULA Greek Linguistic Datasets, available at https://github.com/Clear-Bible/macula-greek/ (Biblica / Clear Bible, CC BY 4.0); semantic domains from the United Bible Societies' Semantic Dictionary of Biblical Greek (MARBLE), based on Louw & Nida, Greek-English Lexicon of the New Testament Based on Semantic Domains (UBS 1988)
+- **Used for:** `token`, `lemma`, `semantic_domain`, `lemma_sense`
+- **Pinned version:** fetched 2026-11-06
 
 ### Clear Bible MACULA Hebrew (WLC syntax, SDBH domains, LXX equivalents)
 
 - **Source:** <https://github.com/Clear-Bible/macula-hebrew>
 - **Licence:** CC-BY-4.0
-- **Credit:** MACULA Hebrew Linguistic Datasets, Biblica / Clear Bible, CC BY 4.0
-- **Used for:** `token`, `syntax_node`, `lemma`, `alignment`
+- **Credit:** MACULA Hebrew Linguistic Datasets, available at https://github.com/Clear-Bible/macula-hebrew/ (Biblica / Clear Bible, CC BY 4.0); semantic domains from the Semantic Dictionary of Biblical Hebrew, ed. Reinier de Blois, © 2000–2021 United Bible Societies
+- **Used for:** `token`, `lemma`, `semantic_domain`, `lemma_sense`, `entity_link`
+- **Pinned version:** fetched 2026-11-06
 
 ### UBS open-licensed resources (dictionaries, parallels, HOTTP, routes, realia)
 

@@ -189,6 +189,48 @@
       "size": 732065,
       "source": "ebible"
     },
+    "http|https://media.githubusercontent.com/media/Clear-Bible/macula-hebrew/47db250bd55d0d8577f2a94fba114ef16c35b23c/WLC/tsv/macula-hebrew.tsv|macula-hebrew|": {
+      "fetched_at": "2026-11-06T07:55:45+00:00",
+      "sha256": "965cb0599beed2fe31283b615bcc369178141c0e718a66d97518d94309cfc124",
+      "size": 84382719,
+      "source": "macula-hebrew"
+    },
+    "http|https://raw.githubusercontent.com/Clear-Bible/macula-greek/8423afe47b9e8f24b7772e808af45c7159a6fe7e/LICENSE.md|macula-greek|": {
+      "fetched_at": "2026-11-06T07:55:33+00:00",
+      "sha256": "41b49a2387b628a7bc772ddfae3a8af9dd8f4d4470b27b6132f6da6c73e4a557",
+      "size": 3573,
+      "source": "macula-greek"
+    },
+    "http|https://raw.githubusercontent.com/Clear-Bible/macula-greek/8423afe47b9e8f24b7772e808af45c7159a6fe7e/SBLGNT/tsv/macula-greek-SBLGNT.tsv|macula-greek|": {
+      "fetched_at": "2026-11-06T07:55:31+00:00",
+      "sha256": "7f71504fdee8659bdd9f85342e4103d645864c2851b8205915bb298f0c004cc5",
+      "size": 20843282,
+      "source": "macula-greek"
+    },
+    "http|https://raw.githubusercontent.com/Clear-Bible/macula-greek/8423afe47b9e8f24b7772e808af45c7159a6fe7e/sources/MARBLE/SDBG/marble-domain-label-mapping.json|macula-greek|": {
+      "fetched_at": "2026-11-06T07:55:33+00:00",
+      "sha256": "d5d146492e2a0fa0eaafc5afa0050888608d05c533c751ca44c7bb22478ad8b3",
+      "size": 27543,
+      "source": "macula-greek"
+    },
+    "http|https://raw.githubusercontent.com/Clear-Bible/macula-greek/8423afe47b9e8f24b7772e808af45c7159a6fe7e/sources/MARBLE/SDBG/sdbg-domains-glosses.xml|macula-greek|": {
+      "fetched_at": "2026-11-06T07:55:33+00:00",
+      "sha256": "b1085d05ff068a977ff14f3bbe92434a53a843ad3546e1286906b823c3c1510a",
+      "size": 16050471,
+      "source": "macula-greek"
+    },
+    "http|https://raw.githubusercontent.com/Clear-Bible/macula-hebrew/47db250bd55d0d8577f2a94fba114ef16c35b23c/LICENSE.md|macula-hebrew|": {
+      "fetched_at": "2026-11-06T07:55:46+00:00",
+      "sha256": "df45ba3224e7d6f9dba3ec8fd2d0b3f1d2febb2620147c889667886fccd4d8e1",
+      "size": 4047,
+      "source": "macula-hebrew"
+    },
+    "http|https://raw.githubusercontent.com/Clear-Bible/macula-hebrew/47db250bd55d0d8577f2a94fba114ef16c35b23c/sources/MARBLE/SDBH/domain-label-mapping-1.json|macula-hebrew|": {
+      "fetched_at": "2026-11-06T07:55:46+00:00",
+      "sha256": "cadebbaee47d1ce3c2c993c5d3d1f21b2baacd86afad86ed551c6c122b6d5128",
+      "size": 12598,
+      "source": "macula-hebrew"
+    },
     "http|https://raw.githubusercontent.com/PerseusDL/canonical-latinLit/master/data/phi1351/phi005/phi1351.phi005.perseus-eng2.xml|witnesses|tacitus-annals-eng.xml": {
       "fetched_at": "2026-11-06T04:04:36+00:00",
       "sha256": "3fd377088c7cdf573658becd2b97e7707400cf4849bcbdfbe8f9c4bd71fdf981",

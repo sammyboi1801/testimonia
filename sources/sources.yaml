@@ -665,20 +665,43 @@ sources:
   - id: macula-greek
     name: Clear Bible MACULA Greek (SBLGNT & Nestle1904 syntax, glosses, domains, referents)
     url: https://github.com/Clear-Bible/macula-greek
-    download: git clone (tsv + lowfat xml)
+    download: three files at a pinned commit (the repository is >100 MB; only these are used)
+    fetch:
+      - http: https://raw.githubusercontent.com/Clear-Bible/macula-greek/8423afe47b9e8f24b7772e808af45c7159a6fe7e/SBLGNT/tsv/macula-greek-SBLGNT.tsv
+      - http: https://raw.githubusercontent.com/Clear-Bible/macula-greek/8423afe47b9e8f24b7772e808af45c7159a6fe7e/sources/MARBLE/SDBG/sdbg-domains-glosses.xml
+      - http: https://raw.githubusercontent.com/Clear-Bible/macula-greek/8423afe47b9e8f24b7772e808af45c7159a6fe7e/sources/MARBLE/SDBG/marble-domain-label-mapping.json
+      - http: https://raw.githubusercontent.com/Clear-Bible/macula-greek/8423afe47b9e8f24b7772e808af45c7159a6fe7e/LICENSE.md
     license: CC-BY-4.0
-    attribution: "MACULA Greek Linguistic Datasets, Biblica / Clear Bible, CC BY 4.0"
-    feeds: [token, syntax_node, lemma]
+    attribution: >-
+      MACULA Greek Linguistic Datasets, available at https://github.com/Clear-Bible/macula-greek/ (Biblica / Clear Bible,
+      CC BY 4.0); semantic domains from the United Bible Societies' Semantic Dictionary of Biblical Greek (MARBLE),
+      based on Louw & Nida, Greek-English Lexicon of the New Testament Based on Semantic Domains (UBS 1988)
+    feeds: [token, lemma, semantic_domain, lemma_sense]
     phase: 3
+    notes: >
+      Louw–Nida / SDBG sense of every SBLGNT word, mapped onto the STEPBible TAGNT words by Strong's number.
+      The UBS domain data is included in MACULA "used with permission"; UBS also publishes the SDBG-based
+      dictionary itself under CC BY-SA 4.0 (ubs-open).
 
   - id: macula-hebrew
     name: Clear Bible MACULA Hebrew (WLC syntax, SDBH domains, LXX equivalents)
     url: https://github.com/Clear-Bible/macula-hebrew
-    download: "git clone + LFS file WLC/tsv/macula-hebrew.tsv"
+    download: two files at a pinned commit (the TSV is a Git LFS object, served by media.githubusercontent.com)
+    fetch:
+      - http: https://media.githubusercontent.com/media/Clear-Bible/macula-hebrew/47db250bd55d0d8577f2a94fba114ef16c35b23c/WLC/tsv/macula-hebrew.tsv
+      - http: https://raw.githubusercontent.com/Clear-Bible/macula-hebrew/47db250bd55d0d8577f2a94fba114ef16c35b23c/sources/MARBLE/SDBH/domain-label-mapping-1.json
+      - http: https://raw.githubusercontent.com/Clear-Bible/macula-hebrew/47db250bd55d0d8577f2a94fba114ef16c35b23c/LICENSE.md
     license: CC-BY-4.0
-    attribution: "MACULA Hebrew Linguistic Datasets, Biblica / Clear Bible, CC BY 4.0"
-    feeds: [token, syntax_node, lemma, alignment]
+    attribution: >-
+      MACULA Hebrew Linguistic Datasets, available at https://github.com/Clear-Bible/macula-hebrew/ (Biblica / Clear Bible,
+      CC BY 4.0); semantic domains from the Semantic Dictionary of Biblical Hebrew, ed. Reinier de Blois,
+      © 2000–2021 United Bible Societies
+    feeds: [token, lemma, semantic_domain, lemma_sense, entity_link]
     phase: 3
+    notes: >
+      SDBH lexical domains and the Septuagint (LXX) Greek equivalent of each Hebrew word, mapped onto the
+      STEPBible TAHOT words by Strong's number. The UBS SDBH data is included in MACULA "used with permission";
+      UBS also publishes the SDBH-based dictionary itself under CC BY-SA 4.0 (ubs-open).
 
   # ---------------------------------------------------------------- context: people, places, chronology
   - id: theographic

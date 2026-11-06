@@ -1,0 +1,60 @@
+/* Deeper word study (WordDomains) and the semantic-domain page. Design tokens only. */
+
+.wd-field { padding: 2px 0 12px; }
+.wd-field + .wd-field { border-top: 1px dashed var(--rule); padding-top: 10px; }
+.wd-field-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; margin-bottom: 4px; }
+.wd-field-name { font-family: var(--font-text); font-size: 15.5px; color: var(--ink); text-decoration: none; }
+a.wd-field-name:hover { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
+.wd-context { font-family: var(--font-ui); font-size: 12px; color: var(--muted); }
+
+.wd-senses { list-style: none; margin: 0 0 6px; padding: 0; }
+.wd-senses li { display: grid; grid-template-columns: minmax(0, 1fr) auto 4.5em; gap: 10px; align-items: baseline; padding: 1px 0; }
+.wd-gloss { color: var(--ink-soft); font-style: italic; min-width: 0; }
+.wd-code { font-family: var(--font-ui); font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.wd-n { font-family: var(--font-ui); font-size: 12px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+.wd-related { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; font-size: 13.5px; }
+.wd-related-label { font-family: var(--font-ui); font-size: 11.5px; color: var(--muted); margin-right: 2px; }
+.wd-word {
+  border: 0; background: transparent; padding: 1px 0; color: var(--ink-soft); cursor: pointer;
+  display: inline-flex; align-items: baseline; gap: 5px; text-align: left; font: inherit;
+}
+.wd-word .greek, .wd-word .hebrew { font-size: 15.5px; color: var(--ink-soft); }
+.wd-word.same .greek, .wd-word.same .hebrew { color: var(--ink); }
+.wd-word:hover:not(:disabled) .greek, .wd-word:hover:not(:disabled) .hebrew { color: var(--link); }
+.wd-word:disabled { cursor: default; }
+.wd-word-gloss { font-family: var(--font-ui); font-size: 11.5px; color: var(--muted); }
+.wd-related .more { font-size: 12px; padding: 0; }
+
+.wd-note { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
+.wd-lxx { display: grid; gap: 3px; }
+.wd-lxx-row { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr) 3.5em; gap: 10px; align-items: center; }
+.wd-lxx-row .wd-word { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.wd-lxx-row .wd-word .greek, .wd-lxx-row .wd-word .hebrew { color: var(--ink); }
+.wd-bar { height: 5px; background: var(--accent); border-radius: var(--radius); opacity: 0.55; }
+.wd-credit { margin: 10px 0 0; font-family: var(--font-ui); font-size: 11px; color: var(--muted); }
+
+/* /domains/:id */
+.domain-crumbs { font-family: var(--font-ui); font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.domain-crumbs a { color: var(--link); text-decoration: none; }
+.domain-page h1 { margin: 6px 0 4px; }
+.domain-sub { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+.domain-children { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 24px; padding: 0; list-style: none; font-size: 14px; }
+.domain-children a { color: var(--link); text-decoration: none; }
+.domain-words { width: 100%; border-collapse: collapse; font-size: 14px; }
+.domain-words th { text-align: left; font-family: var(--font-ui); font-weight: 600; font-size: 12px; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--rule); }
+.domain-words td { padding: 7px 8px; border-bottom: 1px solid var(--rule); vertical-align: baseline; }
+.domain-words td.lemma-cell { font-size: 17px; white-space: nowrap; }
+.domain-words td.lemma-cell a { color: var(--ink); text-decoration: none; }
+.domain-words td.lemma-cell a:hover { color: var(--link); }
+.domain-words td.num { white-space: nowrap; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; font-family: var(--font-ui); font-size: 12.5px; }
+.domain-words td.num .of { opacity: 0.7; }
+.domain-words .translit { color: var(--muted); font-size: 13px; }
+.domain-words .senses { color: var(--ink-soft); font-size: 13px; }
+.domain-words .senses .wd-code { margin-right: 4px; }
+
+@media (max-width: 760px) {
+  .wd-lxx-row { grid-template-columns: minmax(0, 1fr) 30% 3em; }
+  .domain-words .translit-col, .domain-words td.num .of { display: none; }
+  .domain-words td, .domain-words th { padding: 6px 4px; }
+}
