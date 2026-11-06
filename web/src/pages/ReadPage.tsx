@@ -68,7 +68,7 @@ export function ReadPage() {
   const books = meta.data?.books ?? [];
 
   return (
-    <div className={`workspace${open ? "" : " panel-closed"}`} style={{ ["--study-w" as string]: `${settings.layout.study}px` }}>
+    <div className={`workspace${open ? "" : " panel-closed"}${selected ? " has-verse" : ""}`} style={{ ["--study-w" as string]: `${settings.layout.study}px` }}>
       <main>
         {data.isLoading && <div className="loading">Loading…</div>}
         {data.error && <div className="error">Could not load {book} {chapter}: {String(data.error)}</div>}

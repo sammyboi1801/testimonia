@@ -15,6 +15,8 @@ export function TopBar() {
   // ?settings in the URL opens the pane (handy for screenshots and links to settings)
   const [showSettings, setShowSettings] = useState(() => new URLSearchParams(window.location.search).has("settings"));
   const closeSettings = useCallback(() => setShowSettings(false), []);
+  const [menu, setMenu] = useState(false); // phones: links and tools fold into a menu
+  const close = () => setMenu(false);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -29,7 +31,7 @@ export function TopBar() {
   }
 
   return (
-    <header className="topbar">
+    <header className={`topbar${menu ? " menu-open" : ""}`}>
       <NavLink to="/" className="brand" title="Testimonia">
         <span className="brand-mark" aria-hidden>
           ☧
@@ -44,6 +46,10 @@ export function TopBar() {
           aria-label="Passage or search"
         />
       </form>
+      <button className="icon-btn menu-btn" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
+        {menu ? "✕" : "☰"}
+      </button>
+      <div className="topbar-menu" onClick={(e) => (e.target as HTMLElement).closest("a") && close()}>
       <nav className="topnav">
         <NavLink to="/read/John/1">Bible</NavLink>
         <NavLink to="/library">Library</NavLink>
@@ -73,7 +79,15 @@ export function TopBar() {
         >
           {THEME_ICON[settings.theme]}
         </button>
-        <button className="icon-btn gear" title="Settings" aria-label="Settings" onClick={() => setShowSettings(true)}>
+        <button
+          className="icon-btn gear"
+          title="Settings"
+          aria-label="Settings"
+          onClick={() => {
+            close();
+            setShowSettings(true);
+          }}
+        >
           <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden>
             <path
               d="M10 6.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8Zm7 4.5v-2.2l-2-.4a5.6 5.6 0 0 0-.6-1.4l1.1-1.7-1.5-1.5-1.7 1.1a5.6 5.6 0 0 0-1.4-.6l-.4-2H8.9l-.4 2a5.6 5.6 0 0 0-1.4.6L5.4 3.9 3.9 5.4 5 7.1a5.6 5.6 0 0 0-.6 1.4l-2 .4v2.2l2 .4c.1.5.3 1 .6 1.4l-1.1 1.7 1.5 1.5 1.7-1.1c.4.3.9.5 1.4.6l.4 2h2.2l.4-2c.5-.1 1-.3 1.4-.6l1.7 1.1 1.5-1.5-1.1-1.7c.3-.4.5-.9.6-1.4l2-.4Z"
@@ -84,6 +98,7 @@ export function TopBar() {
             />
           </svg>
         </button>
+      </div>
       </div>
       {showSettings && <SettingsPane onClose={closeSettings} />}
     </header>

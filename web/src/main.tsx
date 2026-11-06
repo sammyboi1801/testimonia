@@ -30,6 +30,7 @@ import "./settings.css";
 import "./timeline.css";
 import "./story.css";
 import "./ask.css";
+import "./mobile.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";

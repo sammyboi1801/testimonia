@@ -70,6 +70,15 @@ export function WorkPage() {
           {sec.error && <div className="error">{String(sec.error)}</div>}
           {sec.data && (
             <>
+              {toc.data && toc.data.sections.length > 1 && (
+                <select className="work-mobile-nav" value={n} onChange={(e) => navigate(`${base}/${e.target.value}`)} aria-label="Contents">
+                  {toc.data.sections.map((s) => (
+                    <option key={s.ord} value={s.ord}>
+                      {s.title || s.cite}
+                    </option>
+                  ))}
+                </select>
+              )}
               <div className="work-crumb">
                 {e?.title} {sec.data.section.cite !== "1" && sec.data.section.cite}
                 {volumeLabel(edition) && ` · ${volumeLabel(edition)}`}

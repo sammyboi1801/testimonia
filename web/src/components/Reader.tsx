@@ -206,6 +206,7 @@ function TextCell({ v, id, ctx }: { v: ChapterVerse; id: string; ctx: RowCtx }) 
       className={`cell ${ed ? langClass(ed.language) : ""}${v.red_letter && ed?.language === "eng" ? " red" : ""}`}
       dir={rtl ? "rtl" : undefined}
       lang={ed?.language}
+      data-ed={ed?.abbrev ?? id}
     >
       {t ? (
         <>
