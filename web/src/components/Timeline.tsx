@@ -151,6 +151,22 @@ export function TimelineView() {
   // which layers are on (events, rulers, fathers, outside, anonymous); presets set them, the Layers menu adjusts
   const [layers, setLayers] = useState<Set<string>>(new Set(PRESETS[DEFAULT_PRESET]!.layers));
   const [allRealms, setAllRealms] = useState(false);
+  // two ways to draw the same timeline; the choice is remembered in this browser
+  const [mode, setModeState] = useState<"classic" | "lanes">(() => {
+    try {
+      return localStorage.getItem("testimonia.timeline.mode") === "lanes" ? "lanes" : "classic";
+    } catch {
+      return "classic";
+    }
+  });
+  const setMode = (m: "classic" | "lanes") => {
+    setModeState(m);
+    try {
+      localStorage.setItem("testimonia.timeline.mode", m);
+    } catch {
+      /* storage unavailable */
+    }
+  };
   const rulers = useRulers(layers.has("rulers"));
   const showEvents = layers.has("events");
   const toggleLayer = (id: string) =>
@@ -209,8 +225,11 @@ export function TimelineView() {
   const x = (y: number) => ((y - from) / span) * width;
   const yearAt = (px: number) => from + (px / width) * span;
   const all = useMemo(
-    () => (data ? [...(layers.has("rulers") ? rulersGroups(rulers.data, allRealms) : []), ...groups(data).filter((g) => layers.has(g.id))] : []),
-    [data, rulers.data, layers, allRealms],
+    () =>
+      data
+        ? [...(layers.has("rulers") ? rulersGroups(rulers.data, allRealms || mode === "lanes") : []), ...groups(data).filter((g) => layers.has(g.id))]
+        : [],
+    [data, rulers.data, layers, allRealms, mode],
   );
   const everything = useMemo(() => all.flatMap((g) => g.items), [all]);
   const milestones = useMemo(() => (data?.events ?? []).filter((e) => e.major), [data]);
@@ -406,6 +425,14 @@ export function TimelineView() {
               <option key={i.id} value={i.label} />
             ))}
           </datalist>
+          <div className="seg tl-mode" role="radiogroup" aria-label="Timeline style">
+            <button role="radio" aria-checked={mode === "classic"} className={mode === "classic" ? "on" : ""} onClick={() => setMode("classic")}>
+              Classic
+            </button>
+            <button role="radio" aria-checked={mode === "lanes"} className={mode === "lanes" ? "on" : ""} onClick={() => setMode("lanes")}>
+              Lanes
+            </button>
+          </div>
           <details className="tl-layers">
             <summary>Layers · {layers.size}</summary>
             <div className="tl-layers-menu">
@@ -519,7 +546,18 @@ export function TimelineView() {
               <span className="tl-cursor" ref={cursor} style={{ display: "none" }}>
                 <span />
               </span>
-              {all
+              {mode === "lanes" ? (
+                <LaneRows
+                  groups={all}
+                  x={x}
+                  width={width}
+                  selected={selected?.id ?? null}
+                  hot={hotId}
+                  onClick={click}
+                  onEnter={enter}
+                  onLeave={leave}
+                />
+              ) : all
                 .filter((g) => g.items.length > 0)
                 .map((g) => {
                   const inView = g.items.filter((item) => x(item.end) > -260 && x(item.start) < width + 50);
@@ -566,6 +604,73 @@ export function TimelineView() {
       {selected && <Detail item={selected} onClose={() => choose(null)} />}
       {hover && !drag.current?.moved && <HoverCard item={hover.item} x={hover.x} y={hover.y} />}
     </div>
+  );
+}
+
+/** The "Lanes" style: one named row per group (each realm its own lane), every item a box with its name inside
+ *  when it fits, and lanes with nothing in view left out. */
+function LaneRows({
+  groups,
+  x,
+  width,
+  selected,
+  hot,
+  onClick,
+  onEnter,
+  onLeave,
+}: {
+  groups: Group[];
+  x: (y: number) => number;
+  width: number;
+  selected: string | null;
+  hot: string | null;
+  onClick: (item: Item) => void;
+  onEnter: (item: Item, e: RPointerEvent) => void;
+  onLeave: () => void;
+}) {
+  const ROW = 30;
+  return (
+    <>
+      {groups.map((g) => {
+        const NAME = 152; // the lane-name column on the left
+        const inView = g.items.filter((i) => x(i.end + 1) > NAME + 4 && x(i.start) < width);
+        if (!inView.length) return null; // nothing in this period: no empty lane
+        // pack into rows by drawn extent: the box, or its name where the name is longer than the box
+        const ends: number[] = [];
+        const placed = [...inView]
+          .sort((a, b) => a.start - b.start)
+          .map((item) => {
+            const l = Math.max(x(item.start), NAME); // a reign begun off-screen starts at the column's edge
+            const r = Math.max(x(item.end + 1), l + 6);
+            const reach = Math.max(r, l + item.label.length * 6.4 + 14);
+            let row = ends.findIndex((e) => e + 4 <= l);
+            if (row < 0) row = ends.length;
+            ends[row] = reach;
+            return { item, l, r, row };
+          });
+        return (
+          <section key={g.id} className="tl-lanerow" style={{ height: Math.max(1, ends.length) * ROW + 8 }}>
+            <h4 className="tl-lanename">{g.label}</h4>
+            {placed.map(({ item, l, r, row }) => {
+              const w = r - l;
+              return (
+                <button
+                  key={item.id}
+                  className={`tl-box tl-box-${item.kind}${selected === item.id ? " on" : ""}${hot === item.id ? " hot" : ""}`}
+                  style={{ left: l, width: w, top: 4 + row * ROW }}
+                  onClick={() => onClick(item)}
+                  onPointerEnter={(e) => onEnter(item, e)}
+                  onPointerLeave={onLeave}
+                  aria-label={item.label}
+                >
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </section>
+        );
+      })}
+    </>
   );
 }
 
