@@ -39,7 +39,7 @@ debated them, each placed in time.
 
 | | |
 |---|---|
-| **Read** | Thirteen translations side by side (KJV, Geneva, Tyndale, Douay–Rheims, Brenton's Septuagint, the Vulgate, WEB, BSB and more), aligned verse by verse, with an interlinear of every Greek and Hebrew word, the translators' own footnotes, red letters, and read-aloud that carries on from chapter to chapter. |
+| **Read** | Thirteen translations side by side (KJV, Geneva, Tyndale, Douay–Rheims, Brenton's Septuagint, the Vulgate, WEB, BSB and more) and the Greek Septuagint, aligned verse by verse, with an interlinear of every Greek and Hebrew word, the translators' own footnotes, red letters, and read-aloud that carries on from chapter to chapter. |
 | **Study a verse** | One panel per verse: where the printed editions differ and what each difference means, the church fathers who quoted it (pre-Nicene first), Josephus, Tacitus and other Jewish and Roman writers, cross references, and every word with its lexicon entry and grammar. |
 | **Library** | Early Christian writings as a bookshelf, an interactive timeline beside the events that shaped them (Ctrl + scroll to zoom), or a century-by-century story, with Wikipedia previews for writers, works, events and books. |
 | **Passage guide** | Everything about a whole passage on one page (e.g. John 1:1–18): variants verse by verse, the writers who quote it, the strongest cross references, notes, topics and setting. Compare translations word by word, and copy any verse or passage with its citation. |
@@ -98,7 +98,7 @@ public through Tailscale Funnel or Caddy, with a one-command installer) and the 
 | Layer | Content |
 |---|---|
 | Translations | KJV with Apocrypha, WEB (with deuterocanon), BSB, ASV, YLT, Darby, Webster, LSV, Geneva 1599, Tyndale NT, Douay–Rheims, Brenton's Septuagint, Clementine Vulgate; mapped onto one verse numbering with STEPBible's TVTMS rules, native numbering preserved; translators' footnotes from the USFM sources |
-| Original languages | Leningrad Codex reading text; every Greek NT and Hebrew/Aramaic OT word with lemma, gloss, morphology and morphemes |
+| Original languages | Leningrad Codex reading text; the Septuagint in Greek (Swete's edition, First1KGreek digital text) on the same verse numbering, Septuagint numbers kept; every Greek NT and Hebrew/Aramaic OT word with lemma, gloss, morphology and morphemes |
 | Text criticism | About 15,500 variant units: where the printed Greek editions differ (meaning, omission, word order, spelling), Hebrew Ketiv/Qere and manuscript readings |
 | Lexicons | STEPBible brief lexicons, Abbott-Smith, LSJ, BDB; Greek and Hebrew morphology codes; semantic domains and senses (MACULA with the UBS SDBG/SDBH) and Septuagint equivalents |
 | Manuscripts | 2,070 manuscripts (NT papyri, majuscules, minuscules, LXX codices, Dead Sea Scrolls) with dates, contents as verse ranges, institutions and image links |
@@ -128,7 +128,7 @@ Dead Sea Scrolls lists (pinned revisions), and Wikipedia summaries fetched live.
 from [CCEL](https://www.ccel.org/) and are used in local builds only (`testimonia build --public` leaves them out).
 Manuscript images are linked on [NTVMR](https://ntvmr.uni-muenster.de), never copied.
 
-Planned: SBLGNT and the Byzantine text, CNTR and INTF transcriptions, the Septuagint (Swete), Pleiades and
+Planned: SBLGNT and the Byzantine text, CNTR and INTF transcriptions, Pleiades and
 Wikidata, and Roman roads (Itiner-e).
 
 ## Roadmap
@@ -136,7 +136,7 @@ Wikidata, and Roman roads (Itiner-e).
 | Area | Next |
 |---|---|
 | Manuscripts | Transcriptions (CNTR, INTF), Masoretic codices, Dead Sea Scrolls mapped to English verse numbers |
-| Texts | SBLGNT and the Byzantine text, the Greek Septuagint (Swete) |
+| Texts | SBLGNT and the Byzantine text, Septuagint Ecclesiastes and the Old Greek of Daniel |
 | Context | Roman roads on the atlas, kings and rulers, canon history |
 | Personal | Obsidian-compatible export, your own translation |
 

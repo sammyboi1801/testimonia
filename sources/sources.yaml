@@ -682,15 +682,29 @@ sources:
     phase: 2
 
   - id: lxx-swete
-    name: Septuagint, Swete edition (digital)
-    url: https://github.com/sleeptillseven/LXX-Swete
-    download: git clone
+    name: Septuagint, Swete edition (First1KGreek digital text)
+    url: https://github.com/OpenGreekAndLatin/First1KGreek/tree/master/data/tlg0527
+    download: First1KGreek (sparse git clone of data/tlg0527 only; commit pinned in sources.lock.json)
+    fetch:
+      - git: https://github.com/OpenGreekAndLatin/First1KGreek
+        target: lxx-swete
+        sparse: ["data/tlg0527"]
     license: CC-BY-SA-4.0
-    attribution: "LXX Swete digital edition, CC BY-SA 4.0"
+    attribution: >-
+      The Old Testament in Greek according to the Septuagint, ed. Henry Barclay Swete (Cambridge, 1901–1909; public
+      domain); digital text from the First Thousand Years of Greek project (Open Greek and Latin, University of
+      Leipzig; corrected and encoded by Digital Divide Data), https://github.com/OpenGreekAndLatin/First1KGreek,
+      CC BY-SA 4.0
     share_alike: true
-    feeds: [edition, edition_verse, token]
+    feeds: [edition, edition_verse]
     phase: 2
-    verify: true   # confirm licence file & data quality before relying on it
+    notes: >-
+      TEI/EpiDoc files tlg0527.tlg001–059, one per book, chapter/verse divisions in Swete's (LXX) numbering; the
+      licence is stated in every file's teiHeader and in the repository's license.md (CC BY-SA 4.0, checked
+      2026-11-06). Mapped onto the hub numbering with STEPBible TVTMS like Brenton. Swete prints the Old Greek and
+      Theodotion side by side for Daniel, Susanna and Bel; Theodotion (the text the church read) is used. Swete's
+      marginal sigla and page/line breaks are dropped. Not used: sleeptillseven/LXX-Swete (README says CC BY-SA but
+      its licence file is CC BY-NC-SA, and it is incomplete), eliranwong/LXX-Swete-1930 (GPL-3.0).
 
   - id: ubs-open
     name: UBS open-licensed resources (dictionaries, parallels, HOTTP, routes, realia)
