@@ -7,45 +7,50 @@ API key for that one request.
 ## Option A: an Oracle Cloud Always Free VM (always on)
 
 Oracle's Always Free Ampere instances (up to 4 cores / 24 GB) run around the clock without sleeping. An
-instance you already use for something else works too, as long as ports 80 and 443 are free on it.
+instance you already use for something else works too.
 
-1. **Open the ports.** In the console: instance → *Networking* → the subnet → its *Security list* → *Add
-   ingress rules*: source `0.0.0.0/0`, TCP, destination ports `80,443`. Ubuntu images also have their
-   own firewall:
+1. **Install Docker** on the VM: `curl -fsSL https://get.docker.com | sudo sh && sudo usermod -aG docker $USER`,
+   then log out and back in.
+
+2. **Get the database there.** Either copy it (over Tailscale, from the computer that built it):
 
    ```bash
-   sudo iptables -I INPUT 6 -m state --state NEW -p tcp -m multiport --dports 80,443 -j ACCEPT
-   sudo netfilter-persistent save
+   scp ~/TestimoniaData/build/core-public.db ubuntu@<machine>:testimonia/deploy/oracle/data/core.db
    ```
 
-2. **Install Docker:** `curl -fsSL https://get.docker.com | sudo sh && sudo usermod -aG docker $USER`, then
-   log out and back in.
-
-3. **Publish the database** somewhere the VM can download it. A GitHub release asset is free (up to 2 GB);
-   from the computer that built it:
+   or publish it as a GitHub release asset (free, up to 2 GB) and let the container download it on first start:
 
    ```bash
    gh release create data-v1 ~/TestimoniaData/build/core-public.db --title "Database" --notes "Public build"
+   # then in deploy/oracle/.env on the VM:
+   # TESTIMONIA_CORE_DB_URL=https://github.com/<you>/testimonia/releases/download/data-v1/core-public.db
    ```
 
-   (Or copy it straight to the VM with `scp … ubuntu@<ip>:testimonia/deploy/oracle/data/core.db`.)
-
-4. **On the VM** (any SSH client works, e.g. Termux on a phone; `tmux` keeps the build running if the
-   connection drops):
+3. **Start the app** (on the VM; `tmux` keeps the build running if the connection drops):
 
    ```bash
    git clone https://github.com/<you>/testimonia.git && cd testimonia/deploy/oracle && mkdir -p data
-   cat > .env <<EOF
-   SITE_ADDRESS=<ip with dashes>.sslip.io
-   TESTIMONIA_CORE_DB_URL=https://github.com/<you>/testimonia/releases/download/data-v1/core-public.db
-   EOF
-   docker compose up -d --build
+   docker compose up -d --build          # the app listens on 127.0.0.1:7860 only
    ```
 
-   The first start downloads the database into `data/core.db`.
+4. **Make it public**, one of:
 
-   Caddy obtains the HTTPS certificate on its own; the site is at `https://<ip with dashes>.sslip.io`. To
-   update later: `git pull && docker compose up -d --build`.
+   - **Tailscale Funnel** (if the VM is on Tailscale): no ports to open, HTTPS included.
+
+     ```bash
+     sudo tailscale funnel --bg 7860     # first time: follow the link it prints to allow Funnel
+     ```
+
+     The site is at `https://<machine>.<tailnet>.ts.net` (shown by `tailscale funnel status`). The setting
+     survives reboots; `sudo tailscale funnel --https=443 off` takes it down.
+
+   - **Caddy on the VM's public IP:** open TCP 80 and 443 in the subnet's *Security list* (source
+     `0.0.0.0/0`) and in Ubuntu's firewall
+     (`sudo iptables -I INPUT 6 -m state --state NEW -p tcp -m multiport --dports 80,443 -j ACCEPT && sudo netfilter-persistent save`),
+     put `SITE_ADDRESS=<ip with dashes>.sslip.io` (or your domain) in `.env`, and run
+     `docker compose --profile caddy up -d`. Caddy obtains the certificate itself.
+
+To update later: `git pull && docker compose up -d --build`.
 
 ## Option B: a Hugging Face Space (paid for new Spaces)
 
@@ -91,11 +96,11 @@ The app is then live at `https://yourname-testimonia.hf.space`.
 ## Optional: a nicer address in front (still free)
 
 Host only the web app on Firebase Hosting or Vercel and let it call the server above (the VM or the Space).
-The server must be on HTTPS, which the VM setup already provides.
+The server must be on HTTPS, which both VM setups provide.
 
 ```bash
 cd web
-VITE_API_BASE=https://158-101-122-1.sslip.io npm run build   # the server's address
+VITE_API_BASE=https://<machine>.<tailnet>.ts.net npm run build   # the server's public address
 ```
 
 - **Firebase Hosting** (Spark plan, free): `firebase init hosting` with public dir `web/dist`, then use

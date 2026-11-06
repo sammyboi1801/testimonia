@@ -1,7 +1,13 @@
-# Testimonia on any Linux VM (e.g. an Oracle Cloud Always Free Ampere instance), with HTTPS by Caddy.
-#   1. put the database at ./data/core.db (or set TESTIMONIA_CORE_DB_URL in .env)
-#   2. set SITE_ADDRESS in .env, e.g.  SITE_ADDRESS=158-101-122-1.sslip.io  (or your own domain)
-#   3. docker compose up -d --build
+# Testimonia on any Linux VM (e.g. an Oracle Cloud Always Free Ampere instance).
+#
+#   Database: put it at ./data/core.db, or set TESTIMONIA_CORE_DB_URL in .env (downloaded on first start).
+#
+#   Public over Tailscale Funnel (no open ports, HTTPS included):
+#     docker compose up -d --build
+#     sudo tailscale funnel --bg 7860          → https://<machine>.<tailnet>.ts.net
+#
+#   Or public on the VM's own IP with Caddy (open ports 80/443 first, set SITE_ADDRESS in .env):
+#     docker compose --profile caddy up -d --build
 services:
   app:
     build: ../..
@@ -9,18 +15,19 @@ services:
     restart: unless-stopped
     environment:
       TESTIMONIA_CORE_DB_URL: ${TESTIMONIA_CORE_DB_URL:-}
-      TESTIMONIA_CORS_ORIGINS: ${TESTIMONIA_CORS_ORIGINS:-}   # e.g. https://testimonia.web.app
+      TESTIMONIA_CORS_ORIGINS: ${TESTIMONIA_CORS_ORIGINS:-} # e.g. https://testimonia.web.app
     volumes:
       - ./data:/data/build
-    expose:
-      - "7860"
+    ports:
+      - "127.0.0.1:7860:7860" # only this machine (and Tailscale Funnel) can reach it
 
   caddy:
+    profiles: [caddy]
     image: caddy:2
     restart: unless-stopped
     depends_on: [app]
     environment:
-      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS in .env}
+      SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
     ports:
       - "80:80"
       - "443:443"
