@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from ..books import BY_OSIS, alias_regex, resolve_book
-from ..refs import parse_refs
+from ..refs import parse_refs, vkey
 from .base import Context, IngestError, step
 
 SOURCE = "wikipedia-manuscripts"
@@ -1018,12 +1018,58 @@ def ingest_manuscripts(ctx: Context) -> None:
     ctx.log.info("  %d manuscripts (%d LXX), %d coverage ranges", n_ms, len(lxx), n_cov)
 
 
-@step("dead-sea-scrolls", sources=[DSS_SOURCE], requires=["curated"])
+HebrewMap = tuple[dict[int, int], dict[int, int]]
+
+
+def hebrew_map(rows: Iterable[tuple[int, str]]) -> HebrewMap:
+    """(hub verse key, Hebrew reference) pairs → lookups from a key computed from Hebrew numbers to the hub key.
+
+    The pairs are the WLC verses whose Hebrew number differs from the English one, placed by STEPBible's TVTMS
+    rules ('Isa.8.23' is Isaiah 9:1, 'Mal.3.19' is Malachi 4:1, Psalm titles are verse 1). Where one Hebrew verse
+    spans two English ones, a range starting there takes the first and a range ending there the last."""
+    first: dict[int, int] = {}
+    last: dict[int, int] = {}
+    for hub, ref in rows:
+        book, ch, v = ref.split(".")
+        if book not in BY_OSIS:
+            continue
+        key = vkey(book, int(ch), int(v))
+        first[key] = min(first.get(key, hub), hub)
+        last[key] = max(last.get(key, hub), hub)
+    return first, last
+
+
+def to_hub(ranges: list[tuple[int, int]], table: HebrewMap) -> list[tuple[int, int]]:
+    """Hebrew-numbered verse ranges → hub (English) ranges; verses numbered alike pass through unchanged."""
+    first, last = table
+    out = []
+    for a, b in ranges:
+        lo, hi = first.get(a, a), last.get(b, b)
+        out.append((lo, hi) if lo <= hi else (hi, lo))
+    return merge(out)
+
+
+@step("dead-sea-scrolls", sources=[DSS_SOURCE], requires=["curated", "stepbible-tahot"])
 def ingest_dss(ctx: Context) -> None:
-    """Dead Sea Scrolls (Qumran, Murabba'at, Nahal Hever, Masada) with the biblical passages each preserves."""
+    """Dead Sea Scrolls (Qumran, Murabba'at, Nahal Hever, Masada) with the biblical passages each preserves.
+
+    The scroll lists give passages in Hebrew verse numbers; they are moved onto the hub (English) numbering with
+    the WLC's native references, so that Isaiah 8:23–9:20 in the list covers Isaiah 9:1–21 in the reader."""
     _clear(ctx, DSS_SOURCE)
     rows = list(dss_rows(_read(ctx.find(DSS_SOURCE, "dead-sea-scrolls.wiki"))))
     if len(rows) < MIN_SCROLLS:
         raise IngestError(f"Dead Sea Scrolls list parsed to only {len(rows)} rows — has the page layout changed?")
+    table = hebrew_map(
+        ctx.con.execute(
+            "SELECT vkey, native_ref FROM edition_verse WHERE edition_id = 'wlc' AND native_ref IS NOT NULL"
+        )
+    )
+    if not table[0]:
+        raise IngestError("no Hebrew verse numbering found (the stepbible-tahot step must run first)")
+    moved = 0
+    for ms in rows:
+        hub = to_hub(ms.coverage.ranges, table)
+        moved += hub != ms.coverage.ranges
+        ms.coverage = Coverage(hub, ms.coverage.partial)
     n_ms, n_cov = _store(ctx, rows, DSS_SOURCE)
-    ctx.log.info("  %d scrolls, %d coverage ranges", n_ms, n_cov)
+    ctx.log.info("  %d scrolls, %d coverage ranges (%d scrolls renumbered from Hebrew verses)", n_ms, n_cov, moved)

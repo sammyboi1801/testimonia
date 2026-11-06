@@ -159,8 +159,17 @@ def built(tmp_path_factory):
     mp = pytest.MonkeyPatch()
     mp.setattr(manuscripts, "MIN_PAPYRI", 1)
     mp.setattr(manuscripts, "MIN_SCROLLS", 1)
-    for source in (manuscripts.SOURCE, manuscripts.DSS_SOURCE):
+    for source in (manuscripts.SOURCE, manuscripts.DSS_SOURCE, "stepbible-tahot"):
         ctx.register(source)
+    # Hebrew verse numbering, as stepbible-tahot stores it: Isaiah 8:23–9:20 (Hebrew) is 9:1–21 (English)
+    con.execute(
+        "INSERT OR IGNORE INTO edition (id, title, language, script_dir, kind, source_id) "
+        "VALUES ('wlc', 'Westminster Leningrad Codex', 'hbo', 'rtl', 'reading_text', 'stepbible-tahot')"
+    )
+    con.executemany(
+        "INSERT OR REPLACE INTO edition_verse (edition_id, vkey, native_ref, text) VALUES ('wlc', ?, ?, '')",
+        [(23_009_001, "Isa.8.23")] + [(23_009_001 + v, f"Isa.9.{v}") for v in range(1, 21)],
+    )
     manuscripts.ingest_manuscripts(ctx)
     manuscripts.ingest_dss(ctx)
     manuscripts.ingest_dss(ctx)  # steps are re-runnable
@@ -205,6 +214,28 @@ def test_ingest_rows(built):
     leon = con.execute("SELECT image_url FROM manuscript WHERE id = 'DSS:4QGenb'").fetchone()[0]
     assert leon.endswith("/4Q2-1")
     assert con.execute("SELECT count(*) FROM manuscript WHERE source_id = 'wikipedia-dss'").fetchone()[0] == 4
+
+
+def test_hebrew_verse_numbers_move_to_the_hub():
+    table = manuscripts.hebrew_map(
+        [(23_009_001, "Isa.8.23")] + [(23_009_001 + v, f"Isa.9.{v}") for v in range(1, 21)] + [(19_003_000, "Ps.3.1")]
+    )
+    # 'Isaiah 1:1–8:23; 9:1–20' in Hebrew numbers is Isaiah 1:1–9:21 in English, one unbroken range
+    assert manuscripts.to_hub([(23_001_001, 23_008_023), (23_009_001, 23_009_020)], table) == [(23_001_001, 23_009_021)]
+    assert manuscripts.to_hub([(23_010_001, 23_066_024)], table) == [(23_010_001, 23_066_024)]  # numbered alike
+    assert manuscripts.to_hub([(19_003_001, 19_003_001)], table) == [(19_003_000, 19_003_000)]  # a Psalm title
+    split = manuscripts.hebrew_map([(1_031_055, "Gen.32.1"), (1_032_001, "Gen.32.1")])  # one verse, two hub verses
+    assert manuscripts.to_hub([(1_032_001, 1_032_001)], split) == [(1_031_055, 1_032_001)]
+
+
+def test_scroll_coverage_uses_english_numbers(built):
+    _, con = built
+    ranges = con.execute(
+        "SELECT start_vkey, end_vkey FROM manuscript_coverage WHERE manuscript_id = 'DSS:1QIsaa'"
+    ).fetchall()
+    assert ranges
+    assert not any(b == 23_008_023 for _, b in ranges)  # Hebrew 8:23 does not exist in the English numbering
+    assert any(a <= 23_009_021 <= b for a, b in ranges)  # English 9:21 (Hebrew 9:20) is covered
 
 
 @pytest.fixture(scope="module")
