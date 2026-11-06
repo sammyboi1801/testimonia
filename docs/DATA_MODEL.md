@@ -295,7 +295,7 @@ insensitive so `λογος` finds `λόγος`). Queries join back to the real t
 |---|---|---|
 | Hebrew text, morphology, Qere/Ketiv | `edition_verse`, `token` | OSHB/WLC, TAHOT |
 | Aleppo-based text | `edition_verse` | MAM |
-| Septuagint (Greek + English) | `edition_verse`, `token` | Swete (verify), Brenton |
+| Septuagint (Greek + English) | `edition_verse` (`lxx-swete`, `brenton`) | Swete (First1KGreek, CC BY-SA), Brenton |
 | Hebrew ↔ Greek correspondence | `token.lxx_equiv`, `alignment` | MACULA Hebrew |
 | Vulgate, Douay-Rheims | `edition_verse` | eBible |
 | OT text criticism | `variant_*` | HOTTP (UBS), TAHOT variant codes |

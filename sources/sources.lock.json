@@ -10,6 +10,11 @@
       "fetched_at": "2026-11-06T01:04:19+00:00",
       "source": "hcf-commentaries"
     },
+    "git|https://github.com/OpenGreekAndLatin/First1KGreek|lxx-swete|": {
+      "commit": "ed91552c52530c8f5a3ddf2dd767e899372a804c",
+      "fetched_at": "2026-11-06T17:29:31+00:00",
+      "source": "lxx-swete"
+    },
     "git|https://github.com/STEPBible/STEPBible-Data|stepbible-data|": {
       "commit": "5de0a47f35f0fc13dfe1430d104e5db8a4285f9c",
       "fetched_at": "2026-11-05T23:55:40+00:00",

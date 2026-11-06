@@ -47,7 +47,7 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 | Miqra according to the Masorah (Aleppo-based Hebrew text) | CC-BY-SA-4.0 | 2 |
 | Robinson-Pierpont Byzantine Majority Text (2005/2018) | PD | 2 |
 | SBLGNT and apparatus | CC-BY-4.0 | 2 |
-| Septuagint, Swete edition (digital) | CC-BY-SA-4.0 | 2 |
+| Septuagint, Swete edition (First1KGreek digital text) | CC-BY-SA-4.0 | 2 |
 | Wikidata | CC0-1.0 | 2 |
 | Wikipedia "List of the Dead Sea Scrolls" (+ per-cave lists, Murabba'at, Nahal Hever, Masada) | CC-BY-SA-4.0 | 2 |
 | Wikipedia manuscript lists (NT papyri, uncials, minuscules, LXX codices, DSS) | CC-BY-SA-4.0 | 2 |
@@ -338,13 +338,13 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Credit:** SBL Greek New Testament, Society of Biblical Literature & Logos/Faithlife, CC BY 4.0
 - **Used for:** `edition`, `edition_verse`, `variant_unit`, `variant_reading`, `variant_witness`
 
-### Septuagint, Swete edition (digital)
+### Septuagint, Swete edition (First1KGreek digital text)
 
-- **Source:** <https://github.com/sleeptillseven/LXX-Swete>
+- **Source:** <https://github.com/OpenGreekAndLatin/First1KGreek/tree/master/data/tlg0527>
 - **Licence:** CC-BY-SA-4.0 *(ShareAlike)*
-- **Credit:** LXX Swete digital edition, CC BY-SA 4.0
-- **Used for:** `edition`, `edition_verse`, `token`
-- **Status:** licence/quality under verification — excluded from public builds
+- **Credit:** The Old Testament in Greek according to the Septuagint, ed. Henry Barclay Swete (Cambridge, 1901–1909; public domain); digital text from the First Thousand Years of Greek project (Open Greek and Latin, University of Leipzig; corrected and encoded by Digital Divide Data), https://github.com/OpenGreekAndLatin/First1KGreek, CC BY-SA 4.0
+- **Used for:** `edition`, `edition_verse`
+- **Pinned version:** git ed91552c52
 
 ### Wikidata
 

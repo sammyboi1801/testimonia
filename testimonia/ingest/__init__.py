@@ -10,6 +10,7 @@ from .base import STEPS, Context, IngestError, Step, step
 MODULES = (
     "curated",
     "ebible",
+    "septuagint",
     "openbible",
     "stepbible",
     "verses",

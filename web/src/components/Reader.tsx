@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { isRtl, langClass } from "../lib";
+import { isRtl, langClass, nativeLabel } from "../lib";
 import { MODES, useSettings } from "../settings";
 import type { Book, Chapter, ChapterVerse, Edition, VerseMarks, Word } from "../types";
 import { TextWithNotes } from "./Footnotes";
@@ -225,8 +225,8 @@ function TextCell({ v, id, ctx }: { v: ChapterVerse; id: string; ctx: RowCtx }) 
             <TextWithNotes text={t.text} notes={ctx.footnotes ? t.notes : undefined} marks={ctx.notes[v.osis]?.marks?.filter((m) => m.ed === id)} />
           </span>
           {t.native && (
-            <span className="native" title={`Numbered ${t.native.replace(/^[^.]+\./, "").replace(".", ":")} in ${ed?.abbrev ?? id}`}>
-              {t.native.replace(/^[^.]+\./, "").replace(".", ":")}
+            <span className="native" title={`Numbered ${nativeLabel(t.native, v.osis)} in ${ed?.abbrev ?? id}`}>
+              {nativeLabel(t.native, v.osis)}
             </span>
           )}
         </>

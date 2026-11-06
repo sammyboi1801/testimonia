@@ -171,7 +171,7 @@ function TextTab({ g }: { g: VerseGuide }) {
       <VerseTranscriptions key={g.verse.osis} osis={g.verse.osis} />
       {(g.footnotes?.length ?? 0) > 0 && <TranslatorsNotes notes={g.footnotes!} texts={g.texts} osis={g.verse.osis} />}
       <VerseManuscripts osis={g.verse.osis} />
-      <CompareTranslations texts={g.texts} />
+      <CompareTranslations texts={g.texts} osis={g.verse.osis} />
     </>
   );
 }

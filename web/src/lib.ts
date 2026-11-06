@@ -64,6 +64,25 @@ export function isRtl(lang: string): boolean {
   return lang === "hbo" || lang === "arc" || lang === "heb";
 }
 
+/**
+ * An edition's own numbering of a verse (its `native_ref`, e.g. 'Ps.22.1' or '1Kgs.2.35,1Kgs.2.35a,…') as a
+ * short label beside the standard verse `osis`: '22:1', '2:35–35n', or 'Dan 3:24' when the book differs.
+ */
+export function nativeLabel(native: string, osis: string): string {
+  const hubBook = osis.split(".")[0];
+  const parts = native
+    .split(",")
+    .map((n) => /^([1-4]?[A-Za-z]+)\.([0-9A-Za-z]+)\.([0-9]+[a-z]*(?:-\d+)?)$/.exec(n.trim()))
+    .filter((m): m is RegExpExecArray => m !== null)
+    .map((m) => ({ book: m[1]!, ch: m[2]!, v: m[3]! }));
+  if (!parts.length) return native;
+  const first = parts[0]!;
+  const last = parts[parts.length - 1]!;
+  const head = `${first.book !== hubBook ? `${first.book} ` : ""}${first.ch}:${first.v}`;
+  if (parts.length === 1 || (last.ch === first.ch && last.v === first.v)) return head;
+  return `${head}–${last.ch === first.ch && last.book === first.book ? last.v : `${last.ch}:${last.v}`}`;
+}
+
 /** CSS class for original-language text. */
 export function langClass(lang: string): string {
   if (isRtl(lang)) return "hebrew";

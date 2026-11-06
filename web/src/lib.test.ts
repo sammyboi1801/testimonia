@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatYear, isRtl, isStrong, langClass, osisLabel, parseOsis, verseUrl } from "./lib";
+import { formatYear, isRtl, isStrong, langClass, nativeLabel, osisLabel, parseOsis, verseUrl } from "./lib";
 import type { Book } from "./types";
 
 const books: Book[] = [
@@ -30,6 +30,19 @@ describe("references", () => {
     expect(isStrong("G3439")).toBe(true);
     expect(isStrong("H0430G")).toBe(true);
     expect(isStrong("John.1.1")).toBe(false);
+  });
+});
+
+describe("native verse numbers", () => {
+  it("labels an edition's own numbering beside the standard verse", () => {
+    expect(nativeLabel("Ps.22.1", "Ps.23.1")).toBe("22:1");
+    expect(nativeLabel("Jer.32.1", "Jer.25.15")).toBe("32:1");
+    expect(nativeLabel("1Kgs.2.35,1Kgs.2.35a,1Kgs.2.35b", "1Kgs.2.35")).toBe("2:35–35b");
+    expect(nativeLabel("Wis.4.21,Wis.5.1", "Wis.5.1")).toBe("4:21–5:1");
+  });
+  it("names the book when the edition counts the verse in another book", () => {
+    expect(nativeLabel("Dan.3.24", "PrAzar.1.1")).toBe("Dan 3:24");
+    expect(nativeLabel("Esth.A.1", "AddEsth.11.2")).toBe("Esth A:1");
   });
 });
 
