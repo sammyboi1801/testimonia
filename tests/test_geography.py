@@ -169,8 +169,9 @@ GAZETTEER = {
 JOURNEYS = {
     "features": [
         {"type": "Feature", "properties": {"route_id": 1}, "geometry": {"type": "LineString", "coordinates": [[35.2, 31.8], [36.2, 36.2]]}},
-        {"type": "Feature", "properties": {"Place Name": "Jerusalem", "first": "Acts.13.3"}, "geometry": {"type": "Point", "coordinates": [35.23, 31.78]}},
+        {"type": "Feature", "properties": {"Place Name": "Jerusalem", "first": "Acts.13.3-4, Acts.14.26"}, "geometry": {"type": "Point", "coordinates": [35.23, 31.78]}},
         {"type": "Feature", "properties": {"Place Name": "Nowhere", "first": "Acts.13.1"}, "geometry": {"type": "Point", "coordinates": [30, 30]}},
+        {"type": "Feature", "properties": {"Place Name": "Three Taverns", "first": "924"}, "geometry": {"type": "Point", "coordinates": [12.8, 41.6]}},
     ]
 }  # fmt: skip
 
@@ -244,6 +245,16 @@ def test_theographic_ingest(core):
     feature = json.loads(core.execute("SELECT geojson FROM geo_feature WHERE id = 'paul-journey-1'").fetchone()[0])
     assert [s["name"] for s in feature["properties"]["stops"]] == ["Nowhere", "Jerusalem"]  # in verse order
     assert feature["properties"]["stops"][1]["place"] == "jerusalem"
+    assert feature["properties"]["stops"][1]["osis"] == "Acts.13.3"
+
+
+def test_first_ref_of_a_stop():
+    assert theographic.first_ref("Acts.13.1,Acts.14.26") == "Acts.13.1"
+    assert theographic.first_ref("Acts.13.13, Acts.14.24") == "Acts.13.13"
+    assert theographic.first_ref("Acts.17.15-16") == "Acts.17.15"
+    assert theographic.first_ref(" Acts.28.16 ") == "Acts.28.16"
+    assert theographic.first_ref("924") is None
+    assert theographic.first_ref("") is None
 
 
 # ----------------------------------------------------------------------------- API

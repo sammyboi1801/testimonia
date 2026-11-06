@@ -29,12 +29,14 @@ export default function MiniMap({ points, zoom = 8 }: { points: MapPoint[]; zoom
       .finally(() => {
         if (!alive) return;
         const group = L.featureGroup();
+        // name every spot when there are few; regions (a representative point only) keep a hover label
+        const named = points.filter((p) => p.kind !== "region").length <= 8;
         for (const p of [...points].sort((a, b) => Number(!!a.main) - Number(!!b.main))) {
           const marker = L.circleMarker([p.lat, p.lon], {
             radius: p.main ? 7 : 4,
             className: placeClass(p.kind, p.confidence ?? null, p.main ? "sel" : ""),
           });
-          marker.bindTooltip(escapeHtml(p.name), { direction: "top", offset: [0, -4], className: "pm-tip", permanent: !!p.main || points.length <= 6 });
+          marker.bindTooltip(escapeHtml(p.name), { direction: "top", offset: [0, -4], className: "pm-tip", permanent: !!p.main || (named && p.kind !== "region") });
           if (!p.main) marker.on("click", () => navigate(`/place/${encodeURIComponent(p.id)}`));
           marker.addTo(group);
         }

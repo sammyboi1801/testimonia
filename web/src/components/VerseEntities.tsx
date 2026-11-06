@@ -44,7 +44,7 @@ export function VerseEntities({ osis }: { osis: string }) {
       )}
       {data.events.length > 0 && (
         <p className="ve-row">
-          <span className="ve-label">Event</span>
+          <span className="ve-label">{data.events.length > 1 ? "Events" : "Event"}</span>
           {data.events.slice(0, 2).map((e, i) => (
             <span key={e.id}>
               {i > 0 && <span className="ve-sep"> · </span>}

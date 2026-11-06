@@ -754,7 +754,7 @@ sources:
   - id: natural-earth
     name: Natural Earth (land, coastlines, rivers and lakes, 1:10m)
     url: https://www.naturalearthdata.com/
-    download: shapefile zips from naciscdn.org (version 5.x), turned into the atlas basemap by tools/build_basemap.py
+    download: shapefile zips from naciscdn.org (land 5.1.1, lakes and rivers 5.0.0, coastline 5.0.0-pre9 as published; hash-locked in sources.lock.json), turned into the atlas basemap by tools/build_basemap.py
     fetch:
       - http: https://naciscdn.org/naturalearth/10m/physical/ne_10m_land.zip
         target: natural-earth

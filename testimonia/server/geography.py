@@ -224,19 +224,24 @@ def place(request: Request, place_id: str, preview: str = "bsb") -> dict[str, An
     }
 
 
-def _nearby(s: Store, p: dict[str, Any], limit: int = 12) -> list[dict[str, Any]]:
+def _nearby(s: Store, p: dict[str, Any], limit: int = 12, same_site: int = 30) -> list[dict[str, Any]]:
+    """Places at the same site (under 1 km: Jerusalem's gates) and the nearest others, each list capped on its own.
+
+    Regions are left out: their point is only a representative one."""
     if p["lat"] is None:
         return []
     lat, lon = p["lat"], p["lon"]
     d = 0.6
     rows = s.all(
-        "SELECT id, name, kind, lat, lon FROM place WHERE lat BETWEEN ? AND ? AND lon BETWEEN ? AND ? AND id <> ?",
+        "SELECT id, name, kind, lat, lon FROM place WHERE lat BETWEEN ? AND ? AND lon BETWEEN ? AND ? AND id <> ? "
+        "AND kind IS NOT 'region'",
         (lat - d, lat + d, lon - d, lon + d, p["id"]),
     )
     for r in rows:
         dy, dx = (r["lat"] - lat) * 111.2, (r["lon"] - lon) * 111.2 * math.cos(math.radians(lat))
         r["km"] = round(math.hypot(dx, dy), 1)
-    return sorted(rows, key=lambda r: r["km"])[:limit]
+    rows.sort(key=lambda r: (r["km"], r["name"]))
+    return [r for r in rows if r["km"] < 1][:same_site] + [r for r in rows if r["km"] >= 1][:limit]
 
 
 # ----------------------------------------------------------------------------- people

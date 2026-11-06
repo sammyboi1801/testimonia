@@ -49,6 +49,7 @@ _DATE = re.compile(r"^(-?\d+)(?:-(\d\d)-(\d\d))?$")
 _PARAGRAPH = re.compile(r"\n\s*\n")
 PARAGRAPH_BREAK = "\n\n"
 _COMMAS = re.compile(r",(\s*,)+")
+_STOP_REF = re.compile(r"^([1-4]?[A-Za-z]+\.\d+\.\d+)(?:-\d+)?$")
 
 
 def read_csv(path: Path) -> Iterator[dict[str, str]]:
@@ -404,6 +405,12 @@ def ingest_events(ctx: Context, rows: list[dict[str, str]], people: dict[str, st
     return len(ids)
 
 
+def first_ref(value: str) -> str | None:
+    """A stop's first verse: 'Acts.13.1,Acts.14.26' → 'Acts.13.1'; 'Acts.17.15-16' → 'Acts.17.15'; '924' → None."""
+    m = _STOP_REF.match(value.split(",", 1)[0].strip())
+    return m.group(1) if m else None
+
+
 def ingest_journeys(ctx: Context, data: dict[str, Any]) -> int:
     """Paul's journeys: one route feature per journey, with its stops (verse, place) in order."""
     lines: dict[int, list[list[list[float]]]] = {j: [] for j in JOURNEYS}
@@ -428,8 +435,8 @@ def ingest_journeys(ctx: Context, data: dict[str, Any]) -> int:
             lon, lat = geom["coordinates"][:2]
             name = str(props.get("Place Name") or "").strip()
             for j, (key, _, _) in JOURNEYS.items():
-                ref = str(props.get(key) or "").strip()
-                k = id_to_key(ref)
+                ref = first_ref(str(props.get(key) or ""))
+                k = id_to_key(ref) if ref else None
                 if name and k is not None:
                     stops[j].append({"name": name, "osis": ref, "vkey": k, "lat": round(lat, 4), "lon": round(lon, 4),
                                      "place": nearest(name, lat, lon)})  # fmt: skip
