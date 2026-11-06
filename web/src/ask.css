@@ -122,7 +122,7 @@
 @media (max-width: 760px) {
   .ask-fab { right: 12px; bottom: 12px; padding: 9px 14px; }
   .workspace.has-verse:not(.panel-closed) ~ .ask-fab { display: none; }
-  .ask-drawer { top: auto; height: 88vh; width: 100vw; border-radius: 16px 16px 0 0; border-left: 0; animation: sheet-in 0.2s ease-out; }
+  .ask-drawer { top: auto; height: 88vh; height: 88dvh; width: 100vw; border-radius: 16px 16px 0 0; border-left: 0; animation: sheet-in 0.2s ease-out; }
 }
 
 /* phrase highlights and the selection toolbar */

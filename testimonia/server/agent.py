@@ -195,7 +195,12 @@ async def chat(request: Request, body: ChatRequest, x_api_key: str | None = Head
             yield _sse({"type": "error", "message": f"Could not reach the provider: {type(e).__name__}"})
         yield _sse({"type": "end"})
 
-    return StreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-store"})
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        # no-transform / X-Accel-Buffering: proxies (nginx, CDNs) must pass each event on at once
+        headers={"Cache-Control": "no-store, no-transform", "X-Accel-Buffering": "no"},
+    )
 
 
 def _sse(event: dict[str, Any]) -> str:

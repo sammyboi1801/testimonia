@@ -56,7 +56,10 @@ export function AskDrawer() {
           title="Ask the study assistant"
           aria-label="Ask the study assistant"
         >
-          <span aria-hidden>✦</span> Ask
+          <span className="ask-fab-star" aria-hidden>
+            ✦
+          </span>
+          <span className="ask-fab-label">Ask</span>
         </button>
       )}
       {open && (

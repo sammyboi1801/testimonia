@@ -1,6 +1,6 @@
 import DOMPurify from "dompurify";
 import { marked } from "marked";
-import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { PRESETS, loadConfig, loadKey, runsInBrowser, saveConfig, saveKey, type AiConfig } from "../agent/providers";
 import { runInBrowser, runOnServer, type AgentEvent, type Turn } from "../agent/run";
@@ -33,6 +33,21 @@ function markdown(text: string): string {
   return DOMPurify.sanitize(marked.parse(text, { async: false }) as string);
 }
 
+/** One answer, rendered from markdown; memoised so earlier answers are not re-parsed on every streamed word. */
+const Answer = memo(function Answer({ text }: { text: string }) {
+  const html = useMemo(() => markdown(text), [text]);
+  return <div className="ask-md" dangerouslySetInnerHTML={{ __html: html }} />;
+});
+
+/** The nearest ancestor that scrolls (the drawer's chat area, or the page). */
+function scroller(el: HTMLElement | null): HTMLElement | null {
+  for (let n = el?.parentElement ?? null; n; n = n.parentElement) {
+    const { overflowY } = getComputedStyle(n);
+    if (overflowY === "auto" || overflowY === "scroll") return n;
+  }
+  return (document.scrollingElement as HTMLElement | null) ?? null;
+}
+
 /** The study assistant: bring your own key, any provider; answers grounded in the library, with links.
  *  Used full-page (/ask) and in the drawer that opens from anywhere (`compact`). */
 export function Chat({ context, initial, compact = false }: { context: string | null; initial?: string; compact?: boolean }) {
@@ -49,15 +64,32 @@ export function Chat({ context, initial, compact = false }: { context: string | 
   const inBrowser = runsInBrowser(config);
 
   useEffect(() => {
+    if (busy) return; // saved once the answer is complete, not on every streamed word
     try {
       localStorage.setItem(CHAT_KEY, JSON.stringify(messages.slice(-40)));
     } catch {
       /* storage unavailable */
     }
-  }, [messages]);
+  }, [messages, busy]);
+  // Follow the answer while it streams, but only while the reader is at the bottom, and only by scrolling the
+  // chat's own scroller: scrollIntoView would also scroll the page, which made the screen jump on phones.
+  const follow = useRef(true);
   useEffect(() => {
-    // braces matter: scrollIntoView returns a Promise in current browsers, and an effect must not return one
-    end.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+    const box = scroller(end.current);
+    if (!box) return;
+    const onScroll = () => {
+      follow.current = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+    };
+    box.addEventListener("scroll", onScroll, { passive: true });
+    return () => box.removeEventListener("scroll", onScroll);
+  }, []);
+  useEffect(() => {
+    const box = scroller(end.current);
+    if (!box || !follow.current || !messages.length) return; // nothing to follow yet: keep the page at the top
+    const frame = requestAnimationFrame(() => {
+      box.scrollTop = box.scrollHeight;
+    });
+    return () => cancelAnimationFrame(frame);
   }, [messages]);
 
   function choosePreset(id: string) {
@@ -86,6 +118,7 @@ export function Chat({ context, initial, compact = false }: { context: string | 
     }
     const history: Turn[] = messages.filter((m) => m.content && !m.error).map((m) => ({ role: m.role, content: m.content }));
     const turns: Turn[] = [...history, { role: "user", content: q }];
+    follow.current = true; // a new question always scrolls into view
     setMessages((m) => [...m, { role: "user", content: q }, { role: "assistant", content: "", steps: [] }]);
     setInput("");
     setBusy(true);
@@ -126,8 +159,6 @@ export function Chat({ context, initial, compact = false }: { context: string | 
       navigate(href);
     }
   }
-
-  const rendered = useMemo(() => messages.map((m) => (m.role === "assistant" ? markdown(m.content) : "")), [messages]);
 
   return (
     <div className={compact ? "ask-chat compact" : "ask-chat"}>
@@ -247,7 +278,7 @@ export function Chat({ context, initial, compact = false }: { context: string | 
               )}
               {m.notice && <p className="muted small">{m.notice}</p>}
               {m.content ? (
-                <div className="ask-md" dangerouslySetInnerHTML={{ __html: rendered[i]! }} />
+                <Answer text={m.content} />
               ) : (
                 !m.error && busy && i === messages.length - 1 && <p className="muted">Reading the library…</p>
               )}

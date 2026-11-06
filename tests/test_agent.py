@@ -221,3 +221,20 @@ def test_cors_only_for_listed_front_ends(built, monkeypatch):
         assert ok.headers["access-control-allow-origin"] == "https://testimonia.web.app"
         bad = c.options("/api/agent/chat", headers={"Origin": "https://evil.example", **pre})
         assert "access-control-allow-origin" not in bad.headers
+
+
+def test_chat_stream_is_not_gzipped(client):
+    """gzip buffered the event stream until the end; the chat must stream uncompressed (other API calls stay gzipped)."""
+    r = client.post(
+        "/api/agent/chat",
+        json={
+            "provider": "openai",
+            "model": "m",
+            "base_url": "http://localhost:1/v1",
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+        headers={"Accept-Encoding": "gzip"},
+    )
+    assert "gzip" not in r.headers.get("content-encoding", "")
+    big = client.get("/api/agent/tools", headers={"Accept-Encoding": "gzip"})  # well over the 1 KB threshold
+    assert big.headers.get("content-encoding") == "gzip"

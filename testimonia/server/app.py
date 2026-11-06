@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from .. import __version__, config
 from .agent import router as agent_router
@@ -17,11 +18,29 @@ from .store import Store
 
 DIST = config.WEB_DIR / "dist"
 
+#: Responses streamed as server-sent events. Starlette's gzip holds compressed output back until its buffer
+#: fills, which turned the assistant's live answer into one burst at the very end; these are sent uncompressed.
+STREAMED_PATHS = ("/api/agent/chat",)
+
+
+class GZipExceptStreams:
+    """GZip for everything except the live event streams."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.plain = app
+        self.gzip = GZipMiddleware(app, minimum_size=1024)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http" and scope["path"].startswith(STREAMED_PATHS):
+            await self.plain(scope, receive, send)
+        else:
+            await self.gzip(scope, receive, send)
+
 
 def create_app(db_path: Path | None = None, dist: Path = DIST, agent_allow_private: bool = False) -> FastAPI:
     app = FastAPI(title="Testimonia", version=__version__, docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.state.store = Store(db_path or config.CORE_DB)
-    app.add_middleware(GZipMiddleware, minimum_size=1024)
+    app.add_middleware(GZipExceptStreams)
     # a front-end hosted elsewhere (e.g. Firebase Hosting) may call this API: TESTIMONIA_CORS_ORIGINS=https://a,https://b
     origins = [o.strip() for o in (config.setting("CORS_ORIGINS", "") or "").split(",") if o.strip()]
     if origins:
