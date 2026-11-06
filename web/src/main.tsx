@@ -29,17 +29,21 @@ import "./layout.css";
 import "./settings.css";
 import "./timeline.css";
 import "./story.css";
+import "./ask.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { TopBar } from "./components/TopBar";
+import { AskPage } from "./pages/AskPage";
 import { BookPage } from "./pages/BookPage";
+import { NotesPage } from "./pages/NotesPage";
 import { LibraryPage } from "./pages/LibraryPage";
 import { ReadPage } from "./pages/ReadPage";
 import { SearchPage } from "./pages/SearchPage";
 import { WorkPage } from "./pages/WorkPage";
+import { NotesProvider } from "./notes";
 import { SettingsProvider } from "./settings";
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
@@ -54,6 +58,8 @@ function App() {
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/library/:edition/:ord" element={<WorkPage />} />
         <Route path="/book/:book" element={<BookPage />} />
+        <Route path="/ask" element={<AskPage />} />
+        <Route path="/notes" element={<NotesPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -68,7 +74,9 @@ createRoot(root).render(
     <QueryClientProvider client={queryClient}>
       <SettingsProvider>
         <BrowserRouter>
-          <App />
+          <NotesProvider>
+            <App />
+          </NotesProvider>
         </BrowserRouter>
       </SettingsProvider>
     </QueryClientProvider>

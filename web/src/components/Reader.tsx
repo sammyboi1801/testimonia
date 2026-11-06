@@ -5,6 +5,7 @@ import { MODES, useSettings } from "../settings";
 import type { Book, Chapter, ChapterVerse, Edition, VerseMarks, Word } from "../types";
 import { TextWithNotes } from "./Footnotes";
 import { Marks } from "./Marks";
+import { useNotes, type Note } from "../notes";
 import { ReadAloud } from "./ReadAloud";
 import { speechLang } from "../speech";
 import { PassagePicker } from "./PassagePicker";
@@ -55,7 +56,8 @@ export function Reader({ data, books, editions, selected, onSelect, onWord }: Pr
     el?.scrollIntoView({ block: "center" });
   }, [selected, data.book, data.chapter]);
 
-  const ctx: RowCtx = { byId, wordEd, isNT, onSelect, onWord, selected, footnotes: settings.display.footnotes, speaking };
+  const { notes } = useNotes();
+  const ctx: RowCtx = { byId, wordEd, isNT, onSelect, onWord, selected, footnotes: settings.display.footnotes, speaking, notes };
 
   return (
     <div className="reader" ref={container}>
@@ -112,6 +114,7 @@ interface RowCtx {
   onWord: (strong: string) => void;
   footnotes: boolean;
   speaking: string | null;
+  notes: Record<string, Note>;
 }
 
 function NavArrow({ to, dir }: { to: Chapter["prev"]; dir: string }) {
@@ -145,13 +148,13 @@ function VerseRow({ v, mode, textEds, primary, ctx }: { v: ChapterVerse; mode: s
   const cols = mode === "parallel" ? textEds.length : mode === "original" ? 2 : 1;
   return (
     <div
-      className={`verse-row mode-${mode}${isSel ? " selected" : ""}${v.osis === ctx.speaking ? " speaking" : ""}`}
+      className={`verse-row mode-${mode}${isSel ? " selected" : ""}${v.osis === ctx.speaking ? " speaking" : ""}${ctx.notes[v.osis]?.highlight ? ` hl-${ctx.notes[v.osis]!.highlight}` : ""}`}
       data-osis={v.osis}
       id={`v${v.verse}`}
       style={{ ["--cols" as string]: String(Math.max(cols, 1)) }}
       onClick={() => ctx.onSelect(v.osis)}
     >
-      <Gutter marks={v.marks} verse={v.verse} />
+      <Gutter marks={v.marks} verse={v.verse} note={ctx.notes[v.osis]} />
       {mode === "parallel" && textEds.map((id) => <TextCell key={id} v={v} id={id} ctx={ctx} />)}
       {mode === "original" && (
         <>
@@ -173,7 +176,7 @@ function VerseRow({ v, mode, textEds, primary, ctx }: { v: ChapterVerse; mode: s
   );
 }
 
-function Gutter({ marks, verse }: { marks?: VerseMarks; verse: number }) {
+function Gutter({ marks, verse, note }: { marks?: VerseMarks; verse: number; note?: Note }) {
   const m = marks ?? {};
   const tips: string[] = [];
   if (m.variants) tips.push(`${m.variants} textual variant${m.variants > 1 ? "s" : ""}${m.major_variants ? ` (${m.major_variants} significant)` : ""}`);
@@ -184,6 +187,11 @@ function Gutter({ marks, verse }: { marks?: VerseMarks; verse: number }) {
       <span className="vnum">{verse === 0 ? "title" : verse}</span>
       <span className="marks">
         <Marks marks={marks} />
+        {note?.text && (
+          <i className="mk mk-note" title={`My note: ${note.text.slice(0, 120)}`}>
+            ✎
+          </i>
+        )}
       </span>
     </span>
   );
@@ -317,7 +325,7 @@ function ReadingView({ data, edition, headings, ctx }: { data: Chapter; edition?
               return (
                 <span
                   key={v.vkey}
-                  className={`rv${v.osis === ctx.selected ? " selected" : ""}${v.osis === ctx.speaking ? " speaking" : ""}${v.red_letter && ed?.language === "eng" ? " red" : ""}`}
+                  className={`rv${v.osis === ctx.selected ? " selected" : ""}${v.osis === ctx.speaking ? " speaking" : ""}${v.red_letter && ed?.language === "eng" ? " red" : ""}${ctx.notes[v.osis]?.highlight ? ` hl-${ctx.notes[v.osis]!.highlight}` : ""}`}
                   data-osis={v.osis}
                   onClick={() => ctx.onSelect(v.osis)}
                 >

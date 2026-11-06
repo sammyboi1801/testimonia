@@ -48,6 +48,8 @@ export function TopBar() {
         <NavLink to="/read/John/1">Bible</NavLink>
         <NavLink to="/library">Library</NavLink>
         <NavLink to="/search">Search</NavLink>
+        <NavLink to="/notes">Notes</NavLink>
+        <NavLink to="/ask">Ask</NavLink>
       </nav>
       <div className="topbar-tools">
         <button

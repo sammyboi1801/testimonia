@@ -6,6 +6,7 @@ import { useSettings, type FathersScope, type MarkKind, type PanelTab } from "..
 import type { Book, VerseGuide } from "../types";
 import { NOTE_KIND } from "./Footnotes";
 import { Html } from "./Html";
+import { VerseNote } from "./VerseNote";
 import { Mark } from "./Marks";
 import { Speak } from "./Speak";
 import { WordStudy } from "./WordStudy";
@@ -72,6 +73,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord }: Props & { g:
           {period && <span className="muted"> — {period}</span>}
         </div>
       </header>
+      <VerseNote osis={g.verse.osis} />
 
       {settings.panel.glance && (
       <div className="glance">
@@ -97,6 +99,10 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord }: Props & { g:
         </GlanceRow>
       </div>
       )}
+
+      <Link className="ask-about" to={`/ask?about=${encodeURIComponent(g.verse.osis)}`}>
+        Ask the assistant about {osisLabel(g.verse.osis, books)} →
+      </Link>
 
       <nav className="tabs panel-tabs" role="tablist">
         {TABS.map((t) => (
