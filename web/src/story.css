@@ -169,3 +169,6 @@
 .audio-voice { max-width: 170px; }
 .verse-row.speaking { background: color-mix(in srgb, var(--accent) 12%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
 .rv.speaking { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.story-event { cursor: pointer; }
+.story-title { display: inline-flex; align-items: baseline; gap: 2px; }
+.story-event:hover .story-title strong { text-decoration: underline; text-underline-offset: 4px; }

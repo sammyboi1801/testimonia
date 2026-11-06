@@ -87,14 +87,20 @@ export function StoryView() {
               {c.events.map((e) => (
                 <li key={e.id} className={`${e.major ? "major" : ""} ev-${e.kind}`}>
                   <span className="story-year">{e.circa ? "c. " : ""}{formatYear(e.start)}</span>
-                  <div className="story-event-row">
-                    <button className="story-event" onClick={() => setOpen({ kind: "event", e })}>
+                  <div
+                    className="story-event"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setOpen({ kind: "event", e })}
+                    onKeyDown={(k) => (k.key === "Enter" || k.key === " ") && (k.preventDefault(), setOpen({ kind: "event", e }))}
+                  >
+                    <span className="story-title">
                       <strong>{e.title}</strong>
-                      {e.description && <span>{e.description}</span>}
-                    </button>
-                    <WikiHover title={e.wikipedia}>
-                      <span />
-                    </WikiHover>
+                      <WikiHover title={e.wikipedia}>
+                        <span />
+                      </WikiHover>
+                    </span>
+                    {e.description && <span>{e.description}</span>}
                   </div>
                 </li>
               ))}
