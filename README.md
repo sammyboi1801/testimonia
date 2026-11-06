@@ -9,9 +9,25 @@ the Hebrew and Greek texts and their ancient translations, the manuscripts that 
 (from the Dead Sea Scrolls and the early papyri to the great codices), and the writers of the
 first centuries who quoted, explained and debated them.
 
-> **Status: pre-alpha.** The data pipeline builds the foundation database (texts, words,
-> variants, lexicons, cross references, BTB study aids, chronology). The user interface is not
-> built yet. See [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md).
+> **Status: alpha.** The reader, library, timeline, word study, search, notes and the study
+> assistant work; see [What you can do](#what-you-can-do). Data model: [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md).
+
+## What you can do
+
+- **Read** 13 translations side by side, interlinear Greek and Hebrew, with translators' footnotes,
+  red letters and read-aloud (verse by verse, continuing chapter to chapter).
+- **Study a verse**: variants, cross references, the church fathers who quote it, Jewish and Roman
+  writers (Josephus, Tacitus, Suetonius, Pliny, Lucian), Treasury notes and words with lexicons.
+- **Book pages** with an introduction, outline, chronology and how the early church read the book.
+- **Library** of early Christian writings as a bookshelf, an interactive timeline (milestones such as
+  the fall of the Second Temple; Ctrl+scroll zooms) or a century-by-century story, with Wikipedia
+  previews for authors, works, events and books.
+- **Notes and highlights** on verses and on words or phrases, kept in your browser (no account),
+  with export and import.
+- **Ask the assistant** with your own key: Anthropic, OpenAI, Gemini, OpenRouter, Groq, DeepSeek,
+  Mistral, any OpenAI-compatible endpoint, or local models (Ollama, LM Studio). It reads the
+  library through tools and cites what it finds; keys are never stored on the server.
+- Works on phones; colours, fonts, marks and panels are all adjustable in Settings.
 
 ## Build the database
 
@@ -35,6 +51,9 @@ python -m testimonia serve --open                 # http://127.0.0.1:8765
 
 For interface development, run `python -m testimonia serve` and, in `web/`, `npm run dev`
 (Vite on http://localhost:5173 with hot reload, proxying `/api` to the Python server).
+
+To share it publicly for free (Hugging Face Space, optionally with a Firebase or Vercel front end) or
+to run it in Docker, see [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 What the foundation build contains today:
 
@@ -68,7 +87,7 @@ What the foundation build contains today:
 | Library | apostolic fathers, apologists, church fathers, NT apocrypha, OT pseudepigrapha, Qumran texts — with every scripture citation linked |
 | Manuscripts | NT papyri & codices, LXX codices, Masoretic codices, Dead Sea Scrolls — dates, contents, transcriptions |
 | Context | timeline · atlas · kings & rulers · canon-history comparison · people/places/events pages |
-| Personal | notes (Obsidian-compatible markdown) · your own translation · highlights · reading plans |
+| Personal | Obsidian-compatible export · your own translation · reading plans |
 
 ## Data
 

@@ -1,0 +1,13 @@
+.git
+**/__pycache__
+**/*.pyc
+.venv
+.mypy_cache
+.ruff_cache
+.pytest_cache
+web/node_modules
+web/dist
+*.db
+*.db-*
+tests
+docs/screenshots

@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -21,6 +22,15 @@ def create_app(db_path: Path | None = None, dist: Path = DIST, agent_allow_priva
     app = FastAPI(title="Testimonia", version=__version__, docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.state.store = Store(db_path or config.CORE_DB)
     app.add_middleware(GZipMiddleware, minimum_size=1024)
+    # a front-end hosted elsewhere (e.g. Firebase Hosting) may call this API: TESTIMONIA_CORS_ORIGINS=https://a,https://b
+    origins = [o.strip() for o in (config.setting("CORS_ORIGINS", "") or "").split(",") if o.strip()]
+    if origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_methods=["GET", "POST"],
+            allow_headers=["Content-Type", "X-Api-Key"],
+        )
     app.include_router(router)
     app.include_router(agent_router)
     # the assistant may call private/local model servers only when this server itself is private (local use)

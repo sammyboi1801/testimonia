@@ -1,6 +1,7 @@
 // Running a question: through the Testimonia server (cloud providers) or directly from the browser (models on
 // the user's own machine, which a hosted server cannot reach). Both report the same events.
 
+import { apiUrl } from "../api";
 import type { AiConfig } from "./providers";
 
 export type AgentEvent =
@@ -46,7 +47,7 @@ async function errorText(res: Response): Promise<string> {
 
 /** Cloud providers: the Testimonia server runs the loop with the library tools; the key is used for this call only. */
 export async function runOnServer(c: AiConfig, key: string, turns: Turn[], context: string | null, on: (e: AgentEvent) => void, signal: AbortSignal) {
-  const res = await fetch("/api/agent/chat", {
+  const res = await fetch(apiUrl("/api/agent/chat"), {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(key ? { "X-Api-Key": key } : {}) },
     body: JSON.stringify({ provider: c.protocol, model: c.model, base_url: c.protocol === "openai" ? c.baseUrl : null, messages: turns, context }),
@@ -78,7 +79,7 @@ interface ToolSpec {
 
 /** Local models: the browser calls the model directly and the Testimonia server only runs the study tools. */
 export async function runInBrowser(c: AiConfig, key: string, turns: Turn[], context: string | null, on: (e: AgentEvent) => void, signal: AbortSignal) {
-  const spec = (await (await fetch("/api/agent/tools", { signal })).json()) as { system: string; tools: ToolSpec[] };
+  const spec = (await (await fetch(apiUrl("/api/agent/tools"), { signal })).json()) as { system: string; tools: ToolSpec[] };
   const tools = spec.tools.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.parameters } }));
   const system = spec.system + (context ? `\n\nThe reader currently has open: ${context}.` : "");
   const messages: Record<string, unknown>[] = [{ role: "system", content: system }, ...turns];
@@ -158,7 +159,7 @@ export async function runInBrowser(c: AiConfig, key: string, turns: Turn[], cont
       on({ type: "tool", name: p.name, summary: `${p.name.replaceAll("_", " ")}: ${first ?? ""}` });
       let content = "Error: arguments were not valid JSON";
       if (args !== null) {
-        const r = await fetch("/api/agent/tool", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: p.name, input: args }), signal });
+        const r = await fetch(apiUrl("/api/agent/tool"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: p.name, input: args }), signal });
         content = r.ok ? ((await r.json()) as { content: string }).content : `Error: ${await errorText(r)}`;
       }
       messages.push({ role: "tool", tool_call_id: p.id || `call_${i}`, content });

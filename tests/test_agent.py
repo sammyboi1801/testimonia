@@ -191,3 +191,13 @@ async def test_openai_compatible_without_tool_support(store, monkeypatch):
     ]
     assert [e["type"] for e in events] == ["notice", "text", "done"]
     assert calls["n"] == 2
+
+
+def test_cors_only_for_listed_front_ends(built, monkeypatch):
+    monkeypatch.setenv("TESTIMONIA_CORS_ORIGINS", "https://testimonia.web.app")
+    with TestClient(create_app(built, dist=built.parent / "no-dist")) as c:
+        pre = {"Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "content-type,x-api-key"}
+        ok = c.options("/api/agent/chat", headers={"Origin": "https://testimonia.web.app", **pre})
+        assert ok.headers["access-control-allow-origin"] == "https://testimonia.web.app"
+        bad = c.options("/api/agent/chat", headers={"Origin": "https://evil.example", **pre})
+        assert "access-control-allow-origin" not in bad.headers

@@ -10,8 +10,12 @@ export class ApiError extends Error {
   }
 }
 
+/** Where the API lives: same origin by default, or a separate server (e.g. Cloud Run behind Firebase Hosting). */
+export const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/+$/, "") ?? "";
+export const apiUrl = (path: string) => `${API_BASE}${path}`;
+
 export async function getJson<T>(path: string, params?: Record<string, string | number | undefined>): Promise<T> {
-  const url = new URL(path, window.location.origin);
+  const url = new URL(apiUrl(path), window.location.origin);
   for (const [k, v] of Object.entries(params ?? {})) if (v !== undefined && v !== "") url.searchParams.set(k, String(v));
   const res = await fetch(url);
   if (!res.ok) {
