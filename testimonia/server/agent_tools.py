@@ -22,6 +22,7 @@ from fastapi import HTTPException
 from ..morphology import FEATURES
 from ..refs import parse_refs
 from . import api, reading, study, words
+from . import geography as geo_api
 from . import manuscripts as ms_api
 from .store import Store
 
@@ -280,6 +281,20 @@ TOOLS: list[dict[str, Any]] = [
             "type": "object",
             "properties": {"query": {"type": "string"}},
             "required": ["query"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "bible_people_places",
+        "description": (
+            "A person, place or event in the Bible (from Theographic and OpenBible.info): who or what it is, family "
+            "(people), location and nearby places (places), date and participants (events), and every verse that "
+            "names it. Input: a name, e.g. 'Sosthenes', 'Corinth', 'Shechem'."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"name": {"type": "string"}},
+            "required": ["name"],
             "additionalProperties": False,
         },
     },
@@ -765,6 +780,67 @@ def manuscripts(store: Store, query: str) -> str:
     return "\n".join(out)
 
 
+def _verse_refs(v: dict[str, Any]) -> str:
+    return "; ".join(f"{b['name']} {', '.join(b['refs'][:25])}" for b in (v or {}).get("books", []))
+
+
+def bible_people_places(store: Store, name: str) -> str:
+    """Biblical people, places and events by name."""
+    like = name.strip()
+    people = store.all(
+        "SELECT id, name FROM person WHERE kind = 'biblical' AND name LIKE ? ORDER BY length(name) LIMIT 4",
+        (like + "%",),
+    )
+    places = store.all("SELECT id, name FROM place WHERE name LIKE ? ORDER BY length(name) LIMIT 3", (like + "%",))
+    events = store.all("SELECT id, title FROM event WHERE title LIKE ? LIMIT 3", ("%" + like + "%",))
+    if not (people or places or events):
+        return f"No biblical person, place or event named {name!r}. Try search_texts or the wikipedia tool."
+    out: list[str] = []
+    for p in people[:2]:
+        d = geo_api.person(_req(store), p["id"], preview="bsb")
+        x = d["person"]
+        out.append(f"# Person: {x['name']} — /person/{x['id']}")
+        if x.get("summary"):
+            out.append(str(x["summary"]))
+        family = "; ".join(
+            f"{rel}: {', '.join(m['name'] for m in members)}"
+            for rel, members in (d.get("family") or {}).items()
+            if members
+        )
+        if family:
+            out.append(f"Family — {family}")
+        if d.get("events"):
+            out.append(
+                "Events: "
+                + "; ".join(f"{e['title']} ({e.get('year') or '?'}, {e.get('place') or ''})" for e in d["events"][:10])
+            )
+        if d.get("places"):
+            out.append("Places: " + ", ".join(pl["name"] for pl in d["places"][:15]))
+        out.append(f"Verses ({d['verses'].get('count')}): {_verse_refs(d['verses'])}")
+    for p in places[:2]:
+        d = geo_api.place(_req(store), p["id"], preview="bsb")
+        x = d["place"]
+        out.append(f"\n# Place: {x['name']} ({x.get('kind')}) — /place/{x['id']} — atlas: /atlas?place={x['id']}")
+        if x.get("summary"):
+            out.append(str(x["summary"]))
+        if x.get("lat") is not None:
+            out.append(
+                f"Location: {x['lat']:.3f}, {x['lon']:.3f} ({x.get('precision') or 'approximate'})"
+                + (f"; today {x['modern_name']}" if x.get("modern_name") else "")
+            )
+        if d.get("people"):
+            out.append("People there: " + ", ".join(pp["name"] for pp in d["people"][:15]))
+        if d.get("nearby"):
+            out.append("Nearby: " + ", ".join(f"{n['name']} ({n['km']} km)" for n in d["nearby"][:8]))
+        out.append(f"Verses ({d['verses'].get('count')}): {_verse_refs(d['verses'])}")
+    for e in events[:2]:
+        d = geo_api.event(_req(store), e["id"], preview="bsb")
+        out.append(
+            f"\n# Event: {json.dumps({k: v for k, v in d.items() if k not in ('verses',)}, ensure_ascii=False, default=str)[:1500]}"
+        )
+    return "\n".join(out)
+
+
 def wikipedia(store: Store, query: str, section: str | None = None) -> str:
     """English Wikipedia, fetched live (nothing stored): the article's whole introduction and its list of sections,
     or one section in full when `section` is given, so any part of the article can be read."""
@@ -969,6 +1045,7 @@ FUNCTIONS: dict[str, Callable[..., str]] = {
     "gospel_parallels": gospel_parallels,
     "word_meanings": word_meanings,
     "manuscripts": manuscripts,
+    "bible_people_places": bible_people_places,
     "wikipedia": wikipedia,
 }
 
