@@ -1,6 +1,9 @@
 /* Phones and narrow windows. Loaded last, so these rules win. */
 
 .menu-btn, .work-mobile-nav { display: none; }
+/* desktop: links and tools sit in one row; on phones they fold into the ☰ menu */
+.topbar-menu { display: flex; align-items: center; gap: 16px; margin-left: auto; min-width: 0; }
+.topbar-menu .topbar-tools { margin-left: 0; }
 
 @media (max-width: 760px) {
   html, body { overflow-x: hidden; }

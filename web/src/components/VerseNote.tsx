@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { HIGHLIGHTS, useNotes } from "../notes";
+import { openAsk } from "./AskDrawer";
 
-/** My note on a verse: a highlight colour and free text, saved in this browser as you type. */
-export function VerseNote({ osis }: { osis: string }) {
+/** One slim row of verse actions — highlight colours, my note, ask the assistant — with the note editor on demand. */
+export function VerseNote({ osis, label }: { osis: string; label: string }) {
   const { get, set } = useNotes();
   const note = get(osis);
   const [text, setText] = useState(note?.text ?? "");
@@ -24,10 +25,9 @@ export function VerseNote({ osis }: { osis: string }) {
   }
 
   return (
-    <section className="my-note">
-      <div className="my-note-head">
-        <span className="about-label">My note</span>
-        <span className="hl-swatches" role="radiogroup" aria-label="Highlight">
+    <section className="verse-actions">
+      <div className="va-row">
+        <span className="hl-swatches" role="radiogroup" aria-label="Highlight this verse">
           {HIGHLIGHTS.map((h) => (
             <button
               key={h.id}
@@ -39,14 +39,15 @@ export function VerseNote({ osis }: { osis: string }) {
             />
           ))}
         </span>
-        {!open && (
-          <button className="link-btn" onClick={() => setOpen(true)}>
-            + Write a note
-          </button>
-        )}
+        <button className={`va-btn${open ? " on" : ""}`} onClick={() => setOpen(!open)} title="My note on this verse">
+          ✎ {note?.text ? "My note" : "Note"}
+        </button>
+        <button className="va-btn va-ask" onClick={() => openAsk(label)} title="Ask the study assistant about this verse">
+          ✦ Ask AI
+        </button>
       </div>
       {open && (
-        <>
+        <div className="va-note">
           <textarea
             className="my-note-text"
             value={text}
@@ -60,7 +61,7 @@ export function VerseNote({ osis }: { osis: string }) {
             <span>Saved in this browser only</span>
             <Link to="/notes">All my notes →</Link>
           </div>
-        </>
+        </div>
       )}
     </section>
   );

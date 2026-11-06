@@ -13,15 +13,10 @@ export const NOTE_KIND: Record<string, string> = {
 
 const letter = (i: number) => (i < 26 ? String.fromCharCode(97 + i) : String(i + 1));
 
-/**
- * Verse text with its translators' footnotes as small superscript letters placed after the words they belong
- * to (falling back to the end of the verse when the anchor is not found). Hovering a letter shows the note.
- */
-export function TextWithNotes({ text, notes }: { text: string; notes?: Footnote[] }) {
-  if (!notes?.length) return <>{text}</>;
-  // find each anchor in order, so repeated words attach to the right occurrence
+/** Where each footnote letter goes: just after its anchor words (and after closing punctuation). */
+export function placeNotes(text: string, notes: Footnote[]): { at: number; note: Footnote; i: number }[] {
   const placed: { at: number; note: Footnote; i: number }[] = [];
-  let from = 0;
+  let from = 0; // find anchors in order, so repeated words attach to the right occurrence
   notes.forEach((note, i) => {
     const anchor = (note.anchor ?? "").trim();
     let at = anchor ? text.indexOf(anchor, from) : 0;
@@ -34,22 +29,48 @@ export function TextWithNotes({ text, notes }: { text: string; notes?: Footnote[
     } else if (anchor) {
       at += anchor.length;
     }
-    placed.push({ at, note, i });
+    // keep a closing punctuation mark with its word: "time;ᵃ" not "timeᵃ;"
+    let end = at;
+    while (end < text.length && /[.,;:!?’”)\]]/.test(text[end]!)) end++;
+    placed.push({ at: end, note, i });
     from = Math.max(from, at);
   });
-  placed.sort((a, b) => a.at - b.at || a.i - b.i);
-  const out: ReactNode[] = [];
-  let pos = 0;
-  for (const p of placed) {
-    // keep a closing punctuation mark with its word: "time;ᵃ" not "timeᵃ;"
-    let at = p.at;
-    while (at < text.length && /[.,;:!?’”)\]]/.test(text[at]!)) at++;
-    if (at > pos) out.push(text.slice(pos, at));
-    out.push(<NoteMark key={p.i} note={p.note} label={letter(p.i)} />);
-    pos = Math.max(pos, at);
+  return placed.sort((a, b) => a.at - b.at || a.i - b.i);
+}
+
+/**
+ * Verse text with the translators' footnotes as small superscript letters after the words they belong to
+ * (hover a letter to read the note), and the reader's own phrase highlights as coloured marks.
+ */
+export function TextWithNotes({ text, notes, marks }: { text: string; notes?: Footnote[]; marks?: TextMark[] }) {
+  if (!notes?.length && !marks?.length) return <>{text}</>;
+  const placed = notes?.length ? placeNotes(text, notes) : [];
+  const cuts = new Set<number>([0, text.length]);
+  for (const p of placed) cuts.add(p.at);
+  for (const m of marks ?? []) {
+    cuts.add(Math.max(0, Math.min(text.length, m.start)));
+    cuts.add(Math.max(0, Math.min(text.length, m.end)));
   }
-  out.push(text.slice(pos));
+  const points = [...cuts].sort((a, b) => a - b);
+  const out: ReactNode[] = [];
+  let k = 0;
+  for (let j = 0; j < points.length; j++) {
+    const at = points[j]!;
+    for (const p of placed) if (p.at === at) out.push(<NoteMark key={`n${p.i}`} note={p.note} label={letter(p.i)} />);
+    const next = points[j + 1];
+    if (next === undefined || next <= at) continue;
+    const piece = text.slice(at, next);
+    const mark = (marks ?? []).find((m) => m.start <= at && m.end >= next);
+    out.push(mark ? <mark key={`m${k++}`} className={`phrase hl-${mark.color}`}>{piece}</mark> : piece);
+  }
   return <>{out}</>;
+}
+
+/** A highlighted range of verse text (character offsets). */
+export interface TextMark {
+  start: number;
+  end: number;
+  color: string;
 }
 
 function NoteMark({ note, label }: { note: Footnote; label: string }) {

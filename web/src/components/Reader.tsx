@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { isRtl, langClass } from "../lib";
 import { MODES, useSettings } from "../settings";
@@ -7,6 +7,7 @@ import { TextWithNotes } from "./Footnotes";
 import { Marks } from "./Marks";
 import { useNotes, type Note } from "../notes";
 import { ReadAloud } from "./ReadAloud";
+import { SelectionToolbar } from "./SelectionToolbar";
 import { speechLang } from "../speech";
 import { PassagePicker } from "./PassagePicker";
 import { Speak } from "./Speak";
@@ -33,6 +34,7 @@ export function Reader({ data, books, editions, selected, onSelect, onWord }: Pr
   const container = useRef<HTMLDivElement>(null);
   const mode = settings.mode;
   const [speaking, setSpeaking] = useState<string | null>(null);
+  const verseLabel = useCallback((osis: string) => osis.replace(/^([1-4]?[A-Za-z]+)\.(\d+)\.(\d+)$/, `${data.name} $2:$3`), [data.name]);
   const listenEd = primary ? byId.get(primary) : undefined;
   const listenVerses = useMemo(
     () =>
@@ -61,6 +63,7 @@ export function Reader({ data, books, editions, selected, onSelect, onWord }: Pr
 
   return (
     <div className="reader" ref={container}>
+      <SelectionToolbar root={container} verseLabel={verseLabel} />
       <div className="reader-head">
         <div className="chapter-title">
           <NavArrow to={data.prev} dir="‹" />
@@ -152,7 +155,7 @@ function VerseRow({ v, mode, textEds, primary, ctx }: { v: ChapterVerse; mode: s
       data-osis={v.osis}
       id={`v${v.verse}`}
       style={{ ["--cols" as string]: String(Math.max(cols, 1)) }}
-      onClick={() => ctx.onSelect(v.osis)}
+      onClick={() => window.getSelection()?.isCollapsed !== false && ctx.onSelect(v.osis)}
     >
       <Gutter marks={v.marks} verse={v.verse} note={ctx.notes[v.osis]} />
       {mode === "parallel" && textEds.map((id) => <TextCell key={id} v={v} id={id} ctx={ctx} />)}
@@ -210,8 +213,8 @@ function TextCell({ v, id, ctx }: { v: ChapterVerse; id: string; ctx: RowCtx }) 
     >
       {t ? (
         <>
-          <span className="vtext">
-            <TextWithNotes text={t.text} notes={ctx.footnotes ? t.notes : undefined} />
+          <span className="vtext" data-osis={v.osis} data-ed={id} data-text={t.text}>
+            <TextWithNotes text={t.text} notes={ctx.footnotes ? t.notes : undefined} marks={ctx.notes[v.osis]?.marks?.filter((m) => m.ed === id)} />
           </span>
           {t.native && (
             <span className="native" title={`Numbered ${t.native.replace(/^[^.]+\./, "").replace(".", ":")} in ${ed?.abbrev ?? id}`}>
@@ -328,13 +331,15 @@ function ReadingView({ data, edition, headings, ctx }: { data: Chapter; edition?
                   key={v.vkey}
                   className={`rv${v.osis === ctx.selected ? " selected" : ""}${v.osis === ctx.speaking ? " speaking" : ""}${v.red_letter && ed?.language === "eng" ? " red" : ""}${ctx.notes[v.osis]?.highlight ? ` hl-${ctx.notes[v.osis]!.highlight}` : ""}`}
                   data-osis={v.osis}
-                  onClick={() => ctx.onSelect(v.osis)}
+                  onClick={() => window.getSelection()?.isCollapsed !== false && ctx.onSelect(v.osis)}
                 >
                   <sup className="vnum">
                     <span className="n">{v.verse === 0 ? "" : v.verse}</span>
                     <Marks marks={v.marks} />
                   </sup>
-                  <TextWithNotes text={t.text} notes={ctx.footnotes ? t.notes : undefined} />{" "}
+                  <span className="vtext" data-osis={v.osis} data-ed={edition} data-text={t.text}>
+                    <TextWithNotes text={t.text} notes={ctx.footnotes ? t.notes : undefined} marks={ctx.notes[v.osis]?.marks?.filter((m) => m.ed === edition)} />
+                  </span>{" "}
                 </span>
               );
             })}

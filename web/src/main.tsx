@@ -36,6 +36,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { AskDrawer } from "./components/AskDrawer";
 import { TopBar } from "./components/TopBar";
 import { AskPage } from "./pages/AskPage";
 import { BookPage } from "./pages/BookPage";
@@ -64,6 +65,7 @@ function App() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <AskDrawer />
     </div>
   );
 }
