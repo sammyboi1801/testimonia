@@ -28,6 +28,8 @@ jobs:
         run: |
           ruff check .
           ruff format --check .
+      - name: Credits up to date
+        run: python -m testimonia credits --check
       - name: Type-check
         run: mypy testimonia
       - name: Test

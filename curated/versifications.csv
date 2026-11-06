@@ -1,0 +1,6 @@
+id,name,description
+eng,English (KJV) — hub,"Hub numbering of Testimonia: KJV, with the Apocrypha as numbered in KJVA; Psalm titles as verse 0."
+heb,Hebrew (Masoretic),"Leningrad Codex / BHS numbering: Psalm titles counted as verses, Malachi 3:19–24, Joel 4."
+lxx,Greek (Septuagint),"Rahlfs/Brenton numbering: Psalms 9–147 offset, lettered subverses, Greek Esther additions inline."
+vul,Latin (Vulgate),"Clementine Vulgate numbering: Greek-style Psalms, Esther additions as chapters 10:4–16, Daniel 13–14."
+nrsv,NRSV,"English variant used by TAGNT: 3 John 1:15, Revelation 12:18, 2 Corinthians 13:12–14."

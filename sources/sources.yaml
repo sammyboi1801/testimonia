@@ -16,7 +16,11 @@ sources:
   - id: btb
     name: Bruhman Translator's Bible
     url: https://github.com/revjude/BTB
-    download: git clone (local vault D:\Obsidian\BTB)
+    download: git clone (or a local vault via the BTB setting)
+    fetch:
+      - local: BTB          # TESTIMONIA_BTB or BTB = '...' in config.toml
+      - git: https://github.com/revjude/BTB
+        target: btb
     license: CC-BY-SA-4.0
     attribution: "Bruhman Translator's Bible (BTB), https://github.com/revjude/BTB, CC BY-SA 4.0"
     share_alike: true
@@ -31,7 +35,11 @@ sources:
   - id: stepbible-tagnt
     name: STEPBible TAGNT (Translators Amalgamated Greek NT)
     url: https://github.com/STEPBible/STEPBible-Data
-    download: raw files "Translators Amalgamated OT+NT/TAGNT *.txt"
+    download: STEPBible-Data (sparse git clone)
+    fetch:
+      - git: https://github.com/STEPBible/STEPBible-Data
+        target: stepbible-data
+        sparse: ["Translators Amalgamated OT+NT", "Versification", "Lexicons", "Morphology codes", "Proper Nouns"]
     license: CC-BY-4.0
     attribution: "STEPBible.org / Tyndale House Cambridge, CC BY 4.0"
     feeds: [token, lemma, variant_unit, variant_reading, variant_witness]
@@ -41,7 +49,11 @@ sources:
   - id: stepbible-tahot
     name: STEPBible TAHOT (Translators Amalgamated Hebrew OT)
     url: https://github.com/STEPBible/STEPBible-Data
-    download: raw files "Translators Amalgamated OT+NT/TAHOT *.txt"
+    download: STEPBible-Data (sparse git clone)
+    fetch:
+      - git: https://github.com/STEPBible/STEPBible-Data
+        target: stepbible-data
+        sparse: ["Translators Amalgamated OT+NT", "Versification", "Lexicons", "Morphology codes", "Proper Nouns"]
     license: CC-BY-4.0
     attribution: "STEPBible.org / Tyndale House Cambridge, CC BY 4.0"
     feeds: [token, lemma, variant_unit, variant_reading, variant_witness]
@@ -51,7 +63,11 @@ sources:
   - id: stepbible-tvtms
     name: STEPBible TVTMS (versification mapping)
     url: https://github.com/STEPBible/STEPBible-Data
-    download: raw file "Versification/TVTMS*.txt"
+    download: STEPBible-Data (sparse git clone)
+    fetch:
+      - git: https://github.com/STEPBible/STEPBible-Data
+        target: stepbible-data
+        sparse: ["Translators Amalgamated OT+NT", "Versification", "Lexicons", "Morphology codes", "Proper Nouns"]
     license: CC-BY-4.0
     attribution: "STEPBible.org / Tyndale House Cambridge, CC BY 4.0"
     feeds: [versification, verse_map]
@@ -60,7 +76,11 @@ sources:
   - id: stepbible-lexicons
     name: STEPBible TBESG / TBESH lexicons and TIPNR proper names
     url: https://github.com/STEPBible/STEPBible-Data
-    download: raw files "Lexicons/*", "Proper Nouns/TIPNR*"
+    download: STEPBible-Data (sparse git clone)
+    fetch:
+      - git: https://github.com/STEPBible/STEPBible-Data
+        target: stepbible-data
+        sparse: ["Translators Amalgamated OT+NT", "Versification", "Lexicons", "Morphology codes", "Proper Nouns"]
     license: CC-BY-4.0
     attribution: "STEPBible.org / Tyndale House Cambridge, CC BY 4.0"
     feeds: [lemma, lexicon, lexicon_entry, person, place, person_ref, place_ref]
@@ -70,6 +90,10 @@ sources:
     name: Open Scriptures Hebrew Bible (WLC + morphology)
     url: https://github.com/openscriptures/morphhb
     download: git clone
+    fetch:
+      - git: https://github.com/openscriptures/morphhb
+        target: oshb
+        sparse: [wlc]
     license: "PD (WLC text) + CC-BY-4.0 (lemmas/morphology)"
     attribution: "Open Scriptures Hebrew Bible, CC BY 4.0; Westminster Leningrad Codex (public domain)"
     feeds: [edition_verse, token]
@@ -79,24 +103,66 @@ sources:
     name: eBible.org translations (VPL XML)
     url: https://ebible.org/Scriptures/translations.csv
     download: "https://ebible.org/Scriptures/{id}_vpl.zip"
+    fetch:
+      - http: https://ebible.org/Scriptures/translations.csv
+        target: ebible
+      - http: https://ebible.org/Scriptures/eng-kjv_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/eng-web_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/engbsb_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/eng-asv_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/engylt_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/engDBY_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/engwebster_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/englsv_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/enggnv_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/engtnt_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/engDRA_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/eng-Brenton_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/latVUC_vpl.zip
+        target: ebible
+        extract: true
     license: per-translation (PD or CC-BY-SA; filtered at build from translations.csv)
     attribution: "Texts from eBible.org — see per-edition credits"
     feeds: [edition, edition_verse]
     phase: 0
-    editions:   # id: licence, notes
-      eng-kjv:      { license: PD, notes: "KJV + Apocrypha (14 books)" }
-      eng-web:      { license: PD, notes: "World English Bible with deuterocanon" }
-      engbsb:       { license: CC0-1.0, notes: "Berean Standard Bible (CC0 since 2023-04-30)" }
-      eng-asv:      { license: PD }
-      engylt:       { license: PD, notes: "Young's Literal" }
-      engDBY:       { license: PD, notes: "Darby" }
-      engwebster:   { license: PD }
-      englsv:       { license: CC-BY-SA-4.0, notes: "Literal Standard Version, Covenant Press" }
-      enggnv:       { license: PD, notes: "Geneva 1599" }
-      engtnt:       { license: PD, notes: "Tyndale NT" }
-      engDRA:       { license: PD, notes: "Douay-Rheims (Challoner) — Vulgate versification" }
-      eng-Brenton:  { license: PD, notes: "Brenton English Septuagint — LXX versification" }
-      latVUC:       { license: PD, notes: "Clementine Vulgate — Vulgate versification" }
+    editions:   # eBible id → Testimonia edition metadata (licence re-checked against translations.csv at build)
+      eng-kjv:     { id: kjva,     abbrev: KJV,     title: "King James Version with Apocrypha", year: 1769, base: TR/MT, versification: eng, license: PD, notes: "1769 Blayney text incl. 14 Apocrypha books" }
+      eng-web:     { id: web,      abbrev: WEB,     title: "World English Bible (with Deuterocanon)", year: 2020, base: critical/MT, versification: eng, license: PD }
+      engbsb:      { id: bsb,      abbrev: BSB,     title: "Berean Standard Bible", year: 2022, base: critical/MT, versification: eng, license: CC0-1.0 }
+      eng-asv:     { id: asv,      abbrev: ASV,     title: "American Standard Version", year: 1901, base: WH/MT, versification: eng, license: PD }
+      engylt:      { id: ylt,      abbrev: YLT,     title: "Young's Literal Translation", year: 1898, base: TR/MT, versification: eng, license: PD }
+      engDBY:      { id: darby,    abbrev: DBY,     title: "Darby Translation", year: 1890, base: critical/MT, versification: eng, license: PD }
+      engwebster:  { id: webster,  abbrev: WBT,     title: "Webster Bible", year: 1833, base: TR/MT, versification: eng, license: PD }
+      englsv:      { id: lsv,      abbrev: LSV,     title: "Literal Standard Version", year: 2020, base: TR/MT, versification: eng, license: CC-BY-SA-4.0, notes: "© 2020 Covenant Press" }
+      enggnv:      { id: geneva,   abbrev: GNV,     title: "Geneva Bible", year: 1599, base: TR/MT, versification: eng, license: PD }
+      engtnt:      { id: tyndale,  abbrev: TNT,     title: "Tyndale New Testament", year: 1534, base: Erasmus, versification: eng, license: PD }
+      engDRA:      { id: dra,      abbrev: DRA,     title: "Douay-Rheims (Challoner revision)", year: 1752, base: Vulgate, versification: vul, license: PD }
+      eng-Brenton: { id: brenton,  abbrev: LXX-E,   title: "Brenton's English Septuagint", year: 1851, base: LXX, versification: lxx, license: PD }
+      latVUC:      { id: vulgate,  abbrev: VUL,     title: "Clementine Vulgate", year: 1592, base: Vulgate, versification: vul, license: PD, language: lat }
 
   - id: crosswire-pd
     name: CrossWire SWORD modules (public-domain texts only)
@@ -112,6 +178,9 @@ sources:
     name: OpenBible.info cross references
     url: https://www.openbible.info/labs/cross-references/
     download: https://a.openbible.info/data/cross-references.zip
+    fetch:
+      - http: https://a.openbible.info/data/cross-references.zip
+        extract: true
     license: CC-BY-4.0
     attribution: "Cross references from OpenBible.info, CC BY"
     feeds: [crossref]
@@ -443,6 +512,7 @@ sources:
 
   - id: testimonia-curated
     name: Testimonia curated tables (this repository, curated/)
+    kind: curated
     url: (this repo)
     download: (in repo)
     license: CC-BY-SA-4.0

@@ -38,8 +38,8 @@ first centuries who quoted, explained and debated them.
 ## Data
 
 Testimonia only uses **openly licensed data** (public domain, CC0, CC BY, CC BY-SA). The full
-list of datasets, their licences and the tables they feed is in
-[`sources/sources.yaml`](sources/sources.yaml). Licensing rules are in
+list of datasets, with the credit line each licence requires, is in **[CREDITS.md](CREDITS.md)**
+(generated from [`sources/sources.yaml`](sources/sources.yaml), the single source of truth). Licensing rules are in
 [`DATA_LICENSE.md`](DATA_LICENSE.md).
 
 Major sources include the [Bruhman Translator's Bible](https://github.com/revjude/BTB),

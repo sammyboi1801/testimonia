@@ -72,9 +72,7 @@ class Range:
         return f"{name} {self.c1}:{self.v1 or 1}–{self.c2}:{self.v2 if self.v2 != 999 else 'end'}"
 
 
-_OSIS_RE = re.compile(
-    r"^([1-4]?[A-Za-z]+)\.(\d+)(?:\.(\d+))?(?:-(?:([1-4]?[A-Za-z]+)\.)?(\d+)(?:\.(\d+))?)?$"
-)
+_OSIS_RE = re.compile(r"^([1-4]?[A-Za-z]+)\.(\d+)(?:\.(\d+))?(?:-(?:([1-4]?[A-Za-z]+)\.)?(\d+)(?:\.(\d+))?)?$")
 # A book name only counts when a chapter/verse number follows ("Isa 7", "1 Cor. 13:4", "Jude 3").
 _BOOK_RE = re.compile(r"(?<![A-Za-z])(" + alias_regex() + r")\.?(?=\s*\d)", re.I)
 _DASH = "[-–—]"

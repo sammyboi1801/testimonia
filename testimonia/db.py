@@ -37,10 +37,13 @@ def connect(path: Path | str, *, readonly: bool = False) -> sqlite3.Connection:
     """Open a connection with the pragmas Testimonia relies on."""
     path = Path(path)
     if readonly:
-        con = sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True, check_same_thread=False)
+        con = sqlite3.connect(
+            f"file:{path.as_posix()}?mode=ro", uri=True, check_same_thread=False, isolation_level=None
+        )
     else:
         path.parent.mkdir(parents=True, exist_ok=True)
-        con = sqlite3.connect(path, check_same_thread=False)
+        # Autocommit mode: transactions are opened explicitly (BEGIN … COMMIT) where needed, never implicitly.
+        con = sqlite3.connect(path, check_same_thread=False, isolation_level=None)
     con.row_factory = sqlite3.Row
     con.execute("PRAGMA foreign_keys = ON")
     con.execute("PRAGMA temp_store = MEMORY")
@@ -226,9 +229,7 @@ def _split_sql(script: str) -> list[str]:
     for line in script.splitlines(keepends=True):
         buf += line
         if sqlite3.complete_statement(buf):
-            if buf.strip() and not all(
-                ln.strip().startswith("--") or not ln.strip() for ln in buf.splitlines()
-            ):
+            if buf.strip() and not all(ln.strip().startswith("--") or not ln.strip() for ln in buf.splitlines()):
                 statements.append(buf.strip())
             buf = ""
     if buf.strip() and not all(ln.strip().startswith("--") or not ln.strip() for ln in buf.splitlines()):

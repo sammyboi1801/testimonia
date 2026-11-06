@@ -54,9 +54,7 @@ def _callouts(text: str) -> str:
             i += 1
         inner = render("\n".join(body))
         openattr = "" if fold == "-" else " open"
-        out.append(
-            f'<details class="callout callout-{kind}"{openattr}><summary>{title}</summary>{inner}</details>'
-        )
+        out.append(f'<details class="callout callout-{kind}"{openattr}><summary>{title}</summary>{inner}</details>')
         out.append("")
     return "\n".join(out)
 

@@ -30,13 +30,9 @@ def test_core_module_registered(core):
 
 
 def test_entity_attr_requires_json(core):
-    core.execute(
-        "INSERT INTO entity_attr (uri, key, value, source_id) VALUES ('ms:GA:P66', 'ms.leaves', '75', 't')"
-    )
+    core.execute("INSERT INTO entity_attr (uri, key, value, source_id) VALUES ('ms:GA:P66', 'ms.leaves', '75', 't')")
     with pytest.raises(sqlite3.IntegrityError):
-        core.execute(
-            "INSERT INTO entity_attr (uri, key, value, source_id) VALUES ('ms:GA:P66', 'x', 'not json', 't')"
-        )
+        core.execute("INSERT INTO entity_attr (uri, key, value, source_id) VALUES ('ms:GA:P66', 'x', 'not json', 't')")
 
 
 def test_entity_link_machine_proposal(core):
@@ -105,9 +101,7 @@ def test_ai_db(tmp_path):
     with pytest.raises(sqlite3.IntegrityError):  # not a whole number of float32s
         con.execute("INSERT INTO embedding (chunk_id, model_id, vector) VALUES (1, 'm@1', ?)", (b"\x00" * 3,))
     with pytest.raises(sqlite3.IntegrityError):
-        con.execute(
-            "INSERT INTO ai_proposal (kind, src, status, created_at) VALUES ('link', 'a:b', 'whatever', 'now')"
-        )
+        con.execute("INSERT INTO ai_proposal (kind, src, status, created_at) VALUES ('link', 'a:b', 'whatever', 'now')")
     con.commit()
     con.close()
     db.open_ai(path).close()

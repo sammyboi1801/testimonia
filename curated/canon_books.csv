@@ -1,0 +1,419 @@
+tradition_id,book,ord,division,status
+tanakh,Gen,1,Torah,canonical
+tanakh,Exod,2,Torah,canonical
+tanakh,Lev,3,Torah,canonical
+tanakh,Num,4,Torah,canonical
+tanakh,Deut,5,Torah,canonical
+tanakh,Josh,6,Nevi'im Rishonim,canonical
+tanakh,Judg,7,Nevi'im Rishonim,canonical
+tanakh,1Sam,8,Nevi'im Rishonim,canonical
+tanakh,2Sam,9,Nevi'im Rishonim,canonical
+tanakh,1Kgs,10,Nevi'im Rishonim,canonical
+tanakh,2Kgs,11,Nevi'im Rishonim,canonical
+tanakh,Isa,12,Nevi'im Acharonim,canonical
+tanakh,Jer,13,Nevi'im Acharonim,canonical
+tanakh,Ezek,14,Nevi'im Acharonim,canonical
+tanakh,Hos,15,Trei Asar,canonical
+tanakh,Joel,16,Trei Asar,canonical
+tanakh,Amos,17,Trei Asar,canonical
+tanakh,Obad,18,Trei Asar,canonical
+tanakh,Jonah,19,Trei Asar,canonical
+tanakh,Mic,20,Trei Asar,canonical
+tanakh,Nah,21,Trei Asar,canonical
+tanakh,Hab,22,Trei Asar,canonical
+tanakh,Zeph,23,Trei Asar,canonical
+tanakh,Hag,24,Trei Asar,canonical
+tanakh,Zech,25,Trei Asar,canonical
+tanakh,Mal,26,Trei Asar,canonical
+tanakh,Ps,27,Ketuvim — Sifrei Emet,canonical
+tanakh,Prov,28,Ketuvim — Sifrei Emet,canonical
+tanakh,Job,29,Ketuvim — Sifrei Emet,canonical
+tanakh,Song,30,Ketuvim — Megillot,canonical
+tanakh,Ruth,31,Ketuvim — Megillot,canonical
+tanakh,Lam,32,Ketuvim — Megillot,canonical
+tanakh,Eccl,33,Ketuvim — Megillot,canonical
+tanakh,Esth,34,Ketuvim — Megillot,canonical
+tanakh,Dan,35,Ketuvim,canonical
+tanakh,Ezra,36,Ketuvim,canonical
+tanakh,Neh,37,Ketuvim,canonical
+tanakh,1Chr,38,Ketuvim,canonical
+tanakh,2Chr,39,Ketuvim,canonical
+protestant,Gen,1,Pentateuch,canonical
+protestant,Exod,2,Pentateuch,canonical
+protestant,Lev,3,Pentateuch,canonical
+protestant,Num,4,Pentateuch,canonical
+protestant,Deut,5,Pentateuch,canonical
+protestant,Josh,6,Historical Books,canonical
+protestant,Judg,7,Historical Books,canonical
+protestant,Ruth,8,Historical Books,canonical
+protestant,1Sam,9,Historical Books,canonical
+protestant,2Sam,10,Historical Books,canonical
+protestant,1Kgs,11,Historical Books,canonical
+protestant,2Kgs,12,Historical Books,canonical
+protestant,1Chr,13,Historical Books,canonical
+protestant,2Chr,14,Historical Books,canonical
+protestant,Ezra,15,Historical Books,canonical
+protestant,Neh,16,Historical Books,canonical
+protestant,Esth,17,Historical Books,canonical
+protestant,Job,18,Wisdom & Poetry,canonical
+protestant,Ps,19,Wisdom & Poetry,canonical
+protestant,Prov,20,Wisdom & Poetry,canonical
+protestant,Eccl,21,Wisdom & Poetry,canonical
+protestant,Song,22,Wisdom & Poetry,canonical
+protestant,Isa,23,Major Prophets,canonical
+protestant,Jer,24,Major Prophets,canonical
+protestant,Lam,25,Major Prophets,canonical
+protestant,Ezek,26,Major Prophets,canonical
+protestant,Dan,27,Major Prophets,canonical
+protestant,Hos,28,Minor Prophets,canonical
+protestant,Joel,29,Minor Prophets,canonical
+protestant,Amos,30,Minor Prophets,canonical
+protestant,Obad,31,Minor Prophets,canonical
+protestant,Jonah,32,Minor Prophets,canonical
+protestant,Mic,33,Minor Prophets,canonical
+protestant,Nah,34,Minor Prophets,canonical
+protestant,Hab,35,Minor Prophets,canonical
+protestant,Zeph,36,Minor Prophets,canonical
+protestant,Hag,37,Minor Prophets,canonical
+protestant,Zech,38,Minor Prophets,canonical
+protestant,Mal,39,Minor Prophets,canonical
+protestant,Matt,40,Gospels,canonical
+protestant,Mark,41,Gospels,canonical
+protestant,Luke,42,Gospels,canonical
+protestant,John,43,Gospels,canonical
+protestant,Acts,44,Acts,canonical
+protestant,Rom,45,Pauline Epistles,canonical
+protestant,1Cor,46,Pauline Epistles,canonical
+protestant,2Cor,47,Pauline Epistles,canonical
+protestant,Gal,48,Pauline Epistles,canonical
+protestant,Eph,49,Pauline Epistles,canonical
+protestant,Phil,50,Pauline Epistles,canonical
+protestant,Col,51,Pauline Epistles,canonical
+protestant,1Thess,52,Pauline Epistles,canonical
+protestant,2Thess,53,Pauline Epistles,canonical
+protestant,1Tim,54,Pauline Epistles,canonical
+protestant,2Tim,55,Pauline Epistles,canonical
+protestant,Titus,56,Pauline Epistles,canonical
+protestant,Phlm,57,Pauline Epistles,canonical
+protestant,Heb,58,Pauline Epistles,canonical
+protestant,Jas,59,General Epistles,canonical
+protestant,1Pet,60,General Epistles,canonical
+protestant,2Pet,61,General Epistles,canonical
+protestant,1John,62,General Epistles,canonical
+protestant,2John,63,General Epistles,canonical
+protestant,3John,64,General Epistles,canonical
+protestant,Jude,65,General Epistles,canonical
+protestant,Rev,66,Apocalypse,canonical
+protestant,1Esd,67,Apocrypha (KJV 1611 appendix),appendix
+protestant,2Esd,68,Apocrypha (KJV 1611 appendix),appendix
+protestant,Tob,69,Apocrypha (KJV 1611 appendix),appendix
+protestant,Jdt,70,Apocrypha (KJV 1611 appendix),appendix
+protestant,AddEsth,71,Apocrypha (KJV 1611 appendix),appendix
+protestant,Wis,72,Apocrypha (KJV 1611 appendix),appendix
+protestant,Sir,73,Apocrypha (KJV 1611 appendix),appendix
+protestant,Bar,74,Apocrypha (KJV 1611 appendix),appendix
+protestant,EpJer,75,Apocrypha (KJV 1611 appendix),appendix
+protestant,PrAzar,76,Apocrypha (KJV 1611 appendix),appendix
+protestant,Sus,77,Apocrypha (KJV 1611 appendix),appendix
+protestant,Bel,78,Apocrypha (KJV 1611 appendix),appendix
+protestant,PrMan,79,Apocrypha (KJV 1611 appendix),appendix
+protestant,1Macc,80,Apocrypha (KJV 1611 appendix),appendix
+protestant,2Macc,81,Apocrypha (KJV 1611 appendix),appendix
+catholic,Gen,1,Pentateuch,canonical
+catholic,Exod,2,Pentateuch,canonical
+catholic,Lev,3,Pentateuch,canonical
+catholic,Num,4,Pentateuch,canonical
+catholic,Deut,5,Pentateuch,canonical
+catholic,Josh,6,Historical Books,canonical
+catholic,Judg,7,Historical Books,canonical
+catholic,Ruth,8,Historical Books,canonical
+catholic,1Sam,9,Historical Books,canonical
+catholic,2Sam,10,Historical Books,canonical
+catholic,1Kgs,11,Historical Books,canonical
+catholic,2Kgs,12,Historical Books,canonical
+catholic,1Chr,13,Historical Books,canonical
+catholic,2Chr,14,Historical Books,canonical
+catholic,Ezra,15,Historical Books,canonical
+catholic,Neh,16,Historical Books,canonical
+catholic,Tob,17,Historical Books,deuterocanonical
+catholic,Jdt,18,Historical Books,deuterocanonical
+catholic,Esth,19,Historical Books,canonical
+catholic,AddEsth,20,Historical Books,deuterocanonical
+catholic,1Macc,21,Historical Books,deuterocanonical
+catholic,2Macc,22,Historical Books,deuterocanonical
+catholic,Job,23,Wisdom Books,canonical
+catholic,Ps,24,Wisdom Books,canonical
+catholic,Prov,25,Wisdom Books,canonical
+catholic,Eccl,26,Wisdom Books,canonical
+catholic,Song,27,Wisdom Books,canonical
+catholic,Wis,28,Wisdom Books,deuterocanonical
+catholic,Sir,29,Wisdom Books,deuterocanonical
+catholic,Isa,30,Prophetic Books,canonical
+catholic,Jer,31,Prophetic Books,canonical
+catholic,Lam,32,Prophetic Books,canonical
+catholic,Bar,33,Prophetic Books,deuterocanonical
+catholic,EpJer,34,Prophetic Books,deuterocanonical
+catholic,Ezek,35,Prophetic Books,canonical
+catholic,Dan,36,Prophetic Books,canonical
+catholic,PrAzar,37,Prophetic Books,deuterocanonical
+catholic,Sus,38,Prophetic Books,deuterocanonical
+catholic,Bel,39,Prophetic Books,deuterocanonical
+catholic,Hos,40,Prophetic Books,canonical
+catholic,Joel,41,Prophetic Books,canonical
+catholic,Amos,42,Prophetic Books,canonical
+catholic,Obad,43,Prophetic Books,canonical
+catholic,Jonah,44,Prophetic Books,canonical
+catholic,Mic,45,Prophetic Books,canonical
+catholic,Nah,46,Prophetic Books,canonical
+catholic,Hab,47,Prophetic Books,canonical
+catholic,Zeph,48,Prophetic Books,canonical
+catholic,Hag,49,Prophetic Books,canonical
+catholic,Zech,50,Prophetic Books,canonical
+catholic,Mal,51,Prophetic Books,canonical
+catholic,Matt,52,Gospels,canonical
+catholic,Mark,53,Gospels,canonical
+catholic,Luke,54,Gospels,canonical
+catholic,John,55,Gospels,canonical
+catholic,Acts,56,Acts,canonical
+catholic,Rom,57,Pauline Epistles,canonical
+catholic,1Cor,58,Pauline Epistles,canonical
+catholic,2Cor,59,Pauline Epistles,canonical
+catholic,Gal,60,Pauline Epistles,canonical
+catholic,Eph,61,Pauline Epistles,canonical
+catholic,Phil,62,Pauline Epistles,canonical
+catholic,Col,63,Pauline Epistles,canonical
+catholic,1Thess,64,Pauline Epistles,canonical
+catholic,2Thess,65,Pauline Epistles,canonical
+catholic,1Tim,66,Pauline Epistles,canonical
+catholic,2Tim,67,Pauline Epistles,canonical
+catholic,Titus,68,Pauline Epistles,canonical
+catholic,Phlm,69,Pauline Epistles,canonical
+catholic,Heb,70,Pauline Epistles,canonical
+catholic,Jas,71,General Epistles,canonical
+catholic,1Pet,72,General Epistles,canonical
+catholic,2Pet,73,General Epistles,canonical
+catholic,1John,74,General Epistles,canonical
+catholic,2John,75,General Epistles,canonical
+catholic,3John,76,General Epistles,canonical
+catholic,Jude,77,General Epistles,canonical
+catholic,Rev,78,Apocalypse,canonical
+orthodox,Gen,1,Pentateuch,canonical
+orthodox,Exod,2,Pentateuch,canonical
+orthodox,Lev,3,Pentateuch,canonical
+orthodox,Num,4,Pentateuch,canonical
+orthodox,Deut,5,Pentateuch,canonical
+orthodox,Josh,6,Historical Books,canonical
+orthodox,Judg,7,Historical Books,canonical
+orthodox,Ruth,8,Historical Books,canonical
+orthodox,1Sam,9,Historical Books,canonical
+orthodox,2Sam,10,Historical Books,canonical
+orthodox,1Kgs,11,Historical Books,canonical
+orthodox,2Kgs,12,Historical Books,canonical
+orthodox,1Chr,13,Historical Books,canonical
+orthodox,2Chr,14,Historical Books,canonical
+orthodox,1Esd,15,Historical Books,deuterocanonical
+orthodox,Ezra,16,Historical Books,canonical
+orthodox,Neh,17,Historical Books,canonical
+orthodox,Tob,18,Historical Books,deuterocanonical
+orthodox,Jdt,19,Historical Books,deuterocanonical
+orthodox,Esth,20,Historical Books,canonical
+orthodox,AddEsth,21,Historical Books,deuterocanonical
+orthodox,1Macc,22,Historical Books,deuterocanonical
+orthodox,2Macc,23,Historical Books,deuterocanonical
+orthodox,3Macc,24,Historical Books,deuterocanonical
+orthodox,Ps,25,Poetic Books,canonical
+orthodox,Ps151,26,Poetic Books,deuterocanonical
+orthodox,PrMan,27,Poetic Books,deuterocanonical
+orthodox,Job,28,Poetic Books,canonical
+orthodox,Prov,29,Poetic Books,canonical
+orthodox,Eccl,30,Poetic Books,canonical
+orthodox,Song,31,Poetic Books,canonical
+orthodox,Wis,32,Poetic Books,deuterocanonical
+orthodox,Sir,33,Poetic Books,deuterocanonical
+orthodox,Hos,34,Prophetic Books,canonical
+orthodox,Amos,35,Prophetic Books,canonical
+orthodox,Mic,36,Prophetic Books,canonical
+orthodox,Joel,37,Prophetic Books,canonical
+orthodox,Obad,38,Prophetic Books,canonical
+orthodox,Jonah,39,Prophetic Books,canonical
+orthodox,Nah,40,Prophetic Books,canonical
+orthodox,Hab,41,Prophetic Books,canonical
+orthodox,Zeph,42,Prophetic Books,canonical
+orthodox,Hag,43,Prophetic Books,canonical
+orthodox,Zech,44,Prophetic Books,canonical
+orthodox,Mal,45,Prophetic Books,canonical
+orthodox,Isa,46,Prophetic Books,canonical
+orthodox,Jer,47,Prophetic Books,canonical
+orthodox,Bar,48,Prophetic Books,deuterocanonical
+orthodox,Lam,49,Prophetic Books,canonical
+orthodox,EpJer,50,Prophetic Books,deuterocanonical
+orthodox,Ezek,51,Prophetic Books,canonical
+orthodox,Dan,52,Prophetic Books,canonical
+orthodox,PrAzar,53,Prophetic Books,deuterocanonical
+orthodox,Sus,54,Prophetic Books,deuterocanonical
+orthodox,Bel,55,Prophetic Books,deuterocanonical
+orthodox,4Macc,56,Appendix,appendix
+orthodox,Matt,57,Gospels,canonical
+orthodox,Mark,58,Gospels,canonical
+orthodox,Luke,59,Gospels,canonical
+orthodox,John,60,Gospels,canonical
+orthodox,Acts,61,Acts,canonical
+orthodox,Rom,62,Pauline Epistles,canonical
+orthodox,1Cor,63,Pauline Epistles,canonical
+orthodox,2Cor,64,Pauline Epistles,canonical
+orthodox,Gal,65,Pauline Epistles,canonical
+orthodox,Eph,66,Pauline Epistles,canonical
+orthodox,Phil,67,Pauline Epistles,canonical
+orthodox,Col,68,Pauline Epistles,canonical
+orthodox,1Thess,69,Pauline Epistles,canonical
+orthodox,2Thess,70,Pauline Epistles,canonical
+orthodox,1Tim,71,Pauline Epistles,canonical
+orthodox,2Tim,72,Pauline Epistles,canonical
+orthodox,Titus,73,Pauline Epistles,canonical
+orthodox,Phlm,74,Pauline Epistles,canonical
+orthodox,Heb,75,Pauline Epistles,canonical
+orthodox,Jas,76,General Epistles,canonical
+orthodox,1Pet,77,General Epistles,canonical
+orthodox,2Pet,78,General Epistles,canonical
+orthodox,1John,79,General Epistles,canonical
+orthodox,2John,80,General Epistles,canonical
+orthodox,3John,81,General Epistles,canonical
+orthodox,Jude,82,General Epistles,canonical
+orthodox,Rev,83,Apocalypse,canonical
+lxx,Gen,1,Historical Books,canonical
+lxx,Exod,2,Historical Books,canonical
+lxx,Lev,3,Historical Books,canonical
+lxx,Num,4,Historical Books,canonical
+lxx,Deut,5,Historical Books,canonical
+lxx,Josh,6,Historical Books,canonical
+lxx,Judg,7,Historical Books,canonical
+lxx,Ruth,8,Historical Books,canonical
+lxx,1Sam,9,Historical Books,canonical
+lxx,2Sam,10,Historical Books,canonical
+lxx,1Kgs,11,Historical Books,canonical
+lxx,2Kgs,12,Historical Books,canonical
+lxx,1Chr,13,Historical Books,canonical
+lxx,2Chr,14,Historical Books,canonical
+lxx,1Esd,15,Historical Books,canonical
+lxx,Ezra,16,Historical Books,canonical
+lxx,Neh,17,Historical Books,canonical
+lxx,Esth,18,Historical Books,canonical
+lxx,AddEsth,19,Historical Books,canonical
+lxx,Jdt,20,Historical Books,canonical
+lxx,Tob,21,Historical Books,canonical
+lxx,1Macc,22,Historical Books,canonical
+lxx,2Macc,23,Historical Books,canonical
+lxx,3Macc,24,Historical Books,canonical
+lxx,4Macc,25,Historical Books,canonical
+lxx,Ps,26,Poetic & Wisdom Books,canonical
+lxx,Ps151,27,Poetic & Wisdom Books,canonical
+lxx,PrMan,28,Poetic & Wisdom Books,canonical
+lxx,Prov,29,Poetic & Wisdom Books,canonical
+lxx,Eccl,30,Poetic & Wisdom Books,canonical
+lxx,Song,31,Poetic & Wisdom Books,canonical
+lxx,Job,32,Poetic & Wisdom Books,canonical
+lxx,Wis,33,Poetic & Wisdom Books,canonical
+lxx,Sir,34,Poetic & Wisdom Books,canonical
+lxx,Hos,35,Prophetic Books,canonical
+lxx,Amos,36,Prophetic Books,canonical
+lxx,Mic,37,Prophetic Books,canonical
+lxx,Joel,38,Prophetic Books,canonical
+lxx,Obad,39,Prophetic Books,canonical
+lxx,Jonah,40,Prophetic Books,canonical
+lxx,Nah,41,Prophetic Books,canonical
+lxx,Hab,42,Prophetic Books,canonical
+lxx,Zeph,43,Prophetic Books,canonical
+lxx,Hag,44,Prophetic Books,canonical
+lxx,Zech,45,Prophetic Books,canonical
+lxx,Mal,46,Prophetic Books,canonical
+lxx,Isa,47,Prophetic Books,canonical
+lxx,Jer,48,Prophetic Books,canonical
+lxx,Bar,49,Prophetic Books,canonical
+lxx,Lam,50,Prophetic Books,canonical
+lxx,EpJer,51,Prophetic Books,canonical
+lxx,Ezek,52,Prophetic Books,canonical
+lxx,Sus,53,Prophetic Books,canonical
+lxx,Dan,54,Prophetic Books,canonical
+lxx,PrAzar,55,Prophetic Books,canonical
+lxx,Bel,56,Prophetic Books,canonical
+vulgate,Gen,1,Vetus Testamentum,canonical
+vulgate,Exod,2,Vetus Testamentum,canonical
+vulgate,Lev,3,Vetus Testamentum,canonical
+vulgate,Num,4,Vetus Testamentum,canonical
+vulgate,Deut,5,Vetus Testamentum,canonical
+vulgate,Josh,6,Vetus Testamentum,canonical
+vulgate,Judg,7,Vetus Testamentum,canonical
+vulgate,Ruth,8,Vetus Testamentum,canonical
+vulgate,1Sam,9,Vetus Testamentum,canonical
+vulgate,2Sam,10,Vetus Testamentum,canonical
+vulgate,1Kgs,11,Vetus Testamentum,canonical
+vulgate,2Kgs,12,Vetus Testamentum,canonical
+vulgate,1Chr,13,Vetus Testamentum,canonical
+vulgate,2Chr,14,Vetus Testamentum,canonical
+vulgate,Ezra,15,Vetus Testamentum,canonical
+vulgate,Neh,16,Vetus Testamentum,canonical
+vulgate,Tob,17,Vetus Testamentum,canonical
+vulgate,Jdt,18,Vetus Testamentum,canonical
+vulgate,Esth,19,Vetus Testamentum,canonical
+vulgate,AddEsth,20,Vetus Testamentum,canonical
+vulgate,Job,21,Vetus Testamentum,canonical
+vulgate,Ps,22,Vetus Testamentum,canonical
+vulgate,Prov,23,Vetus Testamentum,canonical
+vulgate,Eccl,24,Vetus Testamentum,canonical
+vulgate,Song,25,Vetus Testamentum,canonical
+vulgate,Wis,26,Vetus Testamentum,canonical
+vulgate,Sir,27,Vetus Testamentum,canonical
+vulgate,Isa,28,Vetus Testamentum,canonical
+vulgate,Jer,29,Vetus Testamentum,canonical
+vulgate,Lam,30,Vetus Testamentum,canonical
+vulgate,Bar,31,Vetus Testamentum,canonical
+vulgate,EpJer,32,Vetus Testamentum,canonical
+vulgate,Ezek,33,Vetus Testamentum,canonical
+vulgate,Dan,34,Vetus Testamentum,canonical
+vulgate,PrAzar,35,Vetus Testamentum,canonical
+vulgate,Sus,36,Vetus Testamentum,canonical
+vulgate,Bel,37,Vetus Testamentum,canonical
+vulgate,Hos,38,Vetus Testamentum,canonical
+vulgate,Joel,39,Vetus Testamentum,canonical
+vulgate,Amos,40,Vetus Testamentum,canonical
+vulgate,Obad,41,Vetus Testamentum,canonical
+vulgate,Jonah,42,Vetus Testamentum,canonical
+vulgate,Mic,43,Vetus Testamentum,canonical
+vulgate,Nah,44,Vetus Testamentum,canonical
+vulgate,Hab,45,Vetus Testamentum,canonical
+vulgate,Zeph,46,Vetus Testamentum,canonical
+vulgate,Hag,47,Vetus Testamentum,canonical
+vulgate,Zech,48,Vetus Testamentum,canonical
+vulgate,Mal,49,Vetus Testamentum,canonical
+vulgate,1Macc,50,Vetus Testamentum,canonical
+vulgate,2Macc,51,Vetus Testamentum,canonical
+vulgate,Matt,52,Novum Testamentum,canonical
+vulgate,Mark,53,Novum Testamentum,canonical
+vulgate,Luke,54,Novum Testamentum,canonical
+vulgate,John,55,Novum Testamentum,canonical
+vulgate,Acts,56,Novum Testamentum,canonical
+vulgate,Rom,57,Novum Testamentum,canonical
+vulgate,1Cor,58,Novum Testamentum,canonical
+vulgate,2Cor,59,Novum Testamentum,canonical
+vulgate,Gal,60,Novum Testamentum,canonical
+vulgate,Eph,61,Novum Testamentum,canonical
+vulgate,Phil,62,Novum Testamentum,canonical
+vulgate,Col,63,Novum Testamentum,canonical
+vulgate,1Thess,64,Novum Testamentum,canonical
+vulgate,2Thess,65,Novum Testamentum,canonical
+vulgate,1Tim,66,Novum Testamentum,canonical
+vulgate,2Tim,67,Novum Testamentum,canonical
+vulgate,Titus,68,Novum Testamentum,canonical
+vulgate,Phlm,69,Novum Testamentum,canonical
+vulgate,Heb,70,Novum Testamentum,canonical
+vulgate,Jas,71,Novum Testamentum,canonical
+vulgate,1Pet,72,Novum Testamentum,canonical
+vulgate,2Pet,73,Novum Testamentum,canonical
+vulgate,1John,74,Novum Testamentum,canonical
+vulgate,2John,75,Novum Testamentum,canonical
+vulgate,3John,76,Novum Testamentum,canonical
+vulgate,Jude,77,Novum Testamentum,canonical
+vulgate,Rev,78,Novum Testamentum,canonical
+vulgate,PrMan,79,Appendix,appendix
+vulgate,1Esd,80,Appendix,appendix
+vulgate,2Esd,81,Appendix,appendix
