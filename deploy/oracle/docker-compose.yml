@@ -9,6 +9,7 @@ services:
     restart: unless-stopped
     environment:
       TESTIMONIA_CORE_DB_URL: ${TESTIMONIA_CORE_DB_URL:-}
+      TESTIMONIA_CORS_ORIGINS: ${TESTIMONIA_CORS_ORIGINS:-}   # e.g. https://testimonia.web.app
     volumes:
       - ./data:/data/build
     expose:

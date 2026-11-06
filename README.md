@@ -52,7 +52,7 @@ python -m testimonia serve --open                 # http://127.0.0.1:8765
 For interface development, run `python -m testimonia serve` and, in `web/`, `npm run dev`
 (Vite on http://localhost:5173 with hot reload, proxying `/api` to the Python server).
 
-To share it publicly for free (Hugging Face Space, optionally with a Firebase or Vercel front end) or
+To share it publicly for free (an Oracle Cloud Always Free VM, optionally with a Firebase or Vercel front end) or
 to run it in Docker, see [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 What the foundation build contains today:

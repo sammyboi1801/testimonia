@@ -1,6 +1,6 @@
 # Deploying Testimonia (free)
 
-Testimonia is one Python server (FastAPI) plus one read-only SQLite database (~1 GB) and a static web app.
+Testimonia is one Python server (FastAPI) plus one read-only SQLite database (~700 MB) and a static web app.
 Nothing is stored about visitors: notes live in their browsers, and the AI assistant uses each visitor's own
 API key for that one request.
 
@@ -47,10 +47,10 @@ instance you already use for something else works too, as long as ports 80 and 4
    Caddy obtains the HTTPS certificate on its own; the site is at `https://<ip with dashes>.sslip.io`. To
    update later: `git pull && docker compose up -d --build`.
 
-## Option B: a free Hugging Face Space
+## Option B: a Hugging Face Space (paid for new Spaces)
 
-Free CPU Spaces need no card and are large enough (2 vCPU, 16 GB RAM). They sleep after 48 hours without
-visitors; the next visit wakes them in about a minute.
+Since mid-2026 new Docker Spaces need a PRO account (Spaces created earlier on free CPU keep running). With
+PRO, a CPU Space (2 vCPU, 16 GB RAM) sleeps after 48 hours without visitors and wakes in about a minute.
 
 1. **Build the shareable database** (leaves out sources not cleared for redistribution, e.g. CCEL's files):
 
@@ -90,11 +90,12 @@ The app is then live at `https://yourname-testimonia.hf.space`.
 
 ## Optional: a nicer address in front (still free)
 
-Host only the web app on Firebase Hosting or Vercel and let it call the Space's API.
+Host only the web app on Firebase Hosting or Vercel and let it call the server above (the VM or the Space).
+The server must be on HTTPS, which the VM setup already provides.
 
 ```bash
 cd web
-VITE_API_BASE=https://yourname-testimonia.hf.space npm run build   # the API lives on the Space
+VITE_API_BASE=https://158-101-122-1.sslip.io npm run build   # the server's address
 ```
 
 - **Firebase Hosting** (Spark plan, free): `firebase init hosting` with public dir `web/dist`, then use
@@ -102,7 +103,9 @@ VITE_API_BASE=https://yourname-testimonia.hf.space npm run build   # the API liv
 - **Vercel** (Hobby plan, free): import the repo, root `web`, build `npm run build`, output `dist`,
   environment variable `VITE_API_BASE`; `deploy/vercel.json` adds the single-page-app rewrite.
 
-Set `TESTIMONIA_CORS_ORIGINS` on the Space to that address so the browser may call the API. A custom
+Allow that address on the server so the browser may call the API: on the VM add
+`TESTIMONIA_CORS_ORIGINS=https://<project>.web.app` to `deploy/oracle/.env` and run `docker compose up -d`
+(on a Space, set it under *Variables*). A custom
 domain (~$10/year from any registrar) can point at whichever host you use.
 
 ## Running it yourself
