@@ -168,7 +168,13 @@ A parallel view is just `SELECT … FROM edition_verse WHERE vkey BETWEEN ? AND 
 - NT tokens carry `editions` (which printed editions contain the word) — the basis of the
   "which editions differ here" view.
 - OT tokens carry `lxx_equiv` (MACULA Hebrew's Greek equivalent), linking a Hebrew word to how
-  the Septuagint translated it: a key Old-Testament study tool.
+  the Septuagint translated it: a key Old-Testament study tool. Per lemma the counts are kept as
+  `entity_link` rows `lemma:H… —lxx_equivalent→ lemma:G…` (weight = number of places), which serve
+  both directions of the word study. (`alignment` stays for token-to-token links once LXX tokens exist.)
+- MACULA data is attached to the STEPBible tokens (matched by Strong's number within the verse, then
+  the chapter): `token.domain_id` holds the word's sense in context (`LN:33.98` / `SDBH:001001001`),
+  `semantic_domain` the trees (Louw–Nida domain → SDBG subdomain → Louw–Nida entry; SDBH lexical
+  domains) and `lemma_sense` one row per lemma and domain. Sense counts come from the tokens.
 - `lexicon_entry` holds full articles (BDB, Abbott-Smith, LSJ, UBS dictionaries, TBESG/TBESH…).
 - `syntax_node` holds MACULA syntax trees for diagrams and clause search.
 

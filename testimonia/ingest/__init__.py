@@ -19,6 +19,7 @@ MODULES = (
     "history",
     "witnesses",
     "parallels",
+    "macula",
 )
 
 __all__ = ["MODULES", "STEPS", "Context", "IngestError", "Step", "load_all", "step"]

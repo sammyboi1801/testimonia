@@ -17,6 +17,7 @@ from .api import router
 from .reading import router as reading_router
 from .store import Store
 from .study import router as study_router
+from .words import router as words_router
 
 DIST = config.WEB_DIR / "dist"
 
@@ -56,6 +57,7 @@ def create_app(db_path: Path | None = None, dist: Path = DIST, agent_allow_priva
     app.include_router(agent_router)
     app.include_router(study_router)
     app.include_router(reading_router)
+    app.include_router(words_router)
     # the assistant may call private/local model servers only when this server itself is private (local use)
     app.state.agent_allow_private = agent_allow_private
 

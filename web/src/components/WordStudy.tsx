@@ -6,6 +6,7 @@ import type { Book } from "../types";
 import { Html } from "./Html";
 import { Speak } from "./Speak";
 import { WordChart } from "./WordChart";
+import { WordDomains } from "./WordDomains";
 
 export function WordStudy({ strong, books, onBack, onWord }: { strong: string; books: Book[]; onBack: () => void; onWord: (s: string) => void }) {
   const { data, isLoading, error } = useWord(strong);
@@ -49,6 +50,8 @@ export function WordStudy({ strong, books, onBack, onWord }: { strong: string; b
           </Link>
         </div>
       </details>
+
+      <WordDomains strong={strong} onWord={onWord} />
 
       {data.lexicons.length > 0 && lex && (
         <details className="section" open>
