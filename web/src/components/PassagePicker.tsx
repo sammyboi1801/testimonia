@@ -10,12 +10,24 @@ const GROUPS: { id: Book["testament"]; label: string }[] = [
 
 /** "John 1 ▾" — a popover with every book, then that book's chapters. Replaces the old sidebar. */
 export function PassagePicker({ books, book, chapter }: { books: Book[]; book: string; chapter: number }) {
-  const [open, setOpen] = useState(false);
+  // ?picker in the URL opens it (screenshots, links)
+  const [open, setOpen] = useState(() => new URLSearchParams(window.location.search).has("picker"));
   const [picked, setPicked] = useState<string | null>(null);
+  const [filter, setFilter] = useState("");
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const current = books.find((b) => b.osis === book);
   const chosen = books.find((b) => b.osis === (picked ?? book));
+  // "1 co", "rom 8", "song": match the start of the name or of any word in it, with an optional chapter
+  const m = /^(.*?)\s*(\d+)?$/.exec(filter.trim().toLowerCase());
+  const text = (m?.[1] || filter.trim().toLowerCase()).replace(/\s+/g, " ");
+  const wantCh = m?.[2] && m[1] ? Number(m[2]) : null;
+  const matches = (b: Book) => {
+    if (!text) return true;
+    const name = b.name.toLowerCase();
+    return name.startsWith(text) || name.split(/\s+/).some((w) => w.startsWith(text)) || b.osis.toLowerCase().startsWith(text);
+  };
+  const shown = books.filter(matches);
 
   useEffect(() => {
     if (!open) return;
@@ -34,6 +46,7 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
   function go(osis: string, ch: number) {
     setOpen(false);
     setPicked(null);
+    setFilter("");
     navigate(`/read/${osis}/${ch}`);
   }
 
@@ -48,11 +61,27 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
       {open && (
         <div className="picker-pop" role="dialog" aria-label="Choose a passage">
           <div className="picker-books">
-            {GROUPS.map((g) => (
+            <input
+              className="picker-filter"
+              autoFocus
+              value={filter}
+              placeholder="Type a book — e.g. 1 co, rom 8, psalm 23"
+              aria-label="Filter books"
+              onChange={(e) => setFilter(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" || !shown.length) return;
+                const b = shown[0]!;
+                if (wantCh && wantCh <= b.chapters) go(b.osis, wantCh);
+                else if (b.chapters === 1) go(b.osis, 1);
+                else setPicked(b.osis);
+              }}
+            />
+            {!shown.length && <p className="muted small">No book matches “{filter}”.</p>}
+            {GROUPS.filter((g) => shown.some((b) => b.testament === g.id)).map((g) => (
               <section key={g.id}>
                 <h4>{g.label}</h4>
                 <div className="book-grid">
-                  {books
+                  {shown
                     .filter((b) => b.testament === g.id)
                     .map((b) => (
                       <button
@@ -75,7 +104,7 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
                 {Array.from({ length: chosen.chapters }, (_, i) => i + 1).map((c) => (
                   <button
                     key={c}
-                    className={chosen.osis === book && c === chapter ? "on" : ""}
+                    className={`${chosen.osis === book && c === chapter ? "on" : ""}${wantCh === c && shown[0]?.osis === chosen.osis ? " hint" : ""}`}
                     onClick={() => go(chosen.osis, c)}
                   >
                     {c}
