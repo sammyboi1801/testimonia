@@ -177,3 +177,12 @@ def test_ref_resolver_converts_lxx_and_vulgate_numbering(tmp_path):
     assert resolver.resolve("Bible.vul:Ps.22.1") == (19023001, 19023001)
     assert resolver.resolve("Jon.1.1") == (32001001, 32001001)
     assert resolver.resolve("Bible:John.99.1") is None
+
+
+def test_footnote_paragraphs_do_not_nest_inside_spans():
+    works = ccel.classify("anf01", parse(ANF_LIKE), {})
+    ah = next(w for w in works if w.id == "irenaeus.against-heresies")
+    html = list(ccel.leaf_sections(ah.divs))[1].html
+    assert '<span class="note"' in html
+    note = html[html.index('<span class="note"') :]
+    assert "<p>" not in note.split("</span>")[0]  # no block element inside the inline note

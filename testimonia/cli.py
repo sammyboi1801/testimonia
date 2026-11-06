@@ -104,6 +104,23 @@ def cmd_validate(args: argparse.Namespace) -> int:
     return 0 if not problems else 1
 
 
+def cmd_serve(args: argparse.Namespace) -> int:
+    import threading
+    import webbrowser
+
+    import uvicorn
+
+    from .server.app import create_app
+
+    app = create_app()
+    url = f"http://{args.host}:{args.port}"
+    log.info("Testimonia running at %s  (Ctrl+C to stop)", url)
+    if args.open:
+        threading.Timer(1.5, lambda: webbrowser.open(url)).start()
+    uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
+    return 0
+
+
 def cmd_info(args: argparse.Namespace) -> int:
     from . import db
 
@@ -161,6 +178,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument("--public", action="store_true", help="exclude sources not cleared for redistribution")
     p.add_argument("--keep-going", action="store_true", help="continue past failing optional steps")
     p.set_defaults(func=cmd_build)
+
+    p = sub.add_parser("serve", help="run the Testimonia app in your browser")
+    p.add_argument("--host", default=config.HOST)
+    p.add_argument("--port", type=int, default=config.PORT)
+    p.add_argument("--open", action="store_true", help="open the browser automatically")
+    p.set_defaults(func=cmd_serve)
 
     sub.add_parser("validate", help="check core.db integrity").set_defaults(func=cmd_validate)
     sub.add_parser("info", help="paths and database statistics").set_defaults(func=cmd_info)

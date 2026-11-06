@@ -34,7 +34,7 @@
 
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
-PRAGMA user_version = 2;   -- core schema version: bump on every change (core.db is rebuilt, never migrated)
+PRAGMA user_version = 3;   -- core schema version: bump on every change (core.db is rebuilt, never migrated)
 
 -- =====================================================================================
 -- §1  PROVENANCE & LICENSING
@@ -246,7 +246,7 @@ CREATE TABLE edition_verse (
   text        TEXT NOT NULL,               -- plain text (search, diff)
   markup      TEXT,                        -- optional light HTML: red letters, italics, poetry lines, lacunae
   PRIMARY KEY (edition_id, vkey)
-) STRICT, WITHOUT ROWID;
+) STRICT;  -- rowid table: it is the external content of fts_verse
 CREATE INDEX edition_verse_vkey ON edition_verse(vkey);
 
 -- Footnotes that belong to a specific edition (translator notes, KJV marginalia, Brenton notes)
@@ -659,7 +659,7 @@ CREATE TABLE work_section (
   html          TEXT,                      -- body with scripture refs marked <a data-ref="John.1.18">
   text          TEXT,                      -- plain text for search
   PRIMARY KEY (edition_id, ord)
-) STRICT, WITHOUT ROWID;
+) STRICT;  -- rowid table: it is the external content of fts_work
 CREATE INDEX work_section_cite ON work_section(edition_id, cite);
 
 -- Scripture cited by ancient literature (from CCEL scripRef, First1KGreek <bibl>, curated indexes).
@@ -706,6 +706,7 @@ CREATE TABLE commentary_entry (
   work_title    TEXT,                      -- for excerpts: 'Against Heresies 3.11'
   work_id       TEXT,                      -- when resolvable → work(id)
   html          TEXT NOT NULL,
+  text          TEXT,                      -- plain text (search)
   source_url    TEXT
 ) STRICT;
 CREATE INDEX commentary_entry_range ON commentary_entry(start_vkey, end_vkey);
@@ -834,18 +835,20 @@ CREATE TABLE bibliography_link (
 -- §13  FULL-TEXT SEARCH  (external-content FTS5 → no duplicated text)
 -- =====================================================================================
 
--- Contentless indexes (the text lives in the real tables; edition_verse is WITHOUT ROWID).
--- The build fills these after ingest; queries join back on the UNINDEXED key columns.
-CREATE VIRTUAL TABLE fts_verse   USING fts5(text, edition_id UNINDEXED, vkey UNINDEXED,
-  content='', contentless_delete=1, tokenize='unicode61 remove_diacritics 2');
-CREATE VIRTUAL TABLE fts_work    USING fts5(title, text, edition_id UNINDEXED, ord UNINDEXED,
-  content='', contentless_delete=1, tokenize='unicode61 remove_diacritics 2');
-CREATE VIRTUAL TABLE fts_comment USING fts5(text, entry_id UNINDEXED,
-  content='', contentless_delete=1, tokenize='unicode61 remove_diacritics 2');
-CREATE VIRTUAL TABLE fts_lexicon USING fts5(lemma, translit, gloss, body, lemma_id UNINDEXED, lexicon_id UNINDEXED,
-  content='', contentless_delete=1, tokenize='unicode61 remove_diacritics 2');
-CREATE VIRTUAL TABLE fts_entity  USING fts5(name, alt_names, summary, entity_type UNINDEXED, entity_id UNINDEXED,
-  content='', contentless_delete=1, tokenize='unicode61 remove_diacritics 2');
+-- External-content indexes: the text lives once, in the real tables; the index stores only tokens and
+-- supports snippet()/highlight(). The build fills them with INSERT INTO fts(fts) VALUES('rebuild').
+-- remove_diacritics 2 makes λογος find λόγος and בראשית find בְּרֵאשִׁית.
+CREATE VIRTUAL TABLE fts_verse   USING fts5(text, content='edition_verse', content_rowid='rowid',
+  tokenize='unicode61 remove_diacritics 2');
+CREATE VIRTUAL TABLE fts_work    USING fts5(title, text, content='work_section', content_rowid='rowid',
+  tokenize='unicode61 remove_diacritics 2');
+CREATE VIRTUAL TABLE fts_comment USING fts5(text, content='commentary_entry', content_rowid='id',
+  tokenize='unicode61 remove_diacritics 2');
+CREATE VIRTUAL TABLE fts_lexicon USING fts5(lemma, translit, gloss, definition, content='lemma', content_rowid='rowid',
+  tokenize='unicode61 remove_diacritics 2');
+-- Small and built from a view, so this one stores its own content.
+CREATE VIRTUAL TABLE fts_entity  USING fts5(name, summary, entity_type UNINDEXED, entity_id UNINDEXED,
+  tokenize='unicode61 remove_diacritics 2');
 
 -- =====================================================================================
 -- §14  CONVENIENCE VIEWS

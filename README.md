@@ -26,6 +26,16 @@ Data goes to `~/TestimoniaData` (override with `TESTIMONIA_DATA`). To reuse an e
 Obsidian vault instead of downloading it, add `BTB = 'path/to/BTB'` to
 `~/TestimoniaData/config.toml`.
 
+## Run the app
+
+```bash
+cd web && npm install && npm run build && cd ..   # build the interface once (needs Node 20+)
+python -m testimonia serve --open                 # http://127.0.0.1:8765
+```
+
+For interface development, run `python -m testimonia serve` and, in `web/`, `npm run dev`
+(Vite on http://localhost:5173 with hot reload, proxying `/api` to the Python server).
+
 What the foundation build contains today:
 
 | Layer | Content |

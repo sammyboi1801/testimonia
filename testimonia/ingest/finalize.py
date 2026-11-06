@@ -2,29 +2,26 @@
 
 from __future__ import annotations
 
+import re
+
 from .base import Context
+
+_TAGS = re.compile(r"<[^>]+>")
 
 
 def run(ctx: Context) -> None:
     con = ctx.con
-    con.execute("DELETE FROM fts_verse")
-    con.execute("INSERT INTO fts_verse (text, edition_id, vkey) SELECT text, edition_id, vkey FROM edition_verse")
-    con.execute("DELETE FROM fts_lexicon")
-    con.execute(
-        """INSERT INTO fts_lexicon (lemma, translit, gloss, body, lemma_id, lexicon_id)
-           SELECT l.lemma, l.translit, l.gloss, l.definition, l.id, '' FROM lemma l"""
+    # plain text for commentary excerpts (search + previews)
+    rows = con.execute("SELECT id, html FROM commentary_entry WHERE text IS NULL").fetchall()
+    con.executemany(
+        "UPDATE commentary_entry SET text = ? WHERE id = ?",
+        ((" ".join(_TAGS.sub(" ", html or "").split()), i) for i, html in rows),
     )
+    for table in ("fts_verse", "fts_work", "fts_comment", "fts_lexicon"):
+        con.execute(f"INSERT INTO {table}({table}) VALUES ('rebuild')")
     con.execute("DELETE FROM fts_entity")
     con.execute(
-        "INSERT INTO fts_entity (name, alt_names, summary, entity_type, entity_id) "
-        "SELECT title, NULL, summary, type, id FROM entity"
+        "INSERT INTO fts_entity (name, summary, entity_type, entity_id) SELECT title, summary, type, id FROM entity"
     )
-    con.execute("DELETE FROM fts_work")
-    con.execute(
-        "INSERT INTO fts_work (title, text, edition_id, ord) SELECT title, text, edition_id, ord FROM work_section"
-    )
-    con.execute("DELETE FROM fts_comment")
-    con.execute("INSERT INTO fts_comment (text, entry_id) SELECT html, id FROM commentary_entry")
-    # FTS5 merge for faster queries
-    for table in ("fts_verse", "fts_lexicon", "fts_entity", "fts_work", "fts_comment"):
+    for table in ("fts_verse", "fts_work", "fts_comment", "fts_lexicon", "fts_entity"):
         con.execute(f"INSERT INTO {table}({table}) VALUES ('optimize')")

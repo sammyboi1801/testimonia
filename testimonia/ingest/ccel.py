@@ -376,8 +376,18 @@ def _snippet(scrip_ref: Any) -> str:
 
 
 def _to_html(src: Any) -> str:
+    # Footnotes become inline <span class="note">; HTML forbids <p> inside a span (browsers would split the
+    # note apart), so paragraphs inside notes become <span class="np"> first.
+    for note in src.iter("note"):
+        for p in note.iter("p"):
+            p.tag = "note-p"
     for el in list(src.iter()):
         if not isinstance(el.tag, str) or el is src:
+            continue
+        if el.tag == "note-p":
+            el.attrib.clear()
+            el.tag = "span"
+            el.set("class", "np")
             continue
         tag = el.tag
         if tag == "scripRef":
@@ -520,7 +530,7 @@ def ingest_ccel(ctx: Context) -> None:
         if not path.exists():
             raise IngestError(f"CCEL volume missing: {path} — run `testimonia fetch {source}`")
         root = etree.parse(str(path), etree.XMLParser(recover=True, huge_tree=True, resolve_entities=False)).getroot()
-        translator = clean_title(root.findtext(".//DC.Contributor")) or None
+        translator = None  # DC.Contributor is the digitiser, not the translator; ANF/NPNF translators vary per work
         for spec in classify(volume, root, overrides):
             _ingest_work(ctx, spec, source, translator, people, resolver, stats)
     ctx.log.info(
