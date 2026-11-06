@@ -308,6 +308,8 @@ def test_new_study_tools(store):
         ("topic", {"subject": "a"}),
         ("gospel_parallels", {"query": "John 1:1"}),
         ("word_meanings", {"word": "G3056"}),
+        ("manuscripts", {"query": "John 1:1"}),
+        ("manuscripts", {"query": "P52"}),
     ):
         text, is_error = agent_tools.run(store, name, args)
         assert not is_error, (name, text)

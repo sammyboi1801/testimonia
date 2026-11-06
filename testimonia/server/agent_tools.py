@@ -11,6 +11,7 @@ from __future__ import annotations
 import html
 import json
 import re
+import unicodedata
 from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any
@@ -21,6 +22,7 @@ from fastapi import HTTPException
 from ..morphology import FEATURES
 from ..refs import parse_refs
 from . import api, reading, study, words
+from . import manuscripts as ms_api
 from .store import Store
 
 MAX_RESULT = 9000  # characters per tool result
@@ -263,6 +265,21 @@ TOOLS: list[dict[str, Any]] = [
             "type": "object",
             "properties": {"word": {"type": "string"}},
             "required": ["word"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "manuscripts",
+        "description": (
+            "Manuscript evidence. Give a verse (e.g. 'John 18:31', 'Isaiah 53:5') for the earliest New Testament and "
+            "Septuagint manuscripts containing it and the Dead Sea Scrolls that attest it; or give a manuscript's "
+            "siglum or name (e.g. 'P66', 'Codex Sinaiticus', '1QIsa') for its date, contents, holding library and "
+            "image links (NTVMR, Leon Levy)."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"query": {"type": "string"}},
+            "required": ["query"],
             "additionalProperties": False,
         },
     },
@@ -689,6 +706,65 @@ def word_meanings(store: Store, word: str) -> str:
     return "\n".join(out) if len(out) > 1 else f"No meaning data for {strong}."
 
 
+def _ms_line(m: dict[str, Any]) -> str:
+    where = ", ".join(x for x in (m.get("institution"), m.get("city")) if x)
+    return f"{m.get('sigla')} {m.get('name') or ''} ({m.get('collection')}; {m.get('date_label') or '?'})" + (
+        f", {where}" if where else ""
+    )
+
+
+def manuscripts(store: Store, query: str) -> str:
+    """Manuscripts containing a verse, or one manuscript's record."""
+    refs = parse_refs(query)
+    if refs:
+        osis = api._osis(refs[0].start)
+        v = ms_api.verse_manuscripts(_req(store), osis, limit=12)
+        out = [f"# Manuscripts containing {_label(osis)} — {v['total']} listed (earliest first)"]
+        out += [f"- {_ms_line(m)} — /manuscript/{m['id']}" for m in v["manuscripts"]]
+        if v.get("dss"):
+            out.append("\n## Dead Sea Scrolls attesting it (Hebrew verse numbering)")
+            out += [f"- {_ms_line(m)} — /manuscript/{m['id']}" for m in v["dss"]]
+        if v.get("ntvmr_verse"):
+            out.append(f"\nEvery manuscript of this verse on NTVMR (images © holding institutions): {v['ntvmr_verse']}")
+        return "\n".join(out) if len(out) > 1 else f"No manuscript in the catalogue lists {_label(osis)}."
+
+    def norm(text: str | None) -> str:
+        # NFKC folds sigla like 1QIsaᵃ to 1QIsaa, so a plainly typed siglum matches
+        return re.sub(r"[\s.]+", "", unicodedata.normalize("NFKC", text or "")).lower()
+
+    q = norm(query)
+    catalogue = ms_api.manuscripts(_req(store), collection=None)["manuscripts"]
+    hit = next((m for m in catalogue if norm(m.get("sigla")) == q), None) or next(
+        (m for m in catalogue if q in norm(m.get("name")) or q in norm(m.get("sigla"))), None
+    )
+    if hit is None:
+        return f"No manuscript matches {query!r}. Try its siglum (P52, 01, 1QIsaa) or a verse."
+    d = ms_api.manuscript(_req(store), hit["id"])
+    m = d["manuscript"]
+    out = [f"# {_ms_line(m)} — /manuscript/{m['id']}"]
+    out.append(
+        f"Format: {m.get('format') or '?'}, material: {m.get('material') or '?'}, language: {m.get('language') or '?'}"
+    )
+    if d.get("passages"):
+        out.append(
+            "Contents: "
+            + "; ".join(
+                f"{p['label']}" + (f" ({p['completeness']})" if p.get("completeness") else "")
+                for p in d["passages"][:60]
+            )
+        )
+    elif m.get("contents"):
+        out.append(f"Contents: {m['contents']}")
+    links = d.get("ntvmr") or {}
+    if links.get("images"):
+        out.append(f"Images (NTVMR, © holding institutions): {links['images']}")
+    if m.get("image_url"):
+        out.append(f"Images: {m['image_url']}")
+    if d.get("wikipedia"):
+        out.append(f"Wikipedia article: {d['wikipedia']} (use the wikipedia tool for more)")
+    return "\n".join(out)
+
+
 def wikipedia(store: Store, query: str, section: str | None = None) -> str:
     """English Wikipedia, fetched live (nothing stored): the article's whole introduction and its list of sections,
     or one section in full when `section` is given, so any part of the article can be read."""
@@ -892,6 +968,7 @@ FUNCTIONS: dict[str, Callable[..., str]] = {
     "topic": topic,
     "gospel_parallels": gospel_parallels,
     "word_meanings": word_meanings,
+    "manuscripts": manuscripts,
     "wikipedia": wikipedia,
 }
 
