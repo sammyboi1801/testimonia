@@ -1,0 +1,353 @@
+"""The study assistant: bring your own key, any provider.
+
+Two wire protocols cover practically every model:
+
+* ``anthropic`` — Claude through Anthropic's official SDK.
+* ``openai`` — the OpenAI-compatible Chat Completions protocol, spoken by OpenAI, Google Gemini (its OpenAI
+  endpoint), OpenRouter, Groq, DeepSeek, Mistral, Together, xAI, and local servers (Ollama, LM Studio,
+  llama.cpp, vLLM).
+
+The browser keeps the conversation as plain text turns and sends them with each question, so the server
+stores nothing: no accounts, no history, and the key — sent in the ``X-Api-Key`` header — is used for this one
+request and never logged or kept. The same study tools are also served over HTTP so a loop running *in the
+browser* can use them with a model on the user's own machine (a hosted server cannot reach their localhost).
+"""
+
+from __future__ import annotations
+
+import asyncio
+import ipaddress
+import json
+import socket
+from collections.abc import AsyncIterator
+from typing import Any, Literal
+from urllib.parse import urlparse
+
+import anthropic
+import httpx
+from anthropic.types.beta import BetaMessageParam, BetaToolParam, BetaToolResultBlockParam
+from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
+
+from . import agent_tools
+from .store import Store
+
+router = APIRouter(prefix="/api/agent")
+
+MAX_ROUNDS = 10  # tool round-trips per question
+DEFAULT_CLAUDE = "claude-opus-5-5"
+#: Claude models that accept server-side refusal fallbacks in the "default" form (the API picks the fallback).
+FALLBACK_DEFAULT = {"claude-opus-5-5", "claude-sonnet-5-5", "claude-opus-5", "claude-fable-5-1"}
+#: Claude models with the effort control (others ignore it or reject it).
+EFFORT_MODELS = {"claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "claude-opus-5", "claude-sonnet-5",
+                 "claude-opus-4-8", "claude-opus-4-7", "claude-fable-5-1", "claude-fable-5"}  # fmt: skip
+
+SYSTEM = """You are the study assistant of Testimonia, an open-source Bible study library: 13 Bible translations
+with their translators' footnotes, the Greek New Testament and Hebrew Old Testament word by word with the places
+where editions and manuscripts differ, cross references, the church fathers (with dates) and their quotations of
+Scripture, Josephus, Tacitus and other Jewish and Roman writers, and a timeline of people and events.
+
+How to answer:
+- Ground answers in the library. Use the tools to read passages, study verses, look up words, writers and events,
+  and to read the fathers. Quote briefly and accurately; never invent a quotation, reference or date.
+- Cite as markdown links using the links the tools give, e.g. [John 1:18](/read/John/1?v=John.1.18) and
+  [Irenaeus, Against Heresies 3.11](/library/<edition>/<section>). Name the translation when wording matters.
+- Distinguish what the texts say from interpretation. Where scholars or traditions disagree, say so fairly and
+  briefly name the main positions. Dates in the library are approximate ("c.").
+- Be clear and concise; use short paragraphs or lists. Answer in the language of the question."""
+
+
+class Turn(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(max_length=40_000)
+
+
+class ChatRequest(BaseModel):
+    provider: Literal["anthropic", "openai"] = "anthropic"
+    model: str = Field(DEFAULT_CLAUDE, max_length=120)
+    base_url: str | None = Field(None, max_length=300)  # OpenAI-compatible endpoint (…/v1)
+    messages: list[Turn] = Field(min_length=1, max_length=60)
+    context: str | None = Field(None, max_length=200)  # what the reader has open, e.g. 'John 1:18'
+
+
+class ToolCall(BaseModel):
+    name: str
+    input: dict[str, Any]
+
+
+def store(request: Request) -> Store:
+    s: Store = request.app.state.store
+    return s
+
+
+# ----------------------------------------------------------------------------- tools over HTTP (browser loops)
+
+
+@router.get("/tools")
+def tools() -> dict[str, Any]:
+    """The study tools as JSON schemas, plus the system prompt, for an assistant loop running in the browser."""
+    return {"system": SYSTEM, "tools": agent_tools.TOOLS}
+
+
+@router.post("/tool")
+def tool(request: Request, call: ToolCall) -> dict[str, Any]:
+    text, is_error = agent_tools.run(store(request), call.name, call.input)
+    return {"content": text, "is_error": is_error}
+
+
+# ----------------------------------------------------------------------------- server-side loop
+
+
+def check_base_url(url: str, allow_private: bool) -> str:
+    """Refuse URLs a public server must not call on a user's behalf (internal hosts, cloud metadata, plain HTTP)."""
+    p = urlparse(url)
+    if p.scheme not in ("https", "http") or not p.hostname:
+        raise HTTPException(400, "base_url must be an http(s) URL")
+    if allow_private:
+        return url.rstrip("/")
+    if p.scheme != "https":
+        raise HTTPException(400, "base_url must use https on this server")
+    try:
+        addrs = {ai[4][0] for ai in socket.getaddrinfo(p.hostname, p.port or 443)}
+    except OSError as e:
+        raise HTTPException(400, f"cannot resolve {p.hostname}") from e
+    for a in addrs:
+        ip = ipaddress.ip_address(a)
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+            raise HTTPException(
+                400, "this server does not call private or local addresses — use 'run in my browser' for local models"
+            )
+    return url.rstrip("/")
+
+
+@router.post("/chat")
+async def chat(request: Request, body: ChatRequest, x_api_key: str | None = Header(None)) -> StreamingResponse:
+    """Answer one question with the chosen model and the study tools; streams server-sent events."""
+    allow_private = bool(getattr(request.app.state, "agent_allow_private", False))
+    base = ""
+    if body.provider == "openai":
+        if not body.base_url:
+            raise HTTPException(400, "base_url is required for OpenAI-compatible providers")
+        base = await asyncio.to_thread(check_base_url, body.base_url, allow_private)
+    elif not x_api_key:
+        raise HTTPException(401, "an Anthropic API key is required (X-Api-Key header)")
+    s = store(request)
+    system = SYSTEM + (f"\n\nThe reader currently has open: {body.context}." if body.context else "")
+    turns = [t.model_dump() for t in body.messages]
+    if turns[-1]["role"] != "user":
+        raise HTTPException(400, "the last message must be the user's question")
+
+    async def events() -> AsyncIterator[str]:
+        try:
+            if body.provider == "anthropic":
+                gen = _claude(s, x_api_key or "", body.model or DEFAULT_CLAUDE, system, turns)
+            else:
+                gen = _openai(s, x_api_key, base, body.model, system, turns)
+            async for event in gen:
+                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+        except anthropic.AuthenticationError:
+            yield _sse({"type": "error", "message": "The API key was not accepted."})
+        except anthropic.PermissionDeniedError:
+            yield _sse({"type": "error", "message": "This key may not use that model."})
+        except anthropic.NotFoundError:
+            yield _sse({"type": "error", "message": f"Unknown model {body.model!r}."})
+        except anthropic.RateLimitError:
+            yield _sse({"type": "error", "message": "Rate limited by the provider — wait a moment and try again."})
+        except anthropic.APIStatusError as e:
+            yield _sse({"type": "error", "message": f"Provider error {e.status_code}: {e.message}"})
+        except anthropic.APIConnectionError:
+            yield _sse({"type": "error", "message": "Could not reach the provider."})
+        except httpx.HTTPStatusError as e:
+            yield _sse({"type": "error", "message": f"Provider error {e.response.status_code}: {_detail(e.response)}"})
+        except httpx.HTTPError as e:
+            yield _sse({"type": "error", "message": f"Could not reach the provider: {type(e).__name__}"})
+        yield _sse({"type": "end"})
+
+    return StreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-store"})
+
+
+def _sse(event: dict[str, Any]) -> str:
+    return f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+
+
+def _detail(resp: httpx.Response) -> str:
+    try:
+        data = resp.json()
+        err = data.get("error", data)
+        return str(err.get("message", err) if isinstance(err, dict) else err)[:300]
+    except ValueError:
+        return resp.text[:300]
+
+
+async def _tool(s: Store, name: str, args: Any) -> tuple[str, bool]:
+    return await asyncio.to_thread(agent_tools.run, s, name, args)
+
+
+def _summary(name: str, args: Any) -> str:
+    if isinstance(args, dict):
+        first = next((str(v) for v in args.values() if isinstance(v, (str, int))), "")
+        return f"{name.replace('_', ' ')}: {first}"[:120]
+    return name
+
+
+# ----------------------------------------------------------------------------- Claude (official SDK)
+
+
+async def _claude(
+    s: Store, key: str, model: str, system: str, turns: list[dict[str, Any]]
+) -> AsyncIterator[dict[str, Any]]:
+    client = anthropic.AsyncAnthropic(api_key=key, max_retries=2, timeout=300)
+    tool_defs: list[BetaToolParam] = [
+        {
+            "name": t["name"],
+            "description": t["description"],
+            "input_schema": t["parameters"],
+            "eager_input_streaming": True,
+        }
+        for t in agent_tools.TOOLS
+    ]
+    # earlier turns are plain text (no thinking blocks are replayed); this question's turn is append-only
+    messages: list[BetaMessageParam] = [{"role": t["role"], "content": t["content"]} for t in turns]
+    extra: dict[str, Any] = {}
+    if model in FALLBACK_DEFAULT:
+        extra.update(betas=["server-side-fallback-2026-07-01"], fallbacks="default")
+    if model in EFFORT_MODELS:
+        extra["output_config"] = {"effort": "medium"}
+    json_retries = 0
+    for _ in range(MAX_ROUNDS):
+        try:
+            async with client.beta.messages.stream(
+                model=model,
+                max_tokens=16000,
+                system=[{"type": "text", "text": system}],
+                tools=tool_defs,
+                messages=messages,
+                cache_control={"type": "ephemeral"},
+                **extra,
+            ) as stream:
+                async for event in stream:
+                    if event.type == "text":
+                        yield {"type": "text", "text": event.text}
+                response = await stream.get_final_message()
+            json_retries = 0
+        except ValueError:  # tool input the SDK could not parse at all: re-issue this turn (bounded)
+            json_retries += 1
+            if json_retries > 2:
+                yield {"type": "error", "message": "The model produced an unreadable tool call."}
+                return
+            continue
+        if response.stop_reason == "refusal":
+            yield {"type": "error", "message": "The model declined to answer this request."}
+            return
+        tool_uses = [b for b in response.content if b.type == "tool_use"]
+        messages.append({"role": "assistant", "content": response.content})
+        if not tool_uses:
+            yield {"type": "done", "model": response.model, "usage": _usage(response.usage)}
+            return
+        if response.stop_reason == "max_tokens":
+            yield {"type": "error", "message": "The answer ran out of room while calling a tool."}
+            return
+        results: list[BetaToolResultBlockParam] = []
+        for block in tool_uses:
+            yield {"type": "tool", "name": block.name, "summary": _summary(block.name, block.input)}
+            text, is_error = await _tool(s, block.name, block.input)
+            results.append({"type": "tool_result", "tool_use_id": block.id, "content": text, "is_error": is_error})
+        messages.append({"role": "user", "content": results})  # all results of one turn in a single message
+    yield {"type": "error", "message": f"Stopped after {MAX_ROUNDS} tool rounds."}
+
+
+def _usage(u: Any) -> dict[str, int]:
+    return {k: int(getattr(u, k, 0) or 0) for k in ("input_tokens", "output_tokens", "cache_read_input_tokens")}
+
+
+# ----------------------------------------------------------------------------- OpenAI-compatible (any provider)
+
+
+async def _openai(
+    s: Store, key: str | None, base: str, model: str, system: str, turns: list[dict[str, Any]]
+) -> AsyncIterator[dict[str, Any]]:
+    headers = {"Content-Type": "application/json"}
+    if key:
+        headers["Authorization"] = f"Bearer {key}"
+    tool_defs = [
+        {
+            "type": "function",
+            "function": {"name": t["name"], "description": t["description"], "parameters": t["parameters"]},
+        }
+        for t in agent_tools.TOOLS
+    ]
+    messages: list[dict[str, Any]] = [{"role": "system", "content": system}, *turns]
+    use_tools = True
+    async with httpx.AsyncClient(timeout=httpx.Timeout(300, connect=15)) as http:
+        for _ in range(MAX_ROUNDS):
+            payload: dict[str, Any] = {"model": model, "messages": messages, "stream": True}
+            if use_tools:
+                payload["tools"] = tool_defs
+            text_parts: list[str] = []
+            calls: dict[int, dict[str, str]] = {}
+            async with http.stream("POST", f"{base}/chat/completions", headers=headers, json=payload) as resp:
+                if resp.status_code == 400 and use_tools:
+                    # some local models don't support tools: answer from the model alone
+                    await resp.aread()
+                    use_tools = False
+                    yield {
+                        "type": "notice",
+                        "message": "This model does not support tools; answering without the library.",
+                    }
+                    continue
+                if resp.status_code >= 400:
+                    await resp.aread()
+                    resp.raise_for_status()
+                async for line in resp.aiter_lines():
+                    if not line.startswith("data:"):
+                        continue
+                    data = line[5:].strip()
+                    if data == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(data)
+                    except ValueError:
+                        continue
+                    for choice in chunk.get("choices", []):
+                        delta = choice.get("delta") or {}
+                        if delta.get("content"):
+                            text_parts.append(delta["content"])
+                            yield {"type": "text", "text": delta["content"]}
+                        for tc in delta.get("tool_calls") or []:
+                            slot = calls.setdefault(tc.get("index", 0), {"id": "", "name": "", "arguments": ""})
+                            slot["id"] = tc.get("id") or slot["id"]
+                            fn = tc.get("function") or {}
+                            slot["name"] += fn.get("name") or ""
+                            slot["arguments"] += fn.get("arguments") or ""
+            if not calls:
+                yield {"type": "done", "model": model}
+                return
+            ordered = [calls[i] for i in sorted(calls)]
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": "".join(text_parts) or None,
+                    "tool_calls": [
+                        {
+                            "id": c["id"] or f"call_{i}",
+                            "type": "function",
+                            "function": {"name": c["name"], "arguments": c["arguments"] or "{}"},
+                        }
+                        for i, c in enumerate(ordered)
+                    ],
+                }
+            )
+            for i, c in enumerate(ordered):
+                try:
+                    args = json.loads(c["arguments"] or "{}")
+                except ValueError:
+                    args = None
+                yield {"type": "tool", "name": c["name"], "summary": _summary(c["name"], args)}
+                text, _ = (
+                    await _tool(s, c["name"], args)
+                    if args is not None
+                    else ("Error: arguments were not valid JSON", True)
+                )
+                messages.append({"role": "tool", "tool_call_id": c["id"] or f"call_{i}", "content": text})
+    yield {"type": "error", "message": f"Stopped after {MAX_ROUNDS} tool rounds."}

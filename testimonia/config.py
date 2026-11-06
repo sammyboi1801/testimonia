@@ -61,6 +61,8 @@ NOTES_DIR = _path("NOTES", USER_DIR / "notes")  # markdown notes (Obsidian-compa
 LOG_DIR = _path("LOGS", DATA_DIR / "logs")
 
 HOST = setting("HOST", "127.0.0.1") or "127.0.0.1"
+#: Let the assistant call private/local model URLs even when not bound to localhost (trusted networks only).
+AGENT_ALLOW_PRIVATE = (setting("AGENT_ALLOW_PRIVATE", "") or "").lower() in ("1", "true", "yes")
 PORT = int(setting("PORT", "8765") or "8765")
 #: Sent with every HTTP request. Identifies the project; never contains personal data.
 USER_AGENT = setting("USER_AGENT", "Testimonia-build/0.1 (open-source Bible study data pipeline)") or ""

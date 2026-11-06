@@ -112,7 +112,9 @@ def cmd_serve(args: argparse.Namespace) -> int:
 
     from .server.app import create_app
 
-    app = create_app()
+    # a server bound to this machine only may reach local model servers (Ollama, LM Studio) for the assistant
+    local = args.host in ("127.0.0.1", "localhost", "::1")
+    app = create_app(agent_allow_private=local or config.AGENT_ALLOW_PRIVATE)
     url = f"http://{args.host}:{args.port}"
     log.info("Testimonia running at %s  (Ctrl+C to stop)", url)
     if args.open:

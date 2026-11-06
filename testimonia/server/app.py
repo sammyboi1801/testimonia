@@ -10,17 +10,21 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .. import __version__, config
+from .agent import router as agent_router
 from .api import router
 from .store import Store
 
 DIST = config.WEB_DIR / "dist"
 
 
-def create_app(db_path: Path | None = None, dist: Path = DIST) -> FastAPI:
+def create_app(db_path: Path | None = None, dist: Path = DIST, agent_allow_private: bool = False) -> FastAPI:
     app = FastAPI(title="Testimonia", version=__version__, docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.state.store = Store(db_path or config.CORE_DB)
     app.add_middleware(GZipMiddleware, minimum_size=1024)
     app.include_router(router)
+    app.include_router(agent_router)
+    # the assistant may call private/local model servers only when this server itself is private (local use)
+    app.state.agent_allow_private = agent_allow_private
 
     @app.get("/api/health")
     def health() -> dict[str, str]:
