@@ -20,7 +20,7 @@ from fastapi import HTTPException
 
 from ..morphology import FEATURES
 from ..refs import parse_refs
-from . import api, reading, study
+from . import api, reading, study, words
 from .store import Store
 
 MAX_RESULT = 9000  # characters per tool result
@@ -249,6 +249,20 @@ TOOLS: list[dict[str, Any]] = [
             "type": "object",
             "properties": {"query": {"type": "string"}},
             "required": ["query"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "word_meanings",
+        "description": (
+            "How a Greek or Hebrew word's meanings divide (senses by semantic domain, Louw-Nida numbers for Greek, with "
+            "counts), the other words in the same field of meaning, and its Septuagint equivalents (the Greek words "
+            "the LXX uses for a Hebrew word, or the Hebrew words behind a Greek one). Input: Strong's number or the word."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"word": {"type": "string"}},
+            "required": ["word"],
             "additionalProperties": False,
         },
     },
@@ -614,6 +628,67 @@ def gospel_parallels(store: Store, query: str) -> str:
     return "\n".join(out)
 
 
+def word_meanings(store: Store, word: str) -> str:
+    """Senses, fields of meaning with related words, and Septuagint equivalents of one word."""
+    strong = word.strip().upper() if re.fullmatch(r"[GHgh]\d{1,5}[A-Za-z]?", word.strip()) else None
+    if strong is None:  # a Greek/Hebrew word or transliteration: find its lemma the way grammar search does
+        g = study.grammar(
+            _req(store),
+            lemma=word,
+            strong=None,
+            lang=None,
+            book=None,
+            part=None,
+            tense=None,
+            voice=None,
+            mood=None,
+            case=None,
+            person=None,
+            number=None,
+            gender=None,
+            stem=None,
+            form=None,
+            state=None,
+            article=None,
+            no_article=False,
+            edition="bsb",
+            page=1,
+            size=1,
+        )
+        if not g["lemmas"]:
+            return f"No Greek or Hebrew word matches {word!r}; try its Strong's number."
+        strong = str(g["lemmas"][0]["id"])
+    m = re.fullmatch(r"([GH])(\d{1,5})([A-Z]?)", strong)
+    if m:  # G26 → G0026
+        strong = f"{m.group(1)}{int(m.group(2)):04d}{m.group(3)}"
+    try:
+        g = words.word_domains(_req(store), strong, related=12, fields=4)
+    except HTTPException as e:
+        return f"No meaning data for {word!r}: {e.detail}"
+    out = [f"# Meanings of {strong} — word study: /read/John/1?w={strong} ({g['credit']})"]
+    if g["senses"]:
+        out.append("## Senses")
+        out += [
+            f"- {x['label']}"
+            + (f" (LN {x['code']})" if x.get("code") and strong.startswith("G") else "")
+            + f": {x['n']}×"
+            for x in g["senses"][:15]
+        ]
+    for f in g["fields"]:
+        rel = ", ".join(f"{r['lemma']} {r['id']} ({r.get('gloss') or ''})" for r in (f.get("words") or [])[:12])
+        out.append(f"## Field: {f['description']} ({f['n']} uses)" + (f"\nRelated words: {rel}" if rel else ""))
+    lxx = g.get("lxx") or {}
+    if lxx.get("words"):
+        side = (
+            "Greek words the Septuagint uses for it"
+            if lxx.get("direction") == "greek"
+            else "Hebrew words it renders in the Septuagint"
+        )
+        out.append(f"## {side} ({lxx.get('total')} places)")
+        out += [f"- {w['lemma']} {w['id']} ({w.get('gloss') or ''}): {w['n']}" for w in lxx["words"][:15]]
+    return "\n".join(out) if len(out) > 1 else f"No meaning data for {strong}."
+
+
 def wikipedia(store: Store, query: str, section: str | None = None) -> str:
     """English Wikipedia, fetched live (nothing stored): the article's whole introduction and its list of sections,
     or one section in full when `section` is given, so any part of the article can be read."""
@@ -816,6 +891,7 @@ FUNCTIONS: dict[str, Callable[..., str]] = {
     "grammar_search": grammar_search,
     "topic": topic,
     "gospel_parallels": gospel_parallels,
+    "word_meanings": word_meanings,
     "wikipedia": wikipedia,
 }
 

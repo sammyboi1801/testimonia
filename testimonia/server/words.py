@@ -25,8 +25,10 @@ STRONG = re.compile(r"^[GH]\d{4}[A-Za-z]?$")
 DOMAIN = re.compile(r"^(LN|SDBG|SDBH):[0-9.a-z]{1,20}$")
 SYSTEM_NAME = {"louw-nida": "Louw–Nida", "sdbg": "Semantic Dictionary of Biblical Greek", "sdbh": "SDBH"}
 CREDIT = {
-    "grc": "Domains: Louw & Nida and the UBS Semantic Dictionary of Biblical Greek, via MACULA Greek (CC BY 4.0)",
-    "hbo": "Domains: UBS Semantic Dictionary of Biblical Hebrew; Septuagint equivalents: MACULA Hebrew (CC BY 4.0)",
+    "grc": "Domains: Louw & Nida and the UBS Semantic Dictionary of Biblical Greek (CC BY-SA 4.0), "
+    "via MACULA Greek (CC BY 4.0)",
+    "hbo": "Domains: UBS Semantic Dictionary of Biblical Hebrew (CC BY-SA 4.0); "
+    "Septuagint equivalents: MACULA Hebrew (CC BY 4.0)",
 }
 
 
