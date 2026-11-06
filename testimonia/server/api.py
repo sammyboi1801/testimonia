@@ -29,6 +29,14 @@ def store(request: Request) -> Store:
     return s
 
 
+def _range_label(f: dict[str, Any]) -> str:
+    """'John 1' for a whole chapter, otherwise 'John 1:1–2:11'."""
+    a, b = _osis(f["start_vkey"]).split("."), _osis(f["end_vkey"]).split(".")
+    if a[:2] == b[:2] and a[2] in ("0", "1") and f["end_vkey"] % 1000 == 999:
+        return f"{a[0]} {a[1]}"
+    return f"{a[0]} {a[1]}:{a[2]}–{b[1]}:{b[2]}"
+
+
 def _osis(k: int) -> str:
     b, c, v = key_to_parts(k)
     return f"{b}.{c}.{v}"
@@ -267,11 +275,18 @@ def verse(request: Request, osis: str, preview: str = "bsb", limit: int = Query(
         q["text"] = preview_text(q["other"])
     fathers = s.all(
         "SELECT c.work_id, w.title AS work_title, w.category, c.author_id, p.name AS author, c.year, w.era, c.kind, "
-        "c.cite, c.snippet, c.edition_id, c.section_ord, c.source_id FROM citation c "
+        "c.cite, c.snippet, c.edition_id, c.section_ord, c.source_id, c.start_vkey, c.end_vkey FROM citation c "
         "JOIN work w ON w.id = c.work_id LEFT JOIN person p ON p.id = c.author_id "
         "WHERE c.start_vkey BETWEEN ? AND ? AND c.end_vkey >= ? ORDER BY c.year IS NULL, c.year, w.title LIMIT ?",
         (book_lo, k, k, limit * 4),
     )
+    # A reference to a whole chapter ('John 1' in an index) is not a citation of this verse: keep those apart, so a
+    # verse's list only holds writers who quote or point to it (or a short passage around it).
+    wide = [f for f in fathers if f["end_vkey"] - f["start_vkey"] > MAX_MARK_SPAN]
+    fathers = [f for f in fathers if f["end_vkey"] - f["start_vkey"] <= MAX_MARK_SPAN]
+    broad: dict[tuple[Any, ...], dict[str, Any]] = {}
+    for f in wide:
+        broad.setdefault((f["work_id"], f["edition_id"], f["section_ord"]), {**f, "times": 1, "scope": _range_label(f)})
     merged: dict[tuple[Any, ...], dict[str, Any]] = {}
     for f in fathers:
         key = (f["work_id"], f["edition_id"], f["section_ord"])
@@ -318,6 +333,7 @@ def verse(request: Request, osis: str, preview: str = "bsb", limit: int = Query(
         "crossrefs": xrefs,
         "quotations": quotes,
         "fathers": fathers,
+        "fathers_broad": sorted(broad.values(), key=lambda f: (f["year"] is None, f["year"] or 0)),
         "witnesses": witnesses,
         "commentary": commentary,
         "notes": notes,

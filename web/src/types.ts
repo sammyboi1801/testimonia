@@ -161,6 +161,7 @@ export interface VerseGuide {
   quotations: Quotation[];
   footnotes?: (Footnote & { edition_id: string; abbrev: string | null })[];
   fathers: FatherCitation[];
+  fathers_broad?: (FatherCitation & { scope: string })[]; // references to the whole chapter, not this verse
   witnesses?: FatherCitation[]; // Josephus, Tacitus… (Jewish & Roman writers)
   commentary: CommentaryEntry[];
   notes: { n: number; kind: string | null; body: string }[];

@@ -120,7 +120,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord }: Props & { g:
       </nav>
 
       {active === "text" && <TextTab g={g} />}
-      {active === "fathers" && <FathersTab fathers={fathers} commentary={commentary} onWord={onWord} />}
+      {active === "fathers" && <FathersTab fathers={fathers} broad={(g.fathers_broad ?? []).filter((f) => inScope(f.year, f.era, scope))} commentary={commentary} onWord={onWord} />}
       {active === "links" && <LinksTab g={g} books={books} onWord={onWord} />}
       {active === "words" &&
         (word ? <WordStudy strong={word} books={books} onBack={onCloseWord} onWord={onWord} /> : <WordsTab g={g} onWord={onWord} />)}
@@ -178,7 +178,17 @@ function TextTab({ g }: { g: VerseGuide }) {
   );
 }
 
-function FathersTab({ fathers, commentary, onWord }: { fathers: VerseGuide["fathers"]; commentary: VerseGuide["commentary"]; onWord: (s: string) => void }) {
+function FathersTab({
+  fathers,
+  broad,
+  commentary,
+  onWord,
+}: {
+  fathers: VerseGuide["fathers"];
+  broad: NonNullable<VerseGuide["fathers_broad"]>;
+  commentary: VerseGuide["commentary"];
+  onWord: (s: string) => void;
+}) {
   const { settings, update } = useSettings();
   const [more, setMore] = useState(40);
   return (
@@ -216,6 +226,29 @@ function FathersTab({ fathers, commentary, onWord }: { fathers: VerseGuide["fath
           <button className="more" onClick={() => setMore(more + 60)}>
             Show more ({fathers.length - more})
           </button>
+        )}
+        {broad.length > 0 && (
+          <details className="fathers-broad">
+            <summary>
+              {broad.length} more refer to {broad[0]!.scope} as a whole
+            </summary>
+            <p className="muted small">These writers point to the whole chapter or a long passage, not to this verse.</p>
+            {broad.map((f, i) => (
+              <div key={`b-${f.work_id}-${f.cite}-${i}`} className="item-head">
+                <span className="who">
+                  {f.author ?? "Anonymous"},{" "}
+                  {f.edition_id && f.section_ord ? (
+                    <Link to={`/library/${encodeURIComponent(f.edition_id)}/${f.section_ord}`}>
+                      <i>{f.work_title}</i> {f.cite}
+                    </Link>
+                  ) : (
+                    <i>{f.work_title}</i>
+                  )}
+                </span>
+                <span className="when">{formatYear(f.year)}</span>
+              </div>
+            ))}
+          </details>
         )}
       </Block>
       <Block title="Commentary" note={commentary.length}>
