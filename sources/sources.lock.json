@@ -15,6 +15,11 @@
       "fetched_at": "2026-11-05T23:55:50+00:00",
       "source": "oshb"
     },
+    "git|https://github.com/ubsicap/ubs-open-license|ubs-open|": {
+      "commit": "a15a96cfaa4ca18a6c0339016645ba1e534db3c8",
+      "fetched_at": "2026-11-06T07:49:44+00:00",
+      "source": "ubs-open"
+    },
     "http|https://a.openbible.info/data/cross-references.zip|openbible-xref|": {
       "fetched_at": "2026-11-05T23:56:11+00:00",
       "sha256": "24f07bcd61280f9dc0c5a451151fc9c9d0d2e45fe0cf3c903b5db4ca6b878878",

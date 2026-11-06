@@ -60,6 +60,7 @@ export function BookPage() {
           <Link className="btn" to={`/read/${b.osis}/1`}>
             Start reading →
           </Link>
+          {["Matt", "Mark", "Luke", "John"].includes(b.osis) && <Link className="rd-book-parallels" to={`/parallels?order=${b.osis}`}>Parallels in the other Gospels →</Link>}
         </div>
         {b.wikipedia && <WikiCard title={b.wikipedia} />}
       </header>

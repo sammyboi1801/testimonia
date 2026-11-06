@@ -31,6 +31,7 @@ import "./timeline.css";
 import "./story.css";
 import "./ask.css";
 import "./study.css";
+import "./reading.css";
 import "./mobile.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -49,6 +50,10 @@ import { LibraryPage } from "./pages/LibraryPage";
 import { ReadPage } from "./pages/ReadPage";
 import { SearchPage } from "./pages/SearchPage";
 import { WorkPage } from "./pages/WorkPage";
+import { TopicsPage } from "./pages/TopicsPage";
+import { TopicPage } from "./pages/TopicPage";
+import { PlanPage, PlansPage } from "./pages/PlansPage";
+import { ParallelPage, ParallelsPage } from "./pages/ParallelsPage";
 import { NotesProvider } from "./notes";
 import { SettingsProvider } from "./settings";
 
@@ -70,6 +75,12 @@ function App() {
           <Route path="/ask" element={<AskPage />} />
           <Route path="/notes" element={<NotesPage />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/topics" element={<TopicsPage />} />
+          <Route path="/topic/:id" element={<TopicPage />} />
+          <Route path="/plans" element={<PlansPage />} />
+          <Route path="/plans/:id" element={<PlanPage />} />
+          <Route path="/parallels" element={<ParallelsPage />} />
+          <Route path="/parallels/:id" element={<ParallelPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ErrorBoundary>

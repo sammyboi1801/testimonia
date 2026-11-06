@@ -1,5 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import { Bookshelf } from "../components/Bookshelf";
+import { ReadingLinks } from "../components/ReadingLinks";
 import { StoryView } from "../components/Story";
 import { TimelineView } from "../components/Timeline";
 
@@ -37,6 +38,7 @@ export function LibraryPage() {
             </button>
           ))}
         </div>
+        <ReadingLinks />
       </div>
       {view === "timeline" ? <TimelineView /> : view === "story" ? <StoryView /> : <Bookshelf />}
     </div>

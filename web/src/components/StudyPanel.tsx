@@ -6,6 +6,7 @@ import { useSettings, type FathersScope, type MarkKind, type PanelTab } from "..
 import type { Book, VerseGuide } from "../types";
 import { openAsk } from "./AskDrawer";
 import { CompareTranslations } from "./CompareTranslations";
+import { GospelParallels } from "./ReadingLinks";
 import { NOTE_KIND } from "./Footnotes";
 import { Html } from "./Html";
 import { VerseNote } from "./VerseNote";
@@ -232,6 +233,7 @@ function LinksTab({ g, books, onWord }: { g: VerseGuide; books: Book[]; onWord: 
   const quotedBy = g.quotations.filter((q) => q.direction === "quoted_by");
   return (
     <>
+      <GospelParallels osis={g.verse.osis} />
       {(quotes.length > 0 || quotedBy.length > 0) && (
         <Block title="Old ↔ New Testament" note={g.quotations.length}>
           {quotes.length > 0 && <p className="muted small">This verse quotes</p>}
@@ -287,7 +289,7 @@ function LinksTab({ g, books, onWord }: { g: VerseGuide; books: Book[]; onWord: 
         <Block title="Topics" note={g.topics.length}>
           <div className="topic-list">
             {g.topics.map((t) => (
-              <Link key={t.id} to={`/search?q=${encodeURIComponent(t.name)}`}>
+              <Link key={t.id} to={`/topic/${encodeURIComponent(t.id)}`}>
                 {t.name}
               </Link>
             ))}

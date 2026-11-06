@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMeta, useSearch } from "../api";
 import { GrammarSearch } from "../components/GrammarSearch";
+import { ReadingLinks } from "../components/ReadingLinks";
 import { osisLabel, verseUrl } from "../lib";
 import type { Book, SearchResults } from "../types";
 
@@ -114,6 +115,7 @@ export function SearchPage() {
             </div>
           )}
           <p className="muted small">Greek and Hebrew match without accents or vowel points: λογος finds λόγος, λόγου, λόγῳ…</p>
+          <ReadingLinks className="rd-links-search" />
         </div>
       )}
 
