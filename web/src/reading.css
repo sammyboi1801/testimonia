@@ -1,0 +1,204 @@
+/* Reading aids: topic pages, reading plans, Gospel parallels. Uses only the design tokens. */
+
+.rd-page { padding-bottom: 64px; }
+.rd-head { margin-bottom: 18px; }
+.rd-head h1 { margin-bottom: 6px; }
+.rd-lede { font-family: var(--font-text); font-size: 17px; line-height: 1.55; color: var(--ink-soft); max-width: 62ch; margin: 0 0 14px; }
+.rd-meta { color: var(--muted); margin: 0; }
+.rd-back { display: inline-block; margin-bottom: 10px; font-size: 13px; }
+.rd-filter {
+  width: min(420px, 100%); padding: 7px 11px; font: inherit; color: var(--ink);
+  background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius);
+}
+.rd-filter:focus { outline: none; border-color: var(--accent); }
+.rd-filter.small-filter { width: 220px; }
+.rd-credit { margin-top: 32px; max-width: 80ch; }
+.rd-note { margin-top: 12px; }
+.rd-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.rd-toolbar .seg { margin-bottom: 0; }
+
+/* quiet entry links (library, search) */
+.rd-links { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13.5px; }
+.library-head .rd-links { margin-left: auto; }
+.rd-links-search { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--rule); }
+.rd-book-parallels { display: inline-block; margin: 10px 0 0 14px; font-size: 13.5px; }
+
+/* ---------------------------------------------------------------- topics index */
+.rd-letters { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 14px; }
+.rd-letters a, .rd-letters span {
+  display: inline-block; min-width: 26px; padding: 3px 0; text-align: center; font-size: 13px;
+  border-radius: var(--radius); background-image: none;
+}
+.rd-letters a:hover { background: var(--panel-2); }
+.rd-letters span { color: var(--rule); }
+.rd-letter-group { scroll-margin-top: 12px; }
+.rd-letter-group h2 {
+  font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(24px * var(--display-size));
+  color: var(--accent); margin: 22px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--rule);
+}
+.rd-topic-list { list-style: none; margin: 0; padding: 0; columns: 4 200px; column-gap: 24px; }
+.rd-topic-list li { break-inside: avoid; padding: 2px 0; font-family: var(--font-text); font-size: 15.5px; line-height: 1.4; }
+.rd-topic-list .small { font-family: var(--font-ui); font-size: 11.5px; }
+
+/* ---------------------------------------------------------------- topic page */
+.rd-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start; }
+.rd-books { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.rd-books button {
+  border: 1px solid var(--rule); background: transparent; border-radius: var(--radius); padding: 2px 9px;
+  font-size: 12.5px; color: var(--ink-soft);
+}
+.rd-books button:hover { border-color: var(--accent); }
+.rd-books button.on { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.rd-books .count { margin-left: 3px; font-size: 11px; }
+.rd-book-select { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-bottom: 4px; }
+.rd-book { scroll-margin-top: 12px; }
+.rd-book h2 {
+  font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(21px * var(--display-size));
+  margin: 22px 0 6px; color: var(--ink);
+}
+.rd-verse { margin: 0 0 8px; font-family: var(--font-text); font-size: calc(17px * var(--font-scale)); line-height: 1.55; color: var(--ink); }
+.rd-ref { font-family: var(--font-ui); font-size: 12px; font-weight: 600; color: var(--accent); margin-right: 2px; }
+.rd-side { position: sticky; top: 0; display: grid; gap: 14px; }
+.rd-box { border: 1px solid var(--rule); border-radius: var(--radius); background: var(--panel); padding: 12px 14px; }
+.rd-box h3 {
+  margin: 0 0 6px; font-size: 12.5px; font-weight: 600; color: var(--ink-soft);
+  text-transform: var(--label-transform); font-variant: var(--label-variant); letter-spacing: var(--label-tracking);
+}
+.rd-box > .muted.small { margin: 0 0 8px; }
+.rd-chips { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13.5px; }
+.rd-fathers { list-style: none; margin: 0; padding: 0; }
+.rd-fathers li { padding: 6px 0; border-bottom: 1px dashed var(--rule); }
+.rd-fathers li:last-child { border-bottom: 0; }
+.rd-father-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13.5px; }
+.rd-father-sample { margin-top: 2px; color: var(--ink-soft); }
+.rd-pairs { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.rd-pairs li { padding: 3px 0; }
+.rd-entry-box > summary { cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); text-transform: var(--label-transform); font-variant: var(--label-variant); letter-spacing: var(--label-tracking); }
+.rd-entry { font-family: var(--font-text); font-size: 15px; line-height: 1.55; color: var(--ink-soft); margin-top: 8px; }
+.rd-entry > p:first-child:has(> strong:only-child) { display: none; } /* the entry repeats the topic's name */
+.rd-entry ul { padding-left: 18px; margin: 0 0 8px; }
+.rd-entry li p { margin: 0; }
+.rd-entry a.wl { color: var(--link); }
+
+/* ---------------------------------------------------------------- reading plans */
+.rd-plan-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.rd-plan-card {
+  display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; color: var(--ink);
+  background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); background-image: none;
+  transition: border-color 0.15s ease;
+}
+.rd-plan-card:hover { border-color: var(--accent); }
+.rd-plan-card h2 { margin: 0; font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(21px * var(--display-size)); }
+.rd-plan-card p { margin: 0; font-family: var(--font-text); font-size: 15px; line-height: 1.5; color: var(--ink-soft); flex: 1; }
+.rd-plan-foot { display: flex; justify-content: space-between; gap: 8px; }
+.rd-progress { height: 4px; border-radius: 2px; background: var(--panel-2); overflow: hidden; min-width: 80px; }
+.rd-progress span { display: block; height: 100%; background: var(--accent); }
+.rd-plan-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.rd-plan-status .rd-progress { width: 160px; }
+.rd-date { font: inherit; font-size: 12.5px; color: var(--ink-soft); background: transparent; border: 1px solid var(--rule); border-radius: var(--radius); padding: 1px 4px; }
+
+.rd-today {
+  margin: 4px 0 22px; padding: 16px 20px; background: var(--panel); border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent); border-radius: var(--radius);
+}
+.rd-today-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; font-size: 13.5px; }
+.rd-label { font-size: 12px; font-weight: 600; color: var(--accent); text-transform: var(--label-transform); font-variant: var(--label-variant); letter-spacing: var(--label-tracking); }
+.rd-today-readings { display: grid; gap: 4px; }
+.rd-reading { font-family: var(--font-text); font-size: 16px; line-height: 1.5; }
+.rd-reading.large { font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(24px * var(--display-size)); }
+.rd-reading.large .muted.small { font-family: var(--font-ui); font-weight: 400; }
+.rd-reading-title { font-style: italic; color: var(--ink-soft); }
+.rd-today-actions { display: flex; align-items: center; gap: 16px; margin-top: 12px; }
+.rd-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--ink-soft); }
+
+.rd-days { list-style: none; margin: 0; padding: 0; }
+.rd-days li {
+  display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: 4px 14px; align-items: baseline;
+  padding: 7px 10px; border-bottom: 1px solid var(--rule); border-radius: var(--radius);
+}
+.rd-days li.today { background: color-mix(in srgb, var(--accent) 9%, var(--panel)); border-bottom-color: transparent; }
+.rd-days li.done .rd-day-readings { color: var(--muted); }
+.rd-day-check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-soft); cursor: pointer; }
+.rd-day-readings { display: flex; flex-wrap: wrap; gap: 2px 18px; }
+.rd-day-readings .rd-reading { font-size: 15.5px; }
+.rd-day-date { white-space: nowrap; }
+
+/* ---------------------------------------------------------------- Gospel parallels: index */
+.rd-syn-table { width: 100%; border-collapse: collapse; }
+.rd-syn-table th {
+  text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--rule);
+  text-transform: var(--label-transform); font-variant: var(--label-variant); letter-spacing: var(--label-tracking);
+}
+.rd-syn-table td { padding: 6px 8px; border-bottom: 1px solid var(--rule); vertical-align: baseline; }
+.rd-syn-table tr:hover td { background: color-mix(in srgb, var(--panel-2) 50%, transparent); }
+.rd-syn-table .n { width: 36px; text-align: right; }
+.rd-syn-table .title { font-family: var(--font-text); font-size: 16px; }
+.rd-syn-table .ref { width: 13%; color: var(--ink-soft); white-space: nowrap; }
+
+/* ---------------------------------------------------------------- Gospel parallels: one section */
+.rd-syn-page { padding-left: max(24px, calc((100% - 1400px) / 2)); padding-right: max(24px, calc((100% - 1400px) / 2)); }
+.rd-syn-nav { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.rd-syn-pager { display: inline-flex; gap: 14px; align-items: baseline; font-size: 13px; }
+.rd-legend { margin: 10px 0 0; }
+.rd-select { max-width: 100%; }
+.rd-pair { display: flex; gap: 4px; margin-top: 10px; }
+.rd-pair button { flex: 1; border: 1px solid var(--rule); background: transparent; border-radius: var(--radius); padding: 6px 4px; font-size: 13px; color: var(--ink-soft); }
+.rd-pair button.on { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.rd-syn { display: grid; grid-template-columns: repeat(var(--syn-cols, 3), minmax(0, 1fr)); gap: 0 28px; }
+.rd-syn-col { min-width: 0; }
+.rd-syn-col + .rd-syn-col { border-left: 1px solid var(--rule); padding-left: 28px; margin-left: -1px; }
+.rd-syn-col h2 {
+  position: sticky; top: -24px; z-index: 1; margin: 0 0 6px; padding: 8px 0 6px; background: var(--bg);
+  font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(22px * var(--display-size));
+  border-bottom: 1px solid var(--rule);
+}
+.rd-syn-passage { margin-bottom: 18px; }
+.rd-syn-ref { display: inline-block; margin: 4px 0 4px; color: var(--muted); }
+.rd-syn-text { font-family: var(--font-text); font-size: calc(17px * var(--font-scale)); line-height: 1.7; color: var(--ink); }
+.rd-syn-text.greek { font-family: var(--greek); font-size: calc(18px * var(--font-scale)); }
+.rd-syn-verse .vnum { margin-left: 2px; }
+.syn-own { background: color-mix(in srgb, var(--accent) 16%, transparent); border-radius: 2px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent); }
+.syn-part { text-decoration: underline dotted var(--accent); text-underline-offset: 4px; }
+.rd-legend .syn-own, .rd-legend .syn-part { color: var(--ink-soft); padding: 0 2px; }
+
+/* the study panel's parallels block */
+.rd-in-panel .item .who { font-weight: 600; font-size: 13.5px; }
+
+@media (max-width: 1000px) {
+  .rd-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .rd-side { position: static; }
+}
+
+@media (max-width: 760px) {
+  .rd-lede { font-size: 16px; }
+  .rd-filter, .rd-filter.small-filter { width: 100%; font-size: 16px; } /* 16px stops iOS zooming into the field */
+  .library-head .rd-links { margin: 2px 0 10px; width: 100%; }
+  .rd-topic-list { columns: 2 140px; column-gap: 14px; }
+  .rd-letters a, .rd-letters span { min-width: 24px; padding: 5px 0; }
+  .rd-book-parallels { margin-left: 0; display: block; }
+
+  .rd-days li { grid-template-columns: minmax(0, 1fr) auto; padding: 8px 4px; }
+  .rd-days li .rd-day-readings { grid-column: 1 / -1; grid-row: 2; padding-left: 26px; }
+  .rd-day-date { grid-row: 1; grid-column: 2; }
+  .rd-today { padding: 14px 14px; }
+  .rd-reading.large { font-size: calc(21px * var(--display-size)); }
+
+  /* section index: title on its own line, the references beneath */
+  .rd-syn-table thead { display: none; }
+  .rd-syn-table tr { display: grid; grid-template-columns: 28px repeat(4, minmax(0, 1fr)); gap: 0 6px; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+  .rd-syn-table td { border: 0; padding: 0; }
+  .rd-syn-table .n { grid-row: 1 / 3; width: auto; padding-top: 2px; }
+  .rd-syn-table .title { grid-column: 2 / -1; }
+  .rd-syn-table .ref { width: auto; white-space: normal; font-size: 12px; }
+  .rd-syn-table .ref:not(:empty)::before { content: attr(data-g) " "; color: var(--muted); }
+  .rd-syn-table .ref div { display: inline; }
+  .rd-syn-table .ref div + div::before { content: "; "; }
+
+  /* a section: two Gospels side by side, chosen with the buttons above */
+  .rd-syn-page { padding-left: 10px; padding-right: 10px; }
+  .rd-syn { gap: 0 12px; }
+  .rd-syn-col + .rd-syn-col { padding-left: 12px; }
+  .rd-syn-col h2 { top: -16px; font-size: calc(18px * var(--display-size)); }
+  .rd-syn-text { font-size: calc(15.5px * var(--font-scale)); line-height: 1.6; }
+  .rd-syn-text.greek { font-size: calc(16px * var(--font-scale)); }
+}
