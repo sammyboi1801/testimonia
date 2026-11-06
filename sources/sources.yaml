@@ -276,6 +276,60 @@ sources:
       is granted: the repo ships only the downloader; nothing derived from CCEL markup is committed or
       included in the published core.db. scripRef osisRef attributes give exact verse citations.
 
+  # ---------------------------------------------------------------- Jewish & Roman witnesses
+  - id: ccel-josephus
+    name: CCEL ThML — The Works of Flavius Josephus (tr. William Whiston, 1737)
+    url: https://ccel.org/ccel/josephus/complete
+    download: https://ccel.org/ccel/josephus/complete.xml — fetched on the user's machine at build time
+    public: false   # same CCEL policy as ccel-schaff (texts PD; CCEL asks permission before republishing its files)
+    fetch:
+      - http: https://ccel.org/ccel/josephus/complete.xml
+        target: witnesses
+        filename: josephus-whiston.xml
+    license: PD (Whiston 1737)
+    attribution: "Flavius Josephus, tr. William Whiston (1737); digital text courtesy of the Christian Classics Ethereal Library"
+    feeds: [work, work_edition, work_section, citation]
+    phase: 1
+    notes: Life, Antiquities, Jewish War, Against Apion (the spurious Discourse on Hades is skipped). Whiston's footnotes carry scripRef links.
+
+  - id: perseus-tacitus
+    name: Tacitus, Annals — tr. A. J. Church & W. J. Brodribb (1876), Perseus TEI
+    url: https://github.com/PerseusDL/canonical-latinLit
+    download: raw TEI file from the canonical-latinLit repository
+    fetch:
+      - http: https://raw.githubusercontent.com/PerseusDL/canonical-latinLit/master/data/phi1351/phi005/phi1351.phi005.perseus-eng2.xml
+        target: witnesses
+        filename: tacitus-annals-eng.xml
+    license: CC-BY-SA-4.0
+    share_alike: true
+    attribution: "Tacitus, Annals, tr. A. J. Church & W. J. Brodribb (1876); TEI by the Perseus Digital Library, CC BY-SA 4.0"
+    feeds: [work, work_edition, work_section]
+    phase: 1
+
+  - id: pd-roman-witnesses
+    name: Suetonius, Pliny the Younger and Lucian in public-domain translations
+    url: https://www.gutenberg.org/
+    download: plain-text files from the Project Gutenberg cache (ebooks 6400, 2811, 47242)
+    fetch:
+      - http: https://www.gutenberg.org/cache/epub/6400/pg6400.txt
+        target: witnesses
+        filename: suetonius-thomson-forester.txt
+      - http: https://www.gutenberg.org/cache/epub/2811/pg2811.txt
+        target: witnesses
+        filename: pliny-letters-melmoth.txt
+      - http: https://www.gutenberg.org/cache/epub/47242/pg47242.txt
+        target: witnesses
+        filename: lucian-fowler-vol4.txt
+    license: PD
+    attribution: "Suetonius, Lives of the Caesars, tr. A. Thomson rev. T. Forester (1855); Pliny the Younger, Letters, tr. W. Melmoth rev. F. C. T. Bosanquet; Lucian, tr. H. W. and F. G. Fowler (Oxford, 1905) — public domain"
+    feeds: [work, work_edition, work_section]
+    phase: 1
+    notes: >
+      Only the passages bearing on Christ and the first Christians are imported: Suetonius' Lives of Claudius
+      and Nero, Pliny's letters 10.96–97 (Melmoth XCVII–XCVIII), Lucian's Death of Peregrine. The Gutenberg
+      header, footer and licence are stripped and the texts are not presented as Project Gutenberg editions
+      (Project Gutenberg licence §1.C).
+
   - id: hcf-commentaries
     name: HistoricalChristianFaith Commentaries-Database
     url: https://github.com/HistoricalChristianFaith/Commentaries-Database
@@ -390,7 +444,7 @@ sources:
     attribution: "Project Gutenberg"
     feeds: [work, work_edition, work_section]
     phase: 1
-    notes: "Pistis Sophia (Horner 1924, #76266); Aquinas Summa Theologica (1920); Josephus (Whiston); Philo (Yonge)"
+    notes: "Pistis Sophia (Horner 1924, #76266); Aquinas Summa Theologica (1920); Philo (Yonge). Josephus, Suetonius, Pliny and Lucian: see ccel-josephus and pd-roman-witnesses"
 
   - id: wikisource
     name: Wikisource (selected PD texts)
@@ -512,6 +566,18 @@ sources:
     attribution: "Wikidata (CC0)"
     feeds: [external_id, person, dating, event, manuscript, place]
     phase: 2
+
+  - id: wikipedia-summaries
+    name: Wikipedia page summaries (introductions shown live in the app)
+    url: https://en.wikipedia.org/api/rest_v1/
+    kind: api
+    download: fetched by the reader's browser when an author, work or event card is opened; nothing is stored in core.db
+    license: CC-BY-SA-4.0
+    share_alike: true
+    attribution: "Introductions to authors, works and events from Wikipedia, CC BY-SA 4.0 (credited on each card)"
+    feeds: []
+    phase: 1
+    notes: Article titles are curated in curated/people.csv, events.csv and work_links.csv (checked to resolve; life dates cross-checked against Wikidata).
 
   - id: mam-aleppo
     name: Miqra according to the Masorah (Aleppo-based Hebrew text)

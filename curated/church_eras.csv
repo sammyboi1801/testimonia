@@ -1,0 +1,7 @@
+id,name,start,end,era_code,description
+era-second-temple,Late Second Temple,-166,70,,"From the Maccabees to the destruction of the Temple"
+era-apostolic,Apostolic age & Apostolic Fathers,30,150,apostolic,"The apostles and those who knew them"
+era-ante-nicene,Ante-Nicene,150,325,ante-nicene,"Apologists, heresiologists and martyrs before the Council of Nicaea"
+era-nicene,Nicene & post-Nicene,325,451,nicene,"The great councils and the golden age of the fathers"
+era-late-patristic,Late patristic,451,750,late-patristic,"From Chalcedon to John of Damascus"
+era-medieval,Medieval,750,1500,medieval,"Schoolmen and monasteries"

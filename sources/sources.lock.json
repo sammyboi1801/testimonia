@@ -21,6 +21,12 @@
       "size": 1984180,
       "source": "openbible-xref"
     },
+    "http|https://ccel.org/ccel/josephus/complete.xml|witnesses|josephus-whiston.xml": {
+      "fetched_at": "2026-11-06T04:04:36+00:00",
+      "sha256": "b7cff7c4a88f7a9b0daf293696f38a66964d81d0e87802a18be0f3a50f1548a3",
+      "size": 5005955,
+      "source": "ccel-josephus"
+    },
     "http|https://ebible.org/Scriptures/eng-Brenton_vpl.zip|ebible|": {
       "fetched_at": "2026-11-05T23:56:02+00:00",
       "sha256": "e5702697f97c536370bc98c46f78d13288c689270f3b00d91909376afd9bcce3",
@@ -104,6 +110,12 @@
       "sha256": "47e777ddaf033ad023a04b80a863291be72f655a227f29606be038177743234a",
       "size": 732065,
       "source": "ebible"
+    },
+    "http|https://raw.githubusercontent.com/PerseusDL/canonical-latinLit/master/data/phi1351/phi005/phi1351.phi005.perseus-eng2.xml|witnesses|tacitus-annals-eng.xml": {
+      "fetched_at": "2026-11-06T04:04:36+00:00",
+      "sha256": "3fd377088c7cdf573658becd2b97e7707400cf4849bcbdfbe8f9c4bd71fdf981",
+      "size": 1225093,
+      "source": "perseus-tacitus"
     },
     "http|https://www.ccel.org/ccel/aquinas/catena1.xml|ccel|": {
       "fetched_at": "2026-11-06T01:05:08+00:00",
@@ -338,6 +350,24 @@
       "sha256": "4ae3cb29edcb7b8e58bb9246049243c464b6839f88f6730f98b80122770b9bb4",
       "size": 3196008,
       "source": "ccel-schaff"
+    },
+    "http|https://www.gutenberg.org/cache/epub/2811/pg2811.txt|witnesses|pliny-letters-melmoth.txt": {
+      "fetched_at": "2026-11-06T04:04:37+00:00",
+      "sha256": "38246747bde7ef4da17603bee74b5344cc1502f8e41d6515fe72651ca0e8fa9a",
+      "size": 552151,
+      "source": "pd-roman-witnesses"
+    },
+    "http|https://www.gutenberg.org/cache/epub/47242/pg47242.txt|witnesses|lucian-fowler-vol4.txt": {
+      "fetched_at": "2026-11-06T04:04:37+00:00",
+      "sha256": "4c7fc8233d28962b26de6cc6839f4de9326fe059ca0b8290f278eb066c0c7409",
+      "size": 481619,
+      "source": "pd-roman-witnesses"
+    },
+    "http|https://www.gutenberg.org/cache/epub/6400/pg6400.txt|witnesses|suetonius-thomson-forester.txt": {
+      "fetched_at": "2026-11-06T04:04:37+00:00",
+      "sha256": "ce62a16afa01bbf5c597788d8c73290ad7bc8ac09a5c87ed9b5c8010c1a9687f",
+      "size": 1423035,
+      "source": "pd-roman-witnesses"
     }
   },
   "version": 1

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { Chapter, Meta, RefResult, SearchResults, SectionView, Toc, VerseGuide, WordStudy, WorkSummary } from "./types";
+import type { Chapter, Meta, RefResult, SearchResults, SectionView, Timeline, Toc, VerseGuide, WikiSummary, WordStudy, WorkSummary } from "./types";
 
 export class ApiError extends Error {
   constructor(
@@ -53,6 +53,19 @@ export const useWord = (strong: string | null) =>
     enabled: !!strong,
     ...FOREVER,
   });
+
+export const useTimeline = () => useQuery({ queryKey: ["timeline"], queryFn: () => getJson<Timeline>("/api/timeline"), ...FOREVER });
+
+/** Wikipedia's page summary (CC BY-SA), fetched live from the public REST API and cached for the session. */
+export async function wikiSummary(title: string): Promise<WikiSummary> {
+  const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title.replaceAll(" ", "_"))}`, {
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw new Error(`Wikipedia: ${res.status}`);
+  return (await res.json()) as WikiSummary;
+}
+export const useWiki = (title: string | null | undefined, enabled = true) =>
+  useQuery({ queryKey: ["wiki", title], queryFn: () => wikiSummary(title!), enabled: !!title && enabled, staleTime: Infinity, gcTime: Infinity, retry: 0 });
 
 export const useWorks = () => useQuery({ queryKey: ["works"], queryFn: () => getJson<WorkSummary[]>("/api/works"), ...FOREVER });
 

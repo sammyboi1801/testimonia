@@ -43,6 +43,25 @@ INSERT INTO work_section (edition_id, ord, cite, level, title, html, text) VALUE
   ('irenaeus.haer@anf01', 1, '3.11', 2, 'Chapter XI', '<p>the only-begotten God</p>', 'the only-begotten God');
 INSERT INTO citation (start_vkey, end_vkey, work_id, edition_id, section_ord, cite, author_id, year, kind, source_id)
   VALUES (43001018, 43001018, 'irenaeus.haer', 'irenaeus.haer@anf01', 1, '3.11', 'irenaeus', 202, 'quotation', 't');
+INSERT INTO person (id, name, kind, born, died, tradition, source_id) VALUES ('josephus', 'Flavius Josephus', 'author', 37, 100, 'jewish', 't');
+INSERT INTO work (id, author_id, title, category, date_from, date_to, source_id) VALUES ('josephus.antiquities', 'josephus', 'Antiquities of the Jews', 'jewish', 93, 94, 't');
+INSERT INTO work_edition (id, work_id, language, kind, source_id) VALUES ('josephus.antiquities@whiston', 'josephus.antiquities', 'eng', 'translation', 't');
+INSERT INTO work_section (edition_id, ord, cite, level, title, html, text) VALUES
+  ('josephus.antiquities@whiston', 1, 'pref', 1, 'Preface', '<p>Those that undertake…</p>', 'Those that undertake'),
+  ('josephus.antiquities@whiston', 2, '18.3', 1, 'Book 18, chapter 3', '<p>Jesus, a wise man</p>', 'Jesus, a wise man');
+INSERT INTO citation (start_vkey, end_vkey, work_id, edition_id, section_ord, cite, author_id, year, kind, snippet, source_id)
+  VALUES (43001018, 43001018, 'josephus.antiquities', 'josephus.antiquities@whiston', 2, '18.3.3', 'josephus', 94, 'reference', 'a parallel', 't');
+INSERT INTO chronology_system (id, name) VALUES ('scholarly', 'Scholarly consensus');
+INSERT INTO external_id (entity_type, entity_id, scheme, value) VALUES ('person', 'josephus', 'wikipedia', 'Josephus'),
+  ('event', 'destruction-of-temple', 'wikipedia', 'Siege of Jerusalem (70 CE)');
+INSERT INTO period (id, name, scope, sort, source_id) VALUES ('era-apostolic', 'Apostolic age', 'church', 1, 't');
+INSERT INTO event (id, title, kind, source_id) VALUES ('destruction-of-temple', 'Destruction of the Second Temple', 'political', 't');
+INSERT INTO dating (entity_type, entity_id, system_id, date_kind, start_year, end_year, circa, source_id) VALUES
+  ('period', 'era-apostolic', 'scholarly', 'span', 30, 150, 0, 't'),
+  ('event', 'destruction-of-temple', 'scholarly', 'point', 70, 70, 0, 't'),
+  ('person', 'josephus', 'scholarly', 'point', 100, 100, 1, 't');
+UPDATE dating SET aspect = 'death' WHERE entity_type = 'person';
+INSERT INTO entity_attr (uri, key, value, source_id) VALUES ('event:destruction-of-temple', 'timeline.major', 'true', 't');
 INSERT INTO meta (key, value) VALUES ('build.version', 'test');
 """
 
@@ -83,7 +102,9 @@ def test_chapter_errors(client):
 def test_passage_guide(client):
     g = client.get("/api/verse/John.1.18").json()
     assert g["variants"][0]["readings"][1]["text"] == "υἱός"
-    assert g["fathers"][0]["author"] == "Irenaeus"
+    assert [f["author"] for f in g["fathers"]] == ["Irenaeus"]  # Josephus is not a church father…
+    assert g["witnesses"][0]["author"] == "Flavius Josephus"  # …he is listed with the Jewish & Roman writers
+    assert g["witnesses"][0]["cite"] == "18.3.3"
     assert g["words"]["tagnt"][0]["lemma"] == "μονογενής"
     xr = client.get("/api/verse/John.1.1").json()["crossrefs"]
     assert xr[0]["osis"] == "Gen.1.1"
@@ -100,8 +121,9 @@ def test_word_study(client):
 
 
 def test_library(client):
-    works = client.get("/api/works").json()
-    assert works[0]["title"] == "Against Heresies"
+    works = {w["title"]: w for w in client.get("/api/works").json()}
+    assert works["Against Heresies"]["year"] == 202
+    assert works["Antiquities of the Jews"]["year"] == 94
     sec = client.get("/api/edition/irenaeus.haer@anf01/section/1").json()
     assert sec["citations"][0]["osis"] == "John.1.18"
 
@@ -139,6 +161,31 @@ def test_original_language_search(client):
 def test_chapter_marks(client):
     r = client.get("/api/chapter/John/1", params={"editions": "kjva,tagnt"}).json()
     v18 = next(v for v in r["verses"] if v["verse"] == 18)
-    assert v18["marks"] == {"variants": 1, "major_variants": 1, "fathers": 1, "pre_nicene": 1}
+    assert v18["marks"] == {"variants": 1, "major_variants": 1, "fathers": 1, "pre_nicene": 1, "witnesses": 1}
     assert v18["words"]["tagnt"][0]["lemma"] == "μονογενής"
     assert "marks" not in next(v for v in r["verses"] if v["verse"] == 1)
+
+
+def test_timeline(client):
+    t = client.get("/api/timeline").json()
+    assert t["eras"] == [{"id": "era-apostolic", "name": "Apostolic age", "description": None, "start": 30, "end": 150}]
+    temple = t["events"][0]
+    assert (temple["title"], temple["start"], temple["major"]) == ("Destruction of the Second Temple", 70, True)
+    assert temple["wikipedia"] == "Siege of Jerusalem (70 CE)"
+    jos = next(a for a in t["authors"] if a["id"] == "josephus")
+    assert (jos["born"], jos["died"], jos["wikipedia"], jos["circa"]) == (37, 100, "Josephus", ["death"])
+    assert [w["title"] for w in jos["works"]] == ["Antiquities of the Jews"]
+    assert jos["category"] == "jewish"
+
+
+def test_toc_introduction(client):
+    toc = client.get("/api/edition/josephus.antiquities@whiston/toc").json()
+    assert toc["edition"]["author_wikipedia"] == "Josephus"
+    assert toc["edition"]["date_from"] == 93
+    assert toc["intro_ord"] is None  # the author's own preface is not an editor's introduction
+
+
+def test_chapter_marks_keep_witnesses_apart(client):
+    v18 = next(v for v in client.get("/api/chapter/John/1").json()["verses"] if v["verse"] == 18)
+    assert v18["marks"]["fathers"] == 1
+    assert v18["marks"]["witnesses"] == 1

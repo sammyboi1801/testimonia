@@ -26,7 +26,12 @@ export const CATEGORY_LABELS: Record<string, string> = {
   liturgical: "Liturgies & Church Orders",
   council: "Councils",
   catena: "Catena Aurea",
+  jewish: "Jewish writers",
+  pagan: "Greek & Roman writers",
 };
+
+/** Categories of non-Christian witnesses (Josephus, Tacitus, Pliny…). */
+export const OUTSIDE = new Set(["jewish", "pagan"]);
 
 /** 'John.1.18' → { book, chapter, verse } (or null). */
 export function parseOsis(osis: string): { book: string; chapter: number; verse: number } | null {

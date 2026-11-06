@@ -18,6 +18,7 @@ from .store import Store
 
 router = APIRouter(prefix="/api")
 
+OUTSIDE = ("jewish", "pagan")  # work categories of non-Christian witnesses
 LEXICON_ORDER = ["tbesg", "tbesh", "abbott-smith", "lsj", "bdb"]
 WORD_EDITIONS = {"tagnt": "NT", "tahot": "OT"}  # word-data editions (rendered as interlinear)
 
@@ -157,12 +158,16 @@ def chapter_marks(s: Store, lo: int, hi: int) -> dict[int, dict[str, int]]:
             bump(r["start_vkey"], "major_variants", r["major"])
     book_lo = lo - lo % 1_000_000
     for r in s.all(
-        "SELECT start_vkey, end_vkey, year FROM citation WHERE start_vkey BETWEEN ? AND ? AND end_vkey >= ?",
+        "SELECT c.start_vkey, c.end_vkey, c.year, w.category IN ('jewish', 'pagan') AS outside FROM citation c "
+        "JOIN work w ON w.id = c.work_id WHERE c.start_vkey BETWEEN ? AND ? AND c.end_vkey >= ?",
         (book_lo, hi, lo),
     ):
         if r["end_vkey"] - r["start_vkey"] > MAX_MARK_SPAN:
             continue
         for k in range(max(r["start_vkey"], lo), min(r["end_vkey"], hi) + 1):
+            if r["outside"]:  # Josephus, Tacitus…: not church fathers
+                bump(k, "witnesses")
+                continue
             bump(k, "fathers")
             if r["year"] is not None and r["year"] <= 325:
                 bump(k, "pre_nicene")
@@ -261,7 +266,9 @@ def verse(request: Request, osis: str, preview: str = "bsb", limit: int = Query(
             merged[key]["times"] += 1
         else:
             merged[key] = {**f, "times": 1}
-    fathers = list(merged.values())
+    # Jewish and Roman writers (Josephus, Tacitus…) are listed apart from the church fathers
+    witnesses = [f for f in merged.values() if f["category"] in OUTSIDE]
+    fathers = [f for f in merged.values() if f["category"] not in OUTSIDE]
     commentary = s.all(
         "SELECT e.id, e.start_vkey, e.end_vkey, e.work_title, e.html, e.source_url, c.title AS author, c.year, "
         "c.era, c.author_id FROM commentary_entry e JOIN commentary c ON c.id = e.commentary_id "
@@ -292,6 +299,7 @@ def verse(request: Request, osis: str, preview: str = "bsb", limit: int = Query(
         "crossrefs": xrefs,
         "quotations": quotes,
         "fathers": fathers,
+        "witnesses": witnesses,
         "commentary": commentary,
         "notes": notes,
         "topics": topics,
@@ -360,20 +368,31 @@ def morph(request: Request, code: str) -> dict[str, Any]:
 @router.get("/works")
 def works(request: Request) -> list[dict[str, Any]]:
     return store(request).all(
-        "SELECT w.id, w.title, w.category, w.era, w.author_id, p.name AS author, p.floruit_to AS year, "
+        "SELECT w.id, w.title, w.category, w.era, w.author_id, p.name AS author, "
+        "COALESCE(w.date_to, p.floruit_to) AS year, w.date_from, w.date_to, "
         "(SELECT count(*) FROM citation c WHERE c.work_id = w.id) AS citations, "
         "(SELECT min(id) FROM work_edition we WHERE we.work_id = w.id) AS edition_id "
         "FROM work w LEFT JOIN person p ON p.id = w.author_id "
-        "ORDER BY p.floruit_to IS NULL, p.floruit_to, p.name, w.title"
+        "ORDER BY COALESCE(w.date_to, p.floruit_to) IS NULL, COALESCE(w.date_to, p.floruit_to), p.name, w.title"
     )
+
+
+INTRO_TITLE = re.compile(r"^(introduct|prefatory|translator)", re.I)  # editor's notes, not an author's own preface
 
 
 @router.get("/edition/{edition_id}/toc")
 def toc(request: Request, edition_id: str) -> dict[str, Any]:
     s = store(request)
     ed = s.one(
-        "SELECT we.*, w.title, w.category, w.era, p.name AS author FROM work_edition we JOIN work w ON w.id = "
-        "we.work_id LEFT JOIN person p ON p.id = w.author_id WHERE we.id = ?",
+        "SELECT we.*, w.title, w.category, w.era, w.summary, w.attribution, w.date_from, w.date_to, w.author_id, "
+        "p.name AS author, p.born AS author_born, p.died AS author_died, p.floruit_from AS author_from, "
+        "p.floruit_to AS author_to, p.summary AS author_summary, "
+        "(SELECT value FROM external_id x WHERE x.entity_type='work' AND x.entity_id=w.id AND scheme='wikipedia') "
+        "AS wikipedia, "
+        "(SELECT value FROM external_id x WHERE x.entity_type='person' AND x.entity_id=w.author_id "
+        "AND scheme='wikipedia') AS author_wikipedia "
+        "FROM work_edition we JOIN work w ON w.id = we.work_id LEFT JOIN person p ON p.id = w.author_id "
+        "WHERE we.id = ?",
         (edition_id,),
     )
     if ed is None:
@@ -381,7 +400,68 @@ def toc(request: Request, edition_id: str) -> dict[str, Any]:
     sections = s.all(
         "SELECT ord, cite, title, level FROM work_section WHERE edition_id = ? ORDER BY ord", (edition_id,)
     )
-    return {"edition": ed, "sections": sections}
+    # the editor's (public-domain) introduction, when the volume has one at the start of the work
+    intro = next((x["ord"] for x in sections[:3] if x["title"] and INTRO_TITLE.match(x["title"])), None)
+    return {"edition": ed, "sections": sections, "intro_ord": intro}
+
+
+@router.get("/timeline")
+def timeline(request: Request) -> dict[str, Any]:
+    """Everything the library timeline draws: eras, events, dated authors with their works, dated anonymous works."""
+    s = store(request)
+    wiki = {
+        (r["entity_type"], r["entity_id"]): r["value"]
+        for r in s.all("SELECT entity_type, entity_id, value FROM external_id WHERE scheme = 'wikipedia'")
+    }
+    circa: dict[tuple[str, str], set[str]] = {}
+    for r in s.all("SELECT entity_type, entity_id, aspect FROM dating WHERE circa = 1 AND system_id = 'scholarly'"):
+        circa.setdefault((r["entity_type"], r["entity_id"]), set()).add(r["aspect"])
+    eras = s.all(
+        "SELECT p.id, p.name, p.description, d.start_year AS start, d.end_year AS end FROM period p "
+        "JOIN dating d ON d.entity_type = 'period' AND d.entity_id = p.id WHERE p.scope = 'church' ORDER BY p.sort"
+    )
+    events = s.all(
+        "SELECT e.id, e.title, e.kind, e.description, d.start_year AS start, d.end_year AS end, d.date_kind, d.circa "
+        "FROM event e JOIN dating d ON d.entity_type = 'event' AND d.entity_id = e.id ORDER BY d.start_year"
+    )
+    major = {
+        r["uri"].split(":", 1)[1]
+        for r in s.all("SELECT uri FROM entity_attr WHERE key = 'timeline.major' AND uri LIKE 'event:%'")
+    }
+    for e in events:
+        e["wikipedia"] = wiki.get(("event", e["id"]))
+        e["major"] = e["id"] in major
+    works = s.all(
+        "SELECT w.id, w.title, w.category, w.author_id, w.date_from, w.date_to, w.summary, "
+        "(SELECT count(*) FROM citation c WHERE c.work_id = w.id) AS citations, "
+        "(SELECT min(id) FROM work_edition we WHERE we.work_id = w.id) AS edition_id FROM work w ORDER BY w.title"
+    )
+    by_author: dict[str, list[dict[str, Any]]] = {}
+    anonymous = []
+    for w in works:
+        w["wikipedia"] = wiki.get(("work", w["id"]))
+        if w["author_id"]:
+            by_author.setdefault(w["author_id"], []).append(w)
+        elif w["date_from"] is not None:
+            anonymous.append(w)
+    authors = s.all(
+        "SELECT id, name, born, died, floruit_from, floruit_to, era, tradition, summary FROM person "
+        "WHERE id IN (SELECT author_id FROM work) AND COALESCE(born, floruit_from, floruit_to, died) IS NOT NULL "
+        "ORDER BY COALESCE(floruit_to, died)"
+    )
+    for a in authors:
+        a["wikipedia"] = wiki.get(("person", a["id"]))
+        a["circa"] = sorted(circa.get(("person", a["id"]), ()))
+        a["works"] = by_author.get(a["id"], [])
+        a["category"] = _main_category(a["works"])
+    return {"eras": eras, "events": events, "authors": authors, "works": anonymous}
+
+
+def _main_category(works: list[dict[str, Any]]) -> str:
+    counts: dict[str, int] = {}
+    for w in works:
+        counts[w["category"]] = counts.get(w["category"], 0) + 1
+    return max(counts, key=lambda c: counts[c]) if counts else "church-father"
 
 
 @router.get("/edition/{edition_id}/section/{ord_}")

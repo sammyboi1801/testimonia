@@ -118,7 +118,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord }: Props & { g:
 function tabCount(t: Tab, g: VerseGuide, fathers: number): string {
   if (t === "text") return String(g.variants.length);
   if (t === "fathers") return String(fathers);
-  if (t === "links") return String(g.quotations.length + g.crossrefs.length);
+  if (t === "links") return String(g.quotations.length + g.crossrefs.length + (g.witnesses?.length ?? 0));
   const w = g.words.tagnt?.length ? g.words.tagnt : g.words.tahot;
   return String(w?.length ?? 0);
 }
@@ -258,6 +258,28 @@ function LinksTab({ g, books, onWord }: { g: VerseGuide; books: Book[]; onWord: 
           {quotedBy.length > 0 && <p className="muted small">Quoted in</p>}
           {quotedBy.map((q) => (
             <RefItem key={`b${q.other}`} osis={q.osis} books={books} text={q.text} />
+          ))}
+        </Block>
+      )}
+      {(g.witnesses?.length ?? 0) > 0 && (
+        <Block title="Jewish & Roman writers" note={g.witnesses!.length}>
+          {g.witnesses!.map((w, i) => (
+            <div key={`${w.work_id}-${w.cite}-${i}`} className="item">
+              <div className="item-head">
+                <strong>{w.author}</strong>
+                {w.edition_id && w.section_ord ? (
+                  <Link to={`/library/${encodeURIComponent(w.edition_id)}/${w.section_ord}`}>
+                    <i>{w.work_title}</i> {w.cite}
+                  </Link>
+                ) : (
+                  <span>
+                    <i>{w.work_title}</i> {w.cite}
+                  </span>
+                )}
+                {w.kind === "comment" && <span className="tag">translator's note</span>}
+              </div>
+              {w.snippet && <p className="note-text">{w.snippet}</p>}
+            </div>
           ))}
         </Block>
       )}

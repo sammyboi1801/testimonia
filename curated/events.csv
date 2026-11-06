@@ -1,0 +1,45 @@
+id,title,kind,start,end,date_kind,approx,wikipedia,description,major
+septuagint-pentateuch,Septuagint: the Law translated into Greek,literary,-279,-249,window,1,Septuagint,Alexandrian Jews translate the Pentateuch into Greek; the rest follows over the next two centuries,
+maccabean-revolt,Maccabean revolt,political,-166,-159,span,0,Maccabean Revolt,Judas Maccabeus leads the revolt against Antiochus IV; the Temple is rededicated (Hanukkah),1
+dead-sea-scrolls-copied,Dead Sea Scrolls copied,manuscript,-249,68,span,1,Dead Sea Scrolls,Scrolls of the Qumran caves: the oldest surviving manuscripts of the Hebrew Bible,
+pompey-takes-jerusalem,Pompey takes Jerusalem,political,-62,-62,point,0,Siege of Jerusalem (63 BC),Judea passes under Roman control,1
+herod-the-great,Reign of Herod the Great,political,-36,-3,span,0,Herod the Great,Client king of Judea; rebuilds the Temple,
+birth-of-jesus,Birth of Jesus,biblical,-5,-3,window,1,Nativity of Jesus,Before the death of Herod (4 BC),1
+ministry-of-jesus,Ministry of Jesus,biblical,27,30,span,1,Ministry of Jesus,From his baptism by John to the crucifixion,
+crucifixion,Crucifixion of Jesus,biblical,30,33,window,1,Crucifixion of Jesus,"Under Pontius Pilate, prefect of Judea 26–36",1
+conversion-of-paul,Conversion of Paul,biblical,33,36,window,1,Conversion of Paul the Apostle,On the road to Damascus,
+council-of-jerusalem,Council of Jerusalem,council,48,50,window,1,Council of Jerusalem,Gentile believers need not keep the Law of Moses (Acts 15),
+pauls-letters,Paul's letters written,literary,50,62,span,1,Pauline epistles,The earliest surviving Christian writings,
+great-fire-of-rome,Great Fire of Rome; Nero blames the Christians,persecution,64,64,point,0,Great Fire of Rome,"Tacitus, Annals 15.44; traditionally the martyrdoms of Peter and Paul",1
+first-jewish-revolt,First Jewish–Roman War,political,66,73,span,0,First Jewish–Roman War,Ends with the fall of Masada; narrated by Josephus,
+destruction-of-temple,Destruction of the Second Temple,political,70,70,point,0,Siege of Jerusalem (70 CE),Titus captures Jerusalem and burns the Temple,1
+gospels-written,The Gospels written,literary,65,100,window,1,Gospel,"Mark first (c. 65–70), John last (c. 90–100), in the mainstream view",
+pliny-trajan,Pliny asks Trajan how to treat Christians,persecution,112,112,point,1,Pliny the Younger on Christians,Letters 10.96–97,
+p52,Papyrus 52 copied,manuscript,100,175,window,1,Rylands Library Papyrus P52,A scrap of John 18 — among the oldest New Testament manuscripts,
+bar-kokhba-revolt,Bar Kokhba revolt,political,132,136,span,0,Bar Kokhba Revolt,Jerusalem refounded as Aelia Capitolina; Jews barred from the city,1
+marcion,Marcion breaks with Rome,church,144,144,point,1,Marcion of Sinope,His shortened canon prompts the church to define its own,
+martyrs-of-lyon,Martyrs of Lyon,persecution,177,177,point,0,Persecution in Lyon,Described in a letter preserved by Eusebius,
+muratorian-fragment,Muratorian fragment (earliest list of NT books),canon,170,200,window,1,Muratorian fragment,Debated: some date it to the 4th century,
+p66-p75,Papyri 66 and 75 copied,manuscript,175,225,window,1,Papyrus 66,Nearly complete early copies of John (and Luke),
+decian-persecution,Decian persecution,persecution,250,251,span,0,Decian persecution,First empire-wide demand that all sacrifice to the gods,1
+valerian-persecution,Valerian persecution,persecution,257,260,span,0,Valerian (emperor),Cyprian of Carthage is executed,
+diocletian-persecution,Great Persecution under Diocletian,persecution,303,313,span,0,Diocletianic Persecution,The last and most severe persecution; scriptures are burned,1
+edict-of-milan,Edict of Milan,political,313,313,point,0,Edict of Milan,Constantine and Licinius grant toleration to Christians,1
+council-of-nicaea,First Council of Nicaea,council,325,325,point,0,First Council of Nicaea,Condemns Arius; the Nicene Creed,1
+codex-vaticanus,Codex Vaticanus copied,manuscript,300,350,window,1,Codex Vaticanus,One of the two oldest complete Greek Bibles,
+codex-sinaiticus,Codex Sinaiticus copied,manuscript,330,360,window,1,Codex Sinaiticus,The oldest complete New Testament,
+festal-letter-39,Athanasius's 39th Festal Letter,canon,367,367,point,0,Development of the New Testament canon,First list of exactly the 27 New Testament books,
+edict-of-thessalonica,Edict of Thessalonica,political,380,380,point,0,Edict of Thessalonica,Nicene Christianity becomes the state religion,
+council-of-constantinople,First Council of Constantinople,council,381,381,point,0,First Council of Constantinople,Completes the Nicene Creed on the Holy Spirit,1
+vulgate,Jerome's Vulgate,literary,382,405,span,0,Vulgate,The Latin Bible of the Western church for a thousand years,
+council-of-carthage,Council of Carthage confirms the canon,canon,397,397,point,0,Councils of Carthage,Lists the books of the Old and New Testaments,
+sack-of-rome,Visigoths sack Rome,political,410,410,point,0,Sack of Rome (410),Prompts Augustine's City of God,1
+council-of-ephesus,Council of Ephesus,council,431,431,point,0,Council of Ephesus,Mary is Theotokos; Nestorius condemned,
+council-of-chalcedon,Council of Chalcedon,council,451,451,point,0,Council of Chalcedon,"Christ in two natures, one person",1
+fall-of-west-rome,End of the Western Roman Empire,political,476,476,point,0,Fall of the Western Roman Empire,Romulus Augustulus deposed,1
+council-of-constantinople-ii,Second Council of Constantinople,council,553,553,point,0,Second Council of Constantinople,Condemns the Three Chapters,
+council-of-constantinople-iii,Third Council of Constantinople,council,680,681,span,0,Third Council of Constantinople,Christ has two wills,
+council-of-nicaea-ii,Second Council of Nicaea,council,787,787,point,0,Second Council of Nicaea,Restores the veneration of icons,
+masoretic-aleppo,Aleppo Codex written,manuscript,920,930,window,1,Aleppo Codex,The Masoretes' model codex of the Hebrew Bible,
+great-schism,East–West Schism,church,1054,1054,point,0,East–West Schism,Rome and Constantinople excommunicate each other,1
+leningrad-codex,Leningrad Codex written,manuscript,1008,1009,window,0,Leningrad Codex,Oldest complete Hebrew Bible; basis of the WLC text used here,

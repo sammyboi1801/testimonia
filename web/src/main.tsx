@@ -27,6 +27,7 @@ import "@fontsource/noto-serif-hebrew/400.css";
 import "./styles.css";
 import "./layout.css";
 import "./settings.css";
+import "./timeline.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";

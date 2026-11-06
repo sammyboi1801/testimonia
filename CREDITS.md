@@ -7,7 +7,7 @@ Testimonia is built entirely on openly licensed data. This page lists every data
 uses, with the credit line its licence requires. A built `core.db` is distributed under
 **CC BY-SA 4.0** as a combination of these sources (see [DATA_LICENSE.md](DATA_LICENSE.md)).
 
-**42 sources** · 22 explicitly excluded
+**46 sources** · 22 explicitly excluded
 
 ## Summary
 
@@ -24,6 +24,7 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 | STEPBible TVTMS (versification mapping) | CC-BY-4.0 | 0 |
 | Testimonia curated tables (this repository, curated/) | CC-BY-SA-4.0 | 0 |
 | CCEL ThML — Ante-Nicene Fathers 1–9, Nicene & Post-Nicene Fathers series 1 & 2 | PD (translations 1885–1900) | 1 |
+| CCEL ThML — The Works of Flavius Josephus (tr. William Whiston, 1737) | PD (Whiston 1737) | 1 |
 | HistoricalChristianFaith Commentaries-Database | PD (public-domain dedication) | 1 |
 | HistoricalChristianFaith Commentaries-Database — authors after AD 451 | PD (public-domain dedication; some excerpts claimed as fair use) | 1 |
 | M. R. James, The Apocryphal New Testament (1924) | PD (US since 2020; author d. 1936) | 1 |
@@ -34,7 +35,10 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 | Project Gutenberg (selected PD works) | PD | 1 |
 | R. H. Charles, Apocrypha and Pseudepigrapha of the Old Testament (1913) | PD | 1 |
 | S. Schechter, Fragments of a Zadokite Work (1910) — Damascus Document, Hebrew + English | PD | 1 |
+| Suetonius, Pliny the Younger and Lucian in public-domain translations | PD | 1 |
+| Tacitus, Annals — tr. A. J. Church & W. J. Brodribb (1876), Perseus TEI | CC-BY-SA-4.0 | 1 |
 | Thomas Aquinas, Catena Aurea (Newman translation, 1841) | PD | 1 |
+| Wikipedia page summaries (introductions shown live in the app) | CC-BY-SA-4.0 | 1 |
 | Wikisource (selected PD texts) | PD texts (Wikisource contributions CC-BY-SA) | 1 |
 | Center for New Testament Restoration — manuscript transcriptions | CC-BY-SA-4.0 | 2 |
 | Hebrew Wikisource — Dead Sea Scrolls transcriptions (מגילות מדבר יהודה) | CC-BY-SA-4.0 | 2 |
@@ -162,6 +166,15 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Pinned version:** fetched 2026-11-06
 - **Status:** local builds only — not included in published databases
 
+### CCEL ThML — The Works of Flavius Josephus (tr. William Whiston, 1737)
+
+- **Source:** <https://ccel.org/ccel/josephus/complete>
+- **Licence:** PD (Whiston 1737)
+- **Credit:** Flavius Josephus, tr. William Whiston (1737); digital text courtesy of the Christian Classics Ethereal Library
+- **Used for:** `work`, `work_edition`, `work_section`, `citation`
+- **Pinned version:** fetched 2026-11-06
+- **Status:** local builds only — not included in published databases
+
 ### HistoricalChristianFaith Commentaries-Database
 
 - **Source:** <https://github.com/HistoricalChristianFaith/Commentaries-Database>
@@ -234,6 +247,22 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Credit:** S. Schechter, Documents of Jewish Sectaries vol. 1 (Cambridge, 1910), public domain
 - **Used for:** `work`, `work_edition`, `work_section`
 
+### Suetonius, Pliny the Younger and Lucian in public-domain translations
+
+- **Source:** <https://www.gutenberg.org/>
+- **Licence:** PD
+- **Credit:** Suetonius, Lives of the Caesars, tr. A. Thomson rev. T. Forester (1855); Pliny the Younger, Letters, tr. W. Melmoth rev. F. C. T. Bosanquet; Lucian, tr. H. W. and F. G. Fowler (Oxford, 1905) — public domain
+- **Used for:** `work`, `work_edition`, `work_section`
+- **Pinned version:** fetched 2026-11-06
+
+### Tacitus, Annals — tr. A. J. Church & W. J. Brodribb (1876), Perseus TEI
+
+- **Source:** <https://github.com/PerseusDL/canonical-latinLit>
+- **Licence:** CC-BY-SA-4.0 *(ShareAlike)*
+- **Credit:** Tacitus, Annals, tr. A. J. Church & W. J. Brodribb (1876); TEI by the Perseus Digital Library, CC BY-SA 4.0
+- **Used for:** `work`, `work_edition`, `work_section`
+- **Pinned version:** fetched 2026-11-06
+
 ### Thomas Aquinas, Catena Aurea (Newman translation, 1841)
 
 - **Source:** <https://www.ccel.org/ccel/aquinas/catena1.xml>
@@ -242,6 +271,12 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Used for:** `commentary`, `commentary_entry`
 - **Pinned version:** fetched 2026-11-06
 - **Status:** local builds only — not included in published databases
+
+### Wikipedia page summaries (introductions shown live in the app)
+
+- **Source:** <https://en.wikipedia.org/api/rest_v1/>
+- **Licence:** CC-BY-SA-4.0 *(ShareAlike)*
+- **Credit:** Introductions to authors, works and events from Wikipedia, CC BY-SA 4.0 (credited on each card)
 
 ### Wikisource (selected PD texts)
 

@@ -55,6 +55,7 @@ export interface VerseMarks {
   variants?: number;
   major_variants?: number;
   fathers?: number;
+  witnesses?: number;
   pre_nicene?: number;
   quotations?: number;
 }
@@ -158,6 +159,7 @@ export interface VerseGuide {
   crossrefs: CrossRef[];
   quotations: Quotation[];
   fathers: FatherCitation[];
+  witnesses?: FatherCitation[]; // Josephus, Tacitus… (Jewish & Roman writers)
   commentary: CommentaryEntry[];
   notes: { n: number; kind: string | null; body: string }[];
   topics: { id: string; name: string }[];
@@ -183,13 +185,94 @@ export interface WorkSummary {
   author_id: string | null;
   author: string | null;
   year: number | null;
+  date_from: number | null;
+  date_to: number | null;
   citations: number;
   edition_id: string | null;
 }
 
 export interface Toc {
-  edition: { id: string; work_id: string; title: string; author: string | null; category: string; era: string | null; translator: string | null };
+  edition: {
+    id: string;
+    work_id: string;
+    title: string;
+    author: string | null;
+    author_id: string | null;
+    category: string;
+    era: string | null;
+    translator: string | null;
+    year: number | null;
+    summary: string | null;
+    attribution: string | null;
+    date_from: number | null;
+    date_to: number | null;
+    author_born: number | null;
+    author_died: number | null;
+    author_from: number | null;
+    author_to: number | null;
+    author_summary: string | null;
+    wikipedia: string | null;
+    author_wikipedia: string | null;
+  };
   sections: { ord: number; cite: string | null; title: string | null; level: number }[];
+  intro_ord: number | null;
+}
+
+export interface TimelineWork {
+  id: string;
+  title: string;
+  category: string;
+  author_id: string | null;
+  date_from: number | null;
+  date_to: number | null;
+  summary: string | null;
+  citations: number;
+  edition_id: string | null;
+  wikipedia: string | null;
+}
+
+export interface TimelineAuthor {
+  id: string;
+  name: string;
+  born: number | null;
+  died: number | null;
+  floruit_from: number | null;
+  floruit_to: number | null;
+  era: string | null;
+  tradition: string | null;
+  summary: string | null;
+  wikipedia: string | null;
+  circa: string[]; // 'birth' | 'death' | 'floruit'
+  category: string;
+  works: TimelineWork[];
+}
+
+export interface TimelineEvent {
+  id: string;
+  title: string;
+  kind: string;
+  description: string | null;
+  start: number;
+  end: number;
+  date_kind: "point" | "span" | "window";
+  circa: number;
+  wikipedia: string | null;
+  major: boolean; // milestones are drawn across the whole timeline
+}
+
+export interface Timeline {
+  eras: { id: string; name: string; description: string | null; start: number; end: number }[];
+  events: TimelineEvent[];
+  authors: TimelineAuthor[];
+  works: TimelineWork[];
+}
+
+export interface WikiSummary {
+  title: string;
+  description?: string;
+  extract: string;
+  thumbnail?: { source: string; width: number; height: number };
+  content_urls?: { desktop: { page: string } };
 }
 
 export interface SectionView {
