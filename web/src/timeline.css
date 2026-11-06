@@ -272,3 +272,60 @@ b.cn { font-family: var(--font-ui); font-size: 0.7em; color: var(--numeral); mar
 .ov-handle.left { left: -6px; }
 .ov-handle.right { right: -6px; }
 .ov-handle:hover { opacity: 1; transform: scaleX(1.25); }
+
+/* ------------------------------------------------------------------ work page: text + context panel */
+.work-layout { grid-template-columns: var(--toc-w, 260px) 6px minmax(0, 1fr) 6px var(--ctx-w, 360px); }
+.work-text { max-width: none; padding: 24px 40px 64px; }
+.work-inner { max-width: 760px; margin: 0 auto; }
+.work-crumb { font-size: 13px; color: var(--muted); }
+.work-section-title { margin: 4px 0 14px; font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(26px * var(--display-size)); }
+.toc-title { margin: 12px 6px 2px; font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(18px * var(--display-size)); }
+.toc-sub { margin: 0 6px 10px; color: var(--muted); }
+.work-context { border-left: 1px solid var(--rule); background: var(--panel); }
+.ctx { padding: 16px 18px 48px; display: grid; gap: 4px; }
+.ctx-block { padding: 6px 0 14px; border-bottom: 1px solid var(--rule); }
+.ctx-block:last-child { border-bottom: 0; }
+.ctx-block h2 { margin: 2px 0 4px; font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(22px * var(--display-size)); line-height: 1.15; }
+.ctx-block h3 { margin: 2px 0 4px; font-family: var(--font-text); font-size: 18px; font-weight: 500; }
+.ctx-block h3 .muted { font-family: var(--font-ui); font-size: 12.5px; }
+.ctx-meta { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12.5px; color: var(--ink-soft); }
+.ctx-summary { margin: 6px 0; font-family: var(--font-text); font-size: 15.5px; line-height: 1.45; }
+.ctx-small { margin: 6px 0; font-size: 12px; color: var(--muted); }
+.ctx-block > a { font-size: 13px; }
+.ctx .wiki-card.compact { width: auto; box-shadow: none; background: var(--bg); margin: 6px 0 8px; }
+.ctx-refs { display: flex; flex-wrap: wrap; gap: 4px 12px; font-family: var(--font-text); font-size: 15px; }
+.ctx-refs sup { font-family: var(--font-ui); font-size: 10px; color: var(--muted); margin-left: 2px; }
+.ctx-works { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 3px; font-family: var(--font-text); font-size: 15px; }
+.about-label .count { margin-left: 4px; font-weight: 400; }
+
+/* reader: introduction to the book before a verse is chosen */
+.book-intro h2 { margin: 2px 0 4px; }
+.book-names { display: grid; gap: 4px; margin: 10px 0 6px; }
+.book-names div { display: grid; grid-template-columns: 64px 1fr; align-items: baseline; }
+.book-names dt { font-size: 12px; color: var(--muted); }
+.book-names dd { margin: 0; font-family: var(--font-text); font-size: 18px; color: var(--ink); }
+.book-names dd.hebrew { font-size: 20px; }
+
+@media (max-width: 1100px) {
+  .work-layout { grid-template-columns: var(--toc-w, 240px) 6px minmax(0, 1fr); }
+  .work-context, .work-layout > .splitter:last-of-type { display: none; }
+}
+
+/* draggable dividers between panels */
+.workspace { grid-template-columns: minmax(0, 1fr) 6px var(--study-w, 440px); }
+.splitter {
+  position: relative; z-index: 3; cursor: col-resize; touch-action: none; overflow: visible !important;
+  background: transparent; outline: none;
+}
+.splitter::after {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 2px; width: 2px;
+  background: transparent; transition: background-color 0.15s ease;
+}
+.splitter:hover::after, .splitter:focus-visible::after, body.resizing .splitter::after { background: var(--accent); }
+.splitter + .guide, .splitter + .work-context { border-left: 1px solid var(--rule); }
+body.resizing { cursor: col-resize; user-select: none; }
+body.resizing iframe, body.resizing .word-card { pointer-events: none; }
+@media (max-width: 760px) {
+  .workspace { grid-template-columns: minmax(0, 1fr); }
+  .workspace > .splitter { display: none; }
+}

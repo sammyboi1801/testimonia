@@ -123,6 +123,8 @@ export interface Settings {
   hover: { cards: boolean; delay: number };
   speech: { enabled: boolean; rate: number; grc: string | null; hbo: string | null };
   panel: { tab: PanelTab; glance: boolean };
+  /** Widths (px) of resizable side panels. */
+  layout: { study: number; toc: number; context: number };
 }
 
 export const DEFAULTS: Settings = {
@@ -145,6 +147,7 @@ export const DEFAULTS: Settings = {
   hover: { cards: true, delay: 260 },
   speech: { enabled: true, rate: 0.8, grc: null, hbo: null },
   panel: { tab: "text", glance: true },
+  layout: { study: 440, toc: 260, context: 360 },
 };
 const KEY = "testimonia.settings.v1";
 

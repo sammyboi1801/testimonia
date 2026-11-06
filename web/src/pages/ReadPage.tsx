@@ -3,6 +3,9 @@ import { Navigate, useParams, useSearchParams } from "react-router-dom";
 import { useChapter, useMeta } from "../api";
 import { Reader } from "../components/Reader";
 import { Mark } from "../components/Marks";
+import { Splitter } from "../components/Splitter";
+import { WikiCard } from "../components/Wiki";
+import type { Book } from "../types";
 import { StudyPanel, type Tab } from "../components/StudyPanel";
 import { useSettings } from "../settings";
 
@@ -11,7 +14,7 @@ const TABS: Tab[] = ["text", "fathers", "links", "words"];
 export function ReadPage() {
   const { book = "John", chapter = "1" } = useParams();
   const [params, setParams] = useSearchParams();
-  const { settings } = useSettings();
+  const { settings, update } = useSettings();
   const meta = useMeta();
   const ch = Number(chapter);
   const needsWords = settings.mode === "interlinear" || settings.mode === "original";
@@ -46,7 +49,7 @@ export function ReadPage() {
   const books = meta.data?.books ?? [];
 
   return (
-    <div className="workspace">
+    <div className="workspace" style={{ ["--study-w" as string]: `${settings.layout.study}px` }}>
       <main>
         {data.isLoading && <div className="loading">Loading…</div>}
         {data.error && <div className="error">Could not load {book} {chapter}: {String(data.error)}</div>}
@@ -54,13 +57,25 @@ export function ReadPage() {
           <Reader data={data.data} books={books} editions={meta.data.editions} selected={selected} onSelect={select} onWord={openWord} />
         )}
       </main>
+      <Splitter
+        label="Study panel width"
+        side="right"
+        value={settings.layout.study}
+        min={300}
+        max={900}
+        reset={440}
+        onChange={(study) => update({ layout: { ...settings.layout, study } })}
+      />
       <aside className="guide" aria-label="Study panel">
         {selected ? (
           <StudyPanel osis={selected} books={books} tab={tab} word={word} onTab={setTab} onWord={openWord} onCloseWord={closeWord} />
         ) : (
           <div className="guide-empty">
-            <h2>Study panel</h2>
-            <p>Choose a verse to see what stands behind it — how the editions and manuscripts differ, which early Christians quoted it, where the Old and New Testaments meet, and every word in Greek or Hebrew.</p>
+            <BookIntro book={books.find((b) => b.osis === (data.data?.book ?? book))} />
+            <p className="muted small">
+              Choose a verse to see what stands behind it — how the editions and manuscripts differ, which early Christians quoted it, where the Old
+              and New Testaments meet, and every word in Greek or Hebrew.
+            </p>
             <p className="legend">
               <span><Mark kind="var" /> editions differ</span>
               <span><Mark kind="fat" /> quoted by the fathers (faded: only after AD 325)</span>
@@ -77,5 +92,41 @@ export function ReadPage() {
         )}
       </aside>
     </div>
+  );
+}
+
+const TESTAMENT: Record<string, string> = { OT: "Old Testament", NT: "New Testament", DC: "Deuterocanon / Apocrypha" };
+
+/** The study panel before a verse is chosen: an introduction to the book being read. */
+function BookIntro({ book }: { book?: Book }) {
+  if (!book) return <h2>Study panel</h2>;
+  const names = [
+    book.hebrew_name && { label: "Hebrew", value: book.hebrew_name, cls: "hebrew" },
+    book.greek_name && { label: "Greek", value: book.greek_name, cls: "greek" },
+    book.latin_name && { label: "Latin", value: book.latin_name, cls: "" },
+  ].filter(Boolean) as { label: string; value: string; cls: string }[];
+  return (
+    <section className="book-intro">
+      <div className="about-label">About this book</div>
+      <h2>{book.name}</h2>
+      <div className="ctx-meta">
+        <span>{TESTAMENT[book.testament] ?? book.testament}</span>
+        {book.genre && <span>{book.genre}</span>}
+        <span>
+          {book.chapters} chapter{book.chapters === 1 ? "" : "s"}
+        </span>
+      </div>
+      {names.length > 0 && (
+        <dl className="book-names">
+          {names.map((n) => (
+            <div key={n.label}>
+              <dt>{n.label}</dt>
+              <dd className={n.cls}>{n.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {book.wikipedia && <WikiCard title={book.wikipedia} />}
+    </section>
   );
 }

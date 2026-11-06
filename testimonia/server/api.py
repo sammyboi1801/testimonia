@@ -56,7 +56,9 @@ def meta(request: Request) -> dict[str, Any]:
     books = [
         {**r, "chapters": present[r["osis"]]}
         for r in s.all(
-            "SELECT osis, name, testament, hebrew_name, greek_name, latin_name, genre, ord FROM book ORDER BY ord"
+            "SELECT osis, name, testament, hebrew_name, greek_name, latin_name, genre, ord, "
+            "(SELECT value FROM external_id x WHERE x.entity_type = 'book' AND x.entity_id = book.osis "
+            "AND x.scheme = 'wikipedia') AS wikipedia FROM book ORDER BY ord"
         )
         if r["osis"] in present
     ]

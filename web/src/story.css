@@ -51,3 +51,7 @@
 .trad-pagan .story-name::after { content: "Roman"; }
 .story-works { margin: 0; font-family: var(--font-text); font-size: 15px; line-height: 1.7; color: var(--muted); }
 .story-works .link-btn { font-family: var(--font-text); font-size: 15px; }
+
+.story-event-row { display: flex; align-items: flex-start; gap: 2px; }
+.story-event-row .wiki-hover { margin-top: 9px; }
+.story-person .wiki-hover { grid-column: 1; }

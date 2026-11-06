@@ -53,7 +53,7 @@ INSERT INTO citation (start_vkey, end_vkey, work_id, edition_id, section_ord, ci
   VALUES (43001018, 43001018, 'josephus.antiquities', 'josephus.antiquities@whiston', 2, '18.3.3', 'josephus', 94, 'reference', 'a parallel', 't');
 INSERT INTO chronology_system (id, name) VALUES ('scholarly', 'Scholarly consensus');
 INSERT INTO external_id (entity_type, entity_id, scheme, value) VALUES ('person', 'josephus', 'wikipedia', 'Josephus'),
-  ('event', 'destruction-of-temple', 'wikipedia', 'Siege of Jerusalem (70 CE)');
+  ('event', 'destruction-of-temple', 'wikipedia', 'Siege of Jerusalem (70 CE)'), ('book', 'John', 'wikipedia', 'Gospel of John');
 INSERT INTO period (id, name, scope, sort, source_id) VALUES ('era-apostolic', 'Apostolic age', 'church', 1, 't');
 INSERT INTO event (id, title, kind, source_id) VALUES ('destruction-of-temple', 'Destruction of the Second Temple', 'political', 't');
 INSERT INTO dating (entity_type, entity_id, system_id, date_kind, start_year, end_year, circa, source_id) VALUES
@@ -81,6 +81,7 @@ def test_health_and_meta(client):
     assert client.get("/api/health").json()["status"] == "ok"
     m = client.get("/api/meta").json()
     assert [b["osis"] for b in m["books"]] == ["Gen", "John"]
+    assert [b["wikipedia"] for b in m["books"]] == [None, "Gospel of John"]
     assert {e["id"] for e in m["editions"]} == {"kjva", "tagnt"}
 
 

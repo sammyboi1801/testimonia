@@ -97,6 +97,12 @@ def ingest_history(ctx: Context) -> None:
     if missing:
         ctx.log.warning("work_dates.csv: %d work(s) not in this build (source skipped?): %s", len(missing), missing[:5])
 
+    books = {r[0] for r in con.execute("SELECT osis FROM book")}
+    for b in read_csv("book_links.csv", ("osis", "wikipedia")):
+        if b["osis"] not in books:
+            raise IngestError(f"book_links.csv: unknown book {b['osis']!r}")
+        _wiki(ctx, "book", b["osis"], b["wikipedia"])
+
     for w in read_csv("work_links.csv", ("work_id",)):
         if w["work_id"] in works:
             _wiki(ctx, "work", w["work_id"], w["wikipedia"])

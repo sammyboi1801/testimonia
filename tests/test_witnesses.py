@@ -58,6 +58,14 @@ def test_work_dates_reference_known_authors():
         assert not w["author_id"] or w["author_id"] in people, w["work_id"]
 
 
+def test_book_links_cover_every_book_once():
+    from testimonia.books import BY_OSIS
+
+    links = rows("book_links.csv")
+    assert sorted(r["osis"] for r in links) == sorted(BY_OSIS)
+    assert all(r["wikipedia"] for r in links)
+
+
 def test_witness_links_parse_and_point_at_witness_works():
     ours = {
         "josephus.antiquities",

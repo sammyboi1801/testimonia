@@ -24,6 +24,7 @@ export interface Book {
   genre: string | null;
   ord: number;
   chapters: number;
+  wikipedia?: string | null;
 }
 
 export interface Meta {

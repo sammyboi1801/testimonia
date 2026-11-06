@@ -4,6 +4,7 @@ import { useTimeline } from "../api";
 import { formatYear } from "../lib";
 import type { TimelineAuthor, TimelineEvent, TimelineWork } from "../types";
 import { AuthorDetail, EventDetail, WorkDetail } from "./Timeline";
+import { WikiHover } from "./Wiki";
 
 interface Chapter {
   id: string;
@@ -86,10 +87,15 @@ export function StoryView() {
               {c.events.map((e) => (
                 <li key={e.id} className={`${e.major ? "major" : ""} ev-${e.kind}`}>
                   <span className="story-year">{e.circa ? "c. " : ""}{formatYear(e.start)}</span>
-                  <button className="story-event" onClick={() => setOpen({ kind: "event", e })}>
-                    <strong>{e.title}</strong>
-                    {e.description && <span>{e.description}</span>}
-                  </button>
+                  <div className="story-event-row">
+                    <button className="story-event" onClick={() => setOpen({ kind: "event", e })}>
+                      <strong>{e.title}</strong>
+                      {e.description && <span>{e.description}</span>}
+                    </button>
+                    <WikiHover title={e.wikipedia}>
+                      <span />
+                    </WikiHover>
+                  </div>
                 </li>
               ))}
             </ol>
@@ -103,9 +109,11 @@ export function StoryView() {
                   const top = [...a.works].sort((x, y) => y.citations - x.citations)[0];
                   return (
                     <div key={a.id} className={`story-person trad-${a.tradition ?? "x"}`}>
-                      <button className="story-name" onClick={() => setOpen({ kind: "author", a })}>
-                        {a.name}
-                      </button>
+                      <WikiHover title={a.wikipedia}>
+                        <button className="story-name" onClick={() => setOpen({ kind: "author", a })}>
+                          {a.name}
+                        </button>
+                      </WikiHover>
                       <span className="story-dates">{dates(a)}</span>
                       {top?.edition_id && (
                         <Link className="story-work" to={`/library/${encodeURIComponent(top.edition_id)}/1`}>
