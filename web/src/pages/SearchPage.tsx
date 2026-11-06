@@ -2,17 +2,19 @@ import DOMPurify from "dompurify";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMeta, useSearch } from "../api";
+import { GrammarSearch } from "../components/GrammarSearch";
 import { osisLabel, verseUrl } from "../lib";
 import type { Book, SearchResults } from "../types";
 
 const snip = (html: string) => ({ __html: DOMPurify.sanitize(html, { ALLOWED_TAGS: ["mark"] }) });
 
-type Scope = "all" | "bible" | "works" | "lexicon";
+type Scope = "all" | "bible" | "works" | "lexicon" | "grammar";
 const SCOPES: { id: Scope; label: string }[] = [
   { id: "all", label: "Everything" },
   { id: "bible", label: "Bible" },
   { id: "works", label: "Early Christian writings" },
   { id: "lexicon", label: "Greek & Hebrew words" },
+  { id: "grammar", label: "Grammar" },
 ];
 const EXAMPLES = ["only begotten", "λόγος", "Melchizedek", "rule of faith", "בְּרֵאשִׁית", "the eighth day", "Isa 53", "logos spermatikos"];
 const LIMIT = 40;
@@ -26,7 +28,7 @@ export function SearchPage() {
   useEffect(() => {
     setText(q);
   }, [q]);
-  const { data, isFetching, error } = useSearch(q, scope);
+  const { data, isFetching, error } = useSearch(scope === "grammar" ? "" : q, scope);
   const meta = useMeta();
   const books = meta.data?.books ?? [];
 
@@ -46,6 +48,7 @@ export function SearchPage() {
     bible: data?.bible?.length ?? null,
     works: data?.works?.length ?? null,
     lexicon: data?.lexicon?.length ?? null,
+    grammar: null,
   };
   const none = data && !data.reference && !data.bible?.length && !data.works?.length && !data.lexicon?.length;
 
@@ -53,7 +56,7 @@ export function SearchPage() {
     <div className="page search-page">
       <form onSubmit={submit} className="search-hero" role="search">
         <h1>Search</h1>
-        <div className="search-box">
+        <div className="search-box" hidden={scope === "grammar"}>
           <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden>
             <circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
             <path d="M13 13l4.5 4.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -80,9 +83,11 @@ export function SearchPage() {
         </nav>
       </form>
 
+      {scope === "grammar" && <GrammarSearch />}
+
       {error && <div className="error">{String(error)}</div>}
 
-      {!q && (
+      {!q && scope !== "grammar" && (
         <div className="search-start">
           <p className="muted">Try one of these:</p>
           <div className="search-examples">

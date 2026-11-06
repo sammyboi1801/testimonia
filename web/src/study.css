@@ -1,0 +1,159 @@
+/* Study tools: passage guide, compare translations, copy with citation, grammar search, word charts.
+   Only design tokens here, so every design and dark mode follow. */
+
+.search-box[hidden] { display: none; }
+.st-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ----------------------------------------------------------------------------- passage links */
+.passage-link { font-family: var(--font-ui); background-image: none; }
+.pl-panel { display: inline-block; margin: -6px 0 12px; font-size: 12.5px; color: var(--link); }
+.pl-heading {
+  margin-left: 10px; font-size: 11.5px; font-style: normal; font-weight: 400; letter-spacing: 0.02em; color: var(--muted);
+  opacity: 0.75; white-space: nowrap; vertical-align: 0.15em;
+}
+.pericope:hover .pl-heading, .pl-heading:focus-visible { opacity: 1; color: var(--link); }
+.bo-head { display: inline-flex; align-items: baseline; gap: 6px; }
+.pl-outline { font-size: 11px; color: var(--muted); }
+.pl-outline:hover { color: var(--link); }
+
+/* ----------------------------------------------------------------------------- copy with citation */
+.copy-wrap { position: relative; display: inline-flex; }
+.copy-menu {
+  position: absolute; z-index: 60; top: calc(100% + 6px); left: 0; width: min(320px, 86vw); padding: 6px;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); box-shadow: var(--shadow);
+  display: grid; gap: 2px;
+}
+.copy-menu > button { display: grid; gap: 2px; text-align: left; padding: 7px 9px; border: 0; border-radius: var(--radius); background: transparent; color: var(--ink); }
+.copy-menu > button:hover, .copy-menu > button:focus-visible { background: var(--panel-2); }
+.cm-label { font-size: 12.5px; font-weight: 600; }
+.cm-sample { font-family: var(--font-text); font-size: 13.5px; line-height: 1.35; color: var(--ink-soft); }
+.cm-edition { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 9px 3px; border-top: 1px solid var(--rule); margin-top: 2px; font-size: 12px; color: var(--muted); }
+.cm-edition select { font-size: 12.5px; padding: 2px 4px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--bg); color: var(--ink); }
+
+/* ----------------------------------------------------------------------------- compare translations */
+.cmp-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.cmp-toggle {
+  font-family: var(--font-ui); font-size: 11.5px; letter-spacing: 0; text-transform: none; font-variant: normal; font-weight: 400;
+  padding: 1px 9px; border: 1px solid var(--rule); border-radius: 999px; background: transparent; color: var(--ink-soft);
+}
+.cmp-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.cmp-toggle.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.cmp-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 0 0 4px; font-size: 12px; color: var(--muted); }
+.cmp-legend select { font-size: 12px; padding: 1px 3px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--bg); color: var(--ink); }
+.cmp-key { margin-left: auto; }
+mark.cmp-diff {
+  color: inherit; background: color-mix(in srgb, var(--accent) 13%, transparent); border-radius: 2px; padding: 0 1px;
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.cmp-gap, .cmp-gap-mark { color: var(--accent); font-family: var(--font-ui); font-size: 0.8em; padding: 0 1px; cursor: help; }
+.cmp-gap { vertical-align: -0.1em; margin: 0 -0.1em 0 -0.25em; }
+.cmp-base .text { color: var(--ink); }
+.cmp-base-tag { margin-left: 6px; font-weight: 400; font-size: 11px; color: var(--muted); }
+
+/* ----------------------------------------------------------------------------- passage guide */
+.passage-page { padding-bottom: 60px; }
+.pg-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.pg-nav { display: flex; gap: 18px; font-size: 13px; }
+.pg-nav a { color: var(--muted); }
+.pg-nav a:hover { color: var(--link); }
+.pg-hero h1 { margin: 2px 0 6px; }
+.pg-text { padding-bottom: 6px; border-bottom: 1px solid var(--rule); }
+.pg-text-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.pg-reading { font-family: var(--font-text); font-size: calc(var(--text-size) * var(--font-scale)); line-height: var(--text-leading); color: var(--ink); }
+.pg-reading p { margin: 0 0 12px; }
+.pg-reading .pericope { margin: 14px 0 4px; }
+.pg-vnum { font-family: var(--font-ui); font-size: 0.6em; vertical-align: 0.5em; margin: 0 3px 0 1px; color: var(--numeral); background-image: none; }
+.pg-vnum:hover { color: var(--link); }
+.pg-verse-group { padding: 6px 0 2px; }
+.pg-verse-ref { display: inline-block; font-family: var(--font-ui); font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 2px; }
+.pg-verse-group .item:last-child { border-bottom: 0; }
+.pg-sub { margin: 4px 0 2px; font-size: 12px; color: var(--muted); }
+.pg-more { margin-top: 8px; }
+.pg-more > summary { cursor: pointer; font-size: 13px; color: var(--link); padding: 4px 0; }
+.pg-writer { border-bottom: 1px dashed var(--rule); }
+.pg-writer:last-child { border-bottom: 0; }
+.pg-writer > summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; padding: 7px 0; }
+.pg-writer > summary::-webkit-details-marker { display: none; }
+.pg-writer > summary::before { content: "▸"; color: var(--muted); font-size: 10px; width: 8px; }
+.pg-writer[open] > summary::before { content: "▾"; }
+.pw-name { font-weight: 600; font-size: 14px; }
+.pw-meta { font-size: 12.5px; color: var(--ink-soft); }
+.pw-works { padding: 0 0 8px 18px; }
+.pg-side .item .text { font-size: 15px; }
+
+/* ----------------------------------------------------------------------------- word chart */
+.word-chart { margin: 6px 0 4px; }
+.wc-readout { min-height: 19px; font-size: 12.5px; color: var(--ink-soft); }
+.wc-svg { display: block; width: 100%; height: auto; overflow: visible; margin: 2px 0 2px; }
+.wc-fill { fill: var(--accent); opacity: 0.72; transition: opacity 0.12s ease; }
+.wc-bar:hover .wc-fill, .wc-bar:focus-visible .wc-fill, .wc-bar.on .wc-fill { opacity: 1; }
+.wc-bar.dim .wc-fill { opacity: 0.3; }
+.wc-bar[role="button"] { cursor: pointer; outline: none; }
+.wc-bar:focus-visible .wc-hit { stroke: var(--accent); stroke-width: 1; }
+.wc-hit { fill: transparent; }
+.wc-zero { fill: var(--rule); }
+.wc-base { stroke: var(--rule); stroke-width: 1; }
+.wc-grid { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 3; }
+.wc-section { stroke: var(--rule); stroke-width: 1; }
+.wc-axis { font-family: var(--font-ui); font-size: 10px; fill: var(--muted); }
+.wc-clusters { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; margin: 4px 0 2px; }
+.wc-clusters .tag { background-image: none; color: var(--ink-soft); }
+.wc-clusters .tag:hover { border-color: var(--accent); color: var(--accent); }
+.wc-book { margin-top: 8px; padding: 6px 10px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--bg); }
+.wc-book-head { display: flex; align-items: baseline; gap: 8px; font-size: 13px; }
+.wc-book-head .link-btn { margin-left: auto; }
+.wc-book-list { max-height: 260px; overflow: auto; }
+.find-forms { display: inline-block; margin-top: 8px; background-image: none; }
+
+/* ----------------------------------------------------------------------------- grammar search */
+.grammar { margin-top: 18px; }
+.gr-form { display: grid; gap: 12px; padding: 14px 16px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--panel); }
+.gr-row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; }
+.gr-features { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px 12px; }
+.gr-field { display: grid; gap: 3px; min-width: 0; }
+.gr-field > span { font-size: 11.5px; color: var(--muted); text-transform: var(--label-transform); font-variant: var(--label-variant); letter-spacing: var(--label-tracking); }
+.gr-field select, .gr-field input {
+  min-width: 0; padding: 5px 7px; font-size: 13.5px; border: 1px solid var(--rule); border-radius: var(--radius);
+  background: var(--bg); color: var(--ink); font-family: var(--font-ui);
+}
+.gr-field select:focus, .gr-field input:focus { outline: none; border-color: var(--accent); }
+.gr-word { flex: 1 1 260px; }
+.gr-word input { font-family: var(--font-text); font-size: 16px; }
+.gr-lang { margin: 0; }
+.gr-lang button { padding: 5px 10px; font-size: 12.5px; }
+.gr-actions { display: flex; align-items: center; gap: 14px; }
+.gr-results { margin-top: 20px; }
+.gr-summary { display: grid; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); font-size: 14px; }
+.gr-lemma { margin-right: 10px; }
+.gr-lemma .greek, .gr-lemma .hebrew { font-size: 17px; }
+.gr-books { display: flex; flex-wrap: wrap; gap: 4px; }
+.gr-books .tag { background: transparent; cursor: pointer; }
+.gr-books .tag:hover { border-color: var(--accent); color: var(--accent); }
+.gr-group h3 { margin: 18px 0 2px; font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(19px * var(--display-size)); color: var(--accent); }
+.gr-hit { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--rule); }
+.gr-ref { font-family: var(--font-ui); font-size: 13px; font-weight: 600; padding-top: 4px; background-image: none; }
+.gr-body p { margin: 0; }
+.gr-orig { font-size: 18px; line-height: 1.6; color: var(--ink-soft); }
+mark.gr-mark { color: var(--ink); background: color-mix(in srgb, var(--accent) 16%, transparent); border-radius: 2px; padding: 0 2px; }
+.gr-parse { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px !important; }
+.gr-parse .greek, .gr-parse .hebrew { font-size: 14px; color: var(--ink); }
+.gr-parse .tag { margin-left: 6px; }
+.gr-text { font-family: var(--font-text); font-size: 15px; color: var(--muted); margin-top: 3px !important; }
+.gr-pager { align-items: center; }
+
+@media (max-width: 760px) {
+  .gr-form { padding: 12px; }
+  .gr-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gr-row > .gr-field { flex: 1 1 140px; }
+  .gr-word { flex-basis: 100%; }
+  .gr-hit { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .gr-ref { padding-top: 0; }
+  .pg-nav { width: 100%; justify-content: space-between; }
+  .pl-heading { opacity: 1; }
+}
+
+/* the outline stays calm: its "guide" links show on hover (always on touch screens) */
+@media (hover: hover) {
+  .book-outline .pl-outline { opacity: 0; transition: opacity 0.12s ease; }
+  .book-outline li:hover .pl-outline, .book-outline .pl-outline:focus-visible { opacity: 1; }
+}

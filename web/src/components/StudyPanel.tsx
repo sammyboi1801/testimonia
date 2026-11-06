@@ -5,10 +5,12 @@ import { formatYear, osisLabel, PRE_NICENE, verseUrl } from "../lib";
 import { useSettings, type FathersScope, type MarkKind, type PanelTab } from "../settings";
 import type { Book, VerseGuide } from "../types";
 import { openAsk } from "./AskDrawer";
+import { CompareTranslations } from "./CompareTranslations";
 import { NOTE_KIND } from "./Footnotes";
 import { Html } from "./Html";
 import { VerseNote } from "./VerseNote";
 import { Mark } from "./Marks";
+import { PassageLink } from "./PassageLink";
 import { Speak } from "./Speak";
 import { WordStudy } from "./WordStudy";
 
@@ -73,6 +75,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord }: Props & { g:
           {era && <span> · {era}</span>}
           {period && <span className="muted"> — {period}</span>}
         </div>
+        <PassageLink osis={g.verse.osis} title={g.heading?.title} />
       </header>
       <VerseNote osis={g.verse.osis} label={osisLabel(g.verse.osis, books)} />
 
@@ -162,22 +165,7 @@ function TextTab({ g }: { g: VerseGuide }) {
         ))}
       </Block>
       {(g.footnotes?.length ?? 0) > 0 && <TranslatorsNotes notes={g.footnotes!} texts={g.texts} osis={g.verse.osis} />}
-      <Block title="Translations" note={g.texts.length}>
-        {g.texts.map((t) => (
-          <div key={t.edition_id} className="item">
-            <div className="item-head">
-              <span className="who">{t.abbrev ?? t.edition_id}</span>
-              <span className="when">
-                {t.native_ref && <span title="Numbered differently in this edition">{t.native_ref} </span>}
-                {t.language === "hbo" && <Speak text={t.text} lang="hbo" />}
-              </span>
-            </div>
-            <div className={`text${t.language === "hbo" ? " hebrew" : ""}`} dir={t.script_dir === "rtl" ? "rtl" : undefined}>
-              {t.text}
-            </div>
-          </div>
-        ))}
-      </Block>
+      <CompareTranslations texts={g.texts} />
     </>
   );
 }
@@ -414,7 +402,7 @@ function Sigla({ witnesses }: { witnesses: string | null }) {
   );
 }
 
-function Variant({ v, hebrew }: { v: VerseGuide["variants"][number]; hebrew: boolean }) {
+export function Variant({ v, hebrew }: { v: VerseGuide["variants"][number]; hebrew: boolean }) {
   const [label, explain] = VARIANT_KIND[v.significance] ?? [v.significance, ""];
   const strong = ["meaning", "omission", "ketiv-qere"].includes(v.significance);
   const showGloss = v.significance === "meaning" || v.significance === "ketiv-qere";

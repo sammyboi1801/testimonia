@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { HIGHLIGHTS, useNotes } from "../notes";
 import { openAsk } from "./AskDrawer";
+import { CopyVerse } from "./CopyCitation";
 
 /** One slim row of verse actions — highlight colours, my note, ask the assistant — with the note editor on demand. */
 export function VerseNote({ osis, label }: { osis: string; label: string }) {
@@ -42,6 +43,7 @@ export function VerseNote({ osis, label }: { osis: string; label: string }) {
         <button className={`va-btn${open ? " on" : ""}`} onClick={() => setOpen(!open)} title="My note on this verse">
           ✎ {note?.text ? "My note" : "Note"}
         </button>
+        <CopyVerse osis={osis} label={label} />
         <button className="va-btn va-ask" onClick={() => openAsk(label)} title="Ask the study assistant about this verse">
           ✦ Ask AI
         </button>

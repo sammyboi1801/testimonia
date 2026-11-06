@@ -2,6 +2,7 @@ import { useEffect, useState, type RefObject } from "react";
 import { HIGHLIGHTS, useNotes, type Highlight } from "../notes";
 import { rangeOffsets, snapToWords } from "../selection";
 import { openAsk } from "./AskDrawer";
+import { CopySelection } from "./CopyCitation";
 
 interface Picked {
   osis: string;
@@ -94,6 +95,7 @@ export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLEle
       >
         ⌫
       </button>
+      <CopySelection text={picked.text} label={picked.label} edition={picked.ed} onDone={done} />
       <button
         className="sel-btn sel-ask"
         onClick={() => {

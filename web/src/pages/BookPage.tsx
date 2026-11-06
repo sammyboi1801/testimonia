@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useBookGuide, useMeta } from "../api";
+import { PassageLink } from "../components/PassageLink";
 import { WikiCard } from "../components/Wiki";
 import { formatYear, osisLabel, verseUrl } from "../lib";
 import type { Book, BookGuide } from "../types";
@@ -190,10 +191,13 @@ function Outline({ data }: { data: BookGuide }) {
           <div className="bo-heads">
             {c.headings.length ? (
               c.headings.map((h) => (
-                <Link key={h.start_vkey} to={verseUrl(h.osis)}>
-                  {h.title}
-                  <span className="muted small"> {h.osis.split(".").slice(1).join(":")}</span>
-                </Link>
+                <span key={h.start_vkey} className="bo-head">
+                  <Link to={verseUrl(h.osis)}>
+                    {h.title}
+                    <span className="muted small"> {h.osis.split(".").slice(1).join(":")}</span>
+                  </Link>
+                  <PassageLink osis={h.osis} title={h.title} variant="outline" />
+                </span>
               ))
             ) : (
               <Link to={`/read/${b.osis}/${c.n}`} className="muted">
