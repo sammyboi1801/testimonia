@@ -400,7 +400,7 @@ def _greek_unit(
         codes, _, form = seg.partition(":")
         if form.strip():
             spelled.append((form.strip(), _editions(codes)))
-    respelled = {e for _, codes in spelled for e in codes}
+    respelled = {e for _, eds_ in spelled for e in eds_}
     in_place = [e for e in eds.base if e not in eds.reordered and e not in respelled]
     readings: list[Reading] = [(word, gloss, wits(in_place) + [_other_witness(o) for o in eds.others])]
     if meaning:
@@ -419,8 +419,8 @@ def _greek_unit(
         readings.append(("", None, wits(e for e in GREEK_EDITIONS if e not in eds.base)))
     if eds.reordered:
         readings.append((word, "(in a different position)", wits(eds.reordered)))
-    for form, codes in spelled:
-        readings.append((form, None, wits(codes)))
+    for form, form_eds in spelled:
+        readings.append((form, None, wits(form_eds)))
     readings = [r for r in readings if r[2]]  # never emit a reading nobody attests
     label = " / ".join(r[0] or "—" for r in readings)
     unit = {
