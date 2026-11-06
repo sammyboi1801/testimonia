@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
-import { rememberReading } from "./HomePage";
 import { useChapter, useMeta } from "../api";
+import { rememberReading } from "../lib";
 import { Reader } from "../components/Reader";
 import { Mark } from "../components/Marks";
 import { Splitter } from "../components/Splitter";

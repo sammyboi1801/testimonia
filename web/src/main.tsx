@@ -30,20 +30,19 @@ import "./settings.css";
 import "./timeline.css";
 import "./story.css";
 import "./ask.css";
-import "./home.css";
 import "./mobile.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { lastReadingPath } from "./lib";
 import { AskDrawer } from "./components/AskDrawer";
 import { TopBar } from "./components/TopBar";
 import { AskPage } from "./pages/AskPage";
 import { BookPage } from "./pages/BookPage";
 import { NotesPage } from "./pages/NotesPage";
 import { LibraryPage } from "./pages/LibraryPage";
-import { HomePage } from "./pages/HomePage";
 import { ReadPage } from "./pages/ReadPage";
 import { SearchPage } from "./pages/SearchPage";
 import { WorkPage } from "./pages/WorkPage";
@@ -57,7 +56,7 @@ function App() {
     <div className="app">
       <TopBar />
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<Navigate to={lastReadingPath()} replace />} />
         <Route path="/read/:book/:chapter" element={<ReadPage />} />
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/library/:edition/:ord" element={<WorkPage />} />

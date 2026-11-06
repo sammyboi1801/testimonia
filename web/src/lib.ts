@@ -70,3 +70,25 @@ export function langClass(lang: string): string {
   if (lang === "grc") return "greek";
   return "";
 }
+
+const LAST_READ = "testimonia.lastRead";
+
+/** Remember the chapter being read, so opening the app returns to it. */
+export function rememberReading(book: string, chapter: number): void {
+  try {
+    localStorage.setItem(LAST_READ, JSON.stringify({ book, chapter }));
+  } catch {
+    /* private mode: nothing to remember */
+  }
+}
+
+/** Where to open the reader: the last chapter read, or John 1. */
+export function lastReadingPath(): string {
+  try {
+    const v = JSON.parse(localStorage.getItem(LAST_READ) ?? "null") as { book?: string; chapter?: number } | null;
+    if (v?.book && v.chapter) return `/read/${v.book}/${v.chapter}`;
+  } catch {
+    /* fall through */
+  }
+  return "/read/John/1";
+}

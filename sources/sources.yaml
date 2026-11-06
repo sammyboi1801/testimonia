@@ -622,7 +622,7 @@ sources:
     name: Historical images on the front page (Wikimedia Commons)
     url: https://commons.wikimedia.org/
     kind: curated
-    download: resized copies kept in web/public/landing/; file, author and licence of each in web/public/landing/credits.json
+    download: resized copies kept in site/img/ (the landing page); file, author and licence of each in site/img/credits.json
     license: PD
     attribution: "Front-page images from Wikimedia Commons, public domain or CC0 (each credited and linked in its caption)"
     feeds: []
