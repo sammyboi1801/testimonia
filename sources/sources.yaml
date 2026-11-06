@@ -684,31 +684,60 @@ sources:
   - id: theographic
     name: Theographic Bible Metadata
     url: https://github.com/robertrouse/theographic-bible-metadata
-    download: git clone (json)
+    download: CSV exports and Paul's journeys GeoJSON, pinned to commit 3f461f2 (2026-11-02)
+    fetch:
+      - http: https://raw.githubusercontent.com/robertrouse/theographic-bible-metadata/3f461f2f3cf8939f2b79430ae238a36528024ed3/CSV/People.csv
+        target: theographic
+      - http: https://raw.githubusercontent.com/robertrouse/theographic-bible-metadata/3f461f2f3cf8939f2b79430ae238a36528024ed3/CSV/Places.csv
+        target: theographic
+      - http: https://raw.githubusercontent.com/robertrouse/theographic-bible-metadata/3f461f2f3cf8939f2b79430ae238a36528024ed3/CSV/Events.csv
+        target: theographic
+      - http: https://raw.githubusercontent.com/robertrouse/theographic-bible-metadata/3f461f2f3cf8939f2b79430ae238a36528024ed3/CSV/PeopleGroups.csv
+        target: theographic
+      - http: https://raw.githubusercontent.com/robertrouse/theographic-bible-metadata/3f461f2f3cf8939f2b79430ae238a36528024ed3/geo/bible-places.geojson
+        target: theographic
+      - http: https://raw.githubusercontent.com/robertrouse/theographic-bible-metadata/3f461f2f3cf8939f2b79430ae238a36528024ed3/geo/pauls_journeys_all.geojson
+        target: theographic
     license: CC-BY-SA-4.0
-    attribution: "Theographic Bible Metadata by Robert Rouse, CC BY-SA 4.0"
+    attribution: "Theographic Bible Metadata by Robert Rouse, CC BY-SA 4.0 (crediting its sources: STEPBible TIPNR, OpenBible.info, Pleiades, Easton's Bible Dictionary, F. N. Jones's chronology)"
     share_alike: true
-    feeds: [person, person_relation, person_ref, place, place_ref, event, event_participant, event_ref, dating, verse_date]
+    feeds: [person, person_relation, person_ref, event, event_participant, event_ref, dating, geo_feature, external_id]
     phase: 4
-    notes: Ussher year per verse (from TSK) and Jones event chronology → two chronology_systems.
+    notes: >
+      Licence checked 2026-11-06 in the repository (LICENSE, readme, geo/README: CC BY-SA 4.0 for the data and
+      both GeoJSON files). Used: biblical people with family relations and verse lists, events with participants,
+      places, verses and Jones-chronology start years, and Paul's journeys (geo/pauls_journeys_all.geojson,
+      routes after Wilson 2009 and Thompson & Wilson 2016). Places are matched to OpenBible.info places through
+      the Linked Places gazetteer (geo/bible-places.geojson). Easton's dictionary text (PD) is used for summaries.
 
   - id: openbible-geo
     name: OpenBible.info Bible Geocoding Data
     url: https://github.com/openbibleinfo/Bible-Geocoding-Data
-    download: git clone (data/ancient.jsonl, modern.jsonl)
+    download: data/ancient.jsonl pinned to commit 7eb18a5 (2021-11-01)
+    fetch:
+      - http: https://raw.githubusercontent.com/openbibleinfo/Bible-Geocoding-Data/7eb18a5ee62f27b9b93bd6689ea272d76dd23b8f/data/ancient.jsonl
+        target: openbible-geo
     license: CC-BY-4.0
     attribution: "Bible geocoding data from OpenBible.info, CC BY 4.0"
-    feeds: [place, place_ref]
+    feeds: [place, place_ref, external_id]
     phase: 4
+    notes: >
+      Licence checked 2026-11-06 in the repository readme and license.txt (CC BY 4.0; OpenStreetMap-derived
+      geometry is ODbL). Only data/ancient.jsonl is used: place names, types, verse lists, the best-scored
+      point of each identification and its confidence, and Pleiades / Wikidata / Wikipedia ids. No
+      OpenStreetMap geometry (geometry/*.geojson) is ingested.
 
   - id: pleiades
     name: Pleiades gazetteer of ancient places
     url: https://pleiades.stoa.org/
-    download: https://atlantides.org/downloads/pleiades/dumps/pleiades-places-latest.csv.gz
+    download: not downloaded; places link to Pleiades by the ids that OpenBible.info and Theographic record
     license: CC-BY-3.0
     attribution: "Pleiades, CC BY 3.0"
-    feeds: [place, external_id]
+    feeds: [external_id]
     phase: 4
+    notes: >
+      The full dump (pleiades-places-latest.csv.gz) is unpinned and adds little over OpenBible's coordinates for
+      biblical places, so Pleiades is used by reference only: place pages link to pleiades.stoa.org/places/<id>.
 
   - id: itinere
     name: Itiner-e — Roman road network
@@ -718,6 +747,34 @@ sources:
     attribution: "Itiner-e, CC BY 4.0"
     feeds: [geo_feature]
     phase: 4
+    notes: >
+      Not yet ingested: the only downloads (v1.3) are a 78 MB GeoJSON, a 34 MB GeoPackage and a 138 MB shapefile.
+      A Roman-roads layer for the atlas needs a clipped, simplified extract made from one of them.
+
+  - id: natural-earth
+    name: Natural Earth (land, coastlines, rivers and lakes, 1:10m)
+    url: https://www.naturalearthdata.com/
+    download: shapefile zips from naciscdn.org (version 5.x), turned into the atlas basemap by tools/build_basemap.py
+    fetch:
+      - http: https://naciscdn.org/naturalearth/10m/physical/ne_10m_land.zip
+        target: natural-earth
+        extract: true
+      - http: https://naciscdn.org/naturalearth/10m/physical/ne_10m_coastline.zip
+        target: natural-earth
+        extract: true
+      - http: https://naciscdn.org/naturalearth/10m/physical/ne_10m_rivers_lake_centerlines.zip
+        target: natural-earth
+        extract: true
+      - http: https://naciscdn.org/naturalearth/10m/physical/ne_10m_lakes.zip
+        target: natural-earth
+        extract: true
+    license: PD
+    attribution: "Made with Natural Earth. Free vector and raster map data @ naturalearthdata.com (public domain)"
+    feeds: []
+    phase: 4
+    notes: >
+      Public domain (naturalearthdata.com/about/terms-of-use). Clipped to the Mediterranean and Near East,
+      simplified and shipped as web/public/atlas/basemap.json, so the atlas needs no tile server.
 
   - id: helloao-commentaries
     name: HelloAO Free Use Bible API — public-domain commentaries

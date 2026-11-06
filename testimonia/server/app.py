@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from .. import __version__, config
 from .agent import router as agent_router
 from .api import router
+from .geography import router as geography_router
 from .store import Store
 
 DIST = config.WEB_DIR / "dist"
@@ -32,6 +33,7 @@ def create_app(db_path: Path | None = None, dist: Path = DIST, agent_allow_priva
             allow_headers=["Content-Type", "X-Api-Key"],
         )
     app.include_router(router)
+    app.include_router(geography_router)
     app.include_router(agent_router)
     # the assistant may call private/local model servers only when this server itself is private (local use)
     app.state.agent_allow_private = agent_allow_private

@@ -7,6 +7,7 @@ import type { Book, VerseGuide } from "../types";
 import { openAsk } from "./AskDrawer";
 import { NOTE_KIND } from "./Footnotes";
 import { Html } from "./Html";
+import { VerseEntities } from "./VerseEntities";
 import { VerseNote } from "./VerseNote";
 import { Mark } from "./Marks";
 import { Speak } from "./Speak";
@@ -244,6 +245,7 @@ function LinksTab({ g, books, onWord }: { g: VerseGuide; books: Book[]; onWord: 
   const quotedBy = g.quotations.filter((q) => q.direction === "quoted_by");
   return (
     <>
+      <VerseEntities osis={g.verse.osis} />
       {(quotes.length > 0 || quotedBy.length > 0) && (
         <Block title="Old ↔ New Testament" note={g.quotations.length}>
           {quotes.length > 0 && <p className="muted small">This verse quotes</p>}

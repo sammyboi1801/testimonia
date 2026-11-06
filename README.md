@@ -110,12 +110,14 @@ Used today: [STEPBible data](https://github.com/STEPBible/STEPBible-Data) (Tynda
 [Open Scriptures Hebrew Bible](https://github.com/openscriptures/morphhb), [eBible.org](https://ebible.org/),
 the [Bruhman Translator's Bible](https://github.com/revjude/BTB), [OpenBible.info](https://www.openbible.info/),
 the [HistoricalChristianFaith commentaries](https://github.com/HistoricalChristianFaith/Commentaries-Database),
-[Perseus](https://www.perseus.tufts.edu/) and [Project Gutenberg](https://www.gutenberg.org/), and Wikipedia
+[Perseus](https://www.perseus.tufts.edu/) and [Project Gutenberg](https://www.gutenberg.org/),
+[Theographic](https://github.com/robertrouse/theographic-bible-metadata) (people, events, Paul's journeys),
+[Natural Earth](https://www.naturalearthdata.com/) (the atlas basemap), and Wikipedia
 summaries shown live in the browser. The church fathers' texts come from [CCEL](https://www.ccel.org/) and are
 used in local builds only (`testimonia build --public` leaves them out).
 
 Planned: SBLGNT and the Byzantine text, CNTR and INTF transcriptions, MACULA, the UBS open resources, the
-Septuagint (Swete), Theographic, Pleiades and Wikidata.
+Septuagint (Swete), Pleiades and Wikidata, and Roman roads (Itiner-e).
 
 ## Roadmap
 

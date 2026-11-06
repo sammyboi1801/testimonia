@@ -189,11 +189,77 @@
       "size": 732065,
       "source": "ebible"
     },
+    "http|https://naciscdn.org/naturalearth/10m/physical/ne_10m_coastline.zip|natural-earth|": {
+      "fetched_at": "2026-11-06T07:49:18+00:00",
+      "sha256": "bfa04cdbcbef07ef90dfca1dabb48062eca29900a113df0f389303e255484017",
+      "size": 3069451,
+      "source": "natural-earth"
+    },
+    "http|https://naciscdn.org/naturalearth/10m/physical/ne_10m_lakes.zip|natural-earth|": {
+      "fetched_at": "2026-11-06T07:49:18+00:00",
+      "sha256": "0803a06f9c3cb4671d89b68c48b142aad9366ba40f665245e12a913fbc61722a",
+      "size": 2349685,
+      "source": "natural-earth"
+    },
+    "http|https://naciscdn.org/naturalearth/10m/physical/ne_10m_land.zip|natural-earth|": {
+      "fetched_at": "2026-11-06T07:49:17+00:00",
+      "sha256": "e547d749445eaa0964aba76738090ec88f5e63c4585122170f98c67a7ea922dc",
+      "size": 3269070,
+      "source": "natural-earth"
+    },
+    "http|https://naciscdn.org/naturalearth/10m/physical/ne_10m_rivers_lake_centerlines.zip|natural-earth|": {
+      "fetched_at": "2026-11-06T07:49:18+00:00",
+      "sha256": "ded71b01870855ccfe19b51f2ec14c9bb48fae23c0e9f3c11974d426433b5c38",
+      "size": 2079507,
+      "source": "natural-earth"
+    },
     "http|https://raw.githubusercontent.com/PerseusDL/canonical-latinLit/master/data/phi1351/phi005/phi1351.phi005.perseus-eng2.xml|witnesses|tacitus-annals-eng.xml": {
       "fetched_at": "2026-11-06T04:04:36+00:00",
       "sha256": "3fd377088c7cdf573658becd2b97e7707400cf4849bcbdfbe8f9c4bd71fdf981",
       "size": 1225093,
       "source": "perseus-tacitus"
+    },
+    "http|https://raw.githubusercontent.com/openbibleinfo/Bible-Geocoding-Data/7eb18a5ee62f27b9b93bd6689ea272d76dd23b8f/data/ancient.jsonl|openbible-geo|": {
+      "fetched_at": "2026-11-06T07:49:14+00:00",
+      "sha256": "b8187aa4737e8517ccc090f765d2be11da4c548cd2a59d3cdcb62e952cb8c0f2",
+      "size": 11550193,
+      "source": "openbible-geo"
+    },
+    "http|https://raw.githubusercontent.com/robertrouse/theographic-bible-metadata/3f461f2f3cf8939f2b79430ae238a36528024ed3/CSV/Events.csv|theographic|": {
+      "fetched_at": "2026-11-06T07:49:15+00:00",
+      "sha256": "c042e1413e26657f5a7d4c4e653ed8b44827995a8b3c7c384a05e762d01f6384",
+      "size": 246197,
+      "source": "theographic"
+    },
+    "http|https://raw.githubusercontent.com/robertrouse/theographic-bible-metadata/3f461f2f3cf8939f2b79430ae238a36528024ed3/CSV/People.csv|theographic|": {
+      "fetched_at": "2026-11-06T07:49:14+00:00",
+      "sha256": "60d88c59577bb9afbbf63a13d74a60161d186050d53ddeb4f24bdc8407a0d32f",
+      "size": 1604871,
+      "source": "theographic"
+    },
+    "http|https://raw.githubusercontent.com/robertrouse/theographic-bible-metadata/3f461f2f3cf8939f2b79430ae238a36528024ed3/CSV/PeopleGroups.csv|theographic|": {
+      "fetched_at": "2026-11-06T07:49:15+00:00",
+      "sha256": "c5742117c82d810ee4eb9de7ed7ece5f69e299398804a9fb649ef4fef67d46e2",
+      "size": 14477,
+      "source": "theographic"
+    },
+    "http|https://raw.githubusercontent.com/robertrouse/theographic-bible-metadata/3f461f2f3cf8939f2b79430ae238a36528024ed3/CSV/Places.csv|theographic|": {
+      "fetched_at": "2026-11-06T07:49:14+00:00",
+      "sha256": "5cebc3afd28e5e513bd3c3c70e0105f4587a2b1eff1b4a9273e6a29e01d06e9f",
+      "size": 990783,
+      "source": "theographic"
+    },
+    "http|https://raw.githubusercontent.com/robertrouse/theographic-bible-metadata/3f461f2f3cf8939f2b79430ae238a36528024ed3/geo/bible-places.geojson|theographic|": {
+      "fetched_at": "2026-11-06T07:49:15+00:00",
+      "sha256": "4bca0eaf1a2e105aca0c6c5d11e41ef982d3ef5c1961e919f2e7d299b5d1cb69",
+      "size": 3188094,
+      "source": "theographic"
+    },
+    "http|https://raw.githubusercontent.com/robertrouse/theographic-bible-metadata/3f461f2f3cf8939f2b79430ae238a36528024ed3/geo/pauls_journeys_all.geojson|theographic|": {
+      "fetched_at": "2026-11-06T07:49:15+00:00",
+      "sha256": "73aeac9b99d458aaae707bc346420421ec8f5e78ccfbba113261182e9e74ae8f",
+      "size": 229179,
+      "source": "theographic"
     },
     "http|https://www.ccel.org/ccel/aquinas/catena1.xml|ccel|": {
       "fetched_at": "2026-11-06T01:05:08+00:00",

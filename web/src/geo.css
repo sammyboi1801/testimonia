@@ -1,0 +1,215 @@
+/* Atlas, place / person / event pages and the study panel's "People & places". Design tokens only, so every
+   design and dark mode work, the map included (Leaflet's SVG takes its colours from these rules). */
+
+/* ------------------------------------------------------------------ library link */
+.view-switch .seg-link { display: inline-flex; align-items: center; padding: 3px 10px; font-size: 12px; color: var(--ink); border-left: 1px solid var(--rule); }
+.view-switch .seg-link:hover { background: var(--panel-2); text-decoration: none; }
+
+/* ------------------------------------------------------------------ the map itself */
+/* parchment land on a darker, engraved sea; in dark mode the land is the lighter of the two */
+:root { --map-land: var(--panel); --map-sea: var(--panel-2); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --map-land: var(--panel-2); --map-sea: var(--bg); }
+}
+:root[data-theme="dark"] { --map-land: var(--panel-2); --map-sea: var(--bg); }
+/* selectors are compound so they win over leaflet.css, which loads later with the map */
+.atlas-map, .mini-map, .atlas-map.leaflet-container, .mini-map.leaflet-container {
+  font-family: var(--font-ui);
+  background-color: var(--map-sea);
+  /* engraved water lines, as on old maps */
+  background-image: repeating-linear-gradient(0deg, transparent 0 6px, color-mix(in srgb, var(--rule) 45%, transparent) 6px 7px);
+}
+.leaflet-container.atlas-map .leaflet-control-attribution, .leaflet-container.mini-map .leaflet-control-attribution {
+  background: color-mix(in srgb, var(--panel) 85%, transparent); color: var(--muted); font-size: 10.5px;
+}
+.leaflet-container.atlas-map .leaflet-control-attribution a, .leaflet-container.mini-map .leaflet-control-attribution a { color: var(--ink-soft); }
+.leaflet-container.atlas-map .leaflet-bar, .leaflet-container.mini-map .leaflet-bar { border: 1px solid var(--rule); box-shadow: var(--shadow); }
+.leaflet-container.atlas-map .leaflet-bar a, .leaflet-container.mini-map .leaflet-bar a { background: var(--panel); color: var(--ink); border-color: var(--rule); }
+.leaflet-container.atlas-map .leaflet-bar a:hover, .leaflet-container.mini-map .leaflet-bar a:hover { background: var(--panel-2); }
+.leaflet-container.atlas-map .leaflet-bar a.leaflet-disabled, .leaflet-container.mini-map .leaflet-bar a.leaflet-disabled { background: var(--panel-2); color: var(--muted); }
+
+.bm-land { fill: var(--map-land); fill-opacity: 1; stroke: none; }
+.bm-coast { fill: none; stroke: var(--ink-soft); stroke-width: 0.8; stroke-opacity: 0.75; }
+.bm-coast-halo { fill: none; stroke: var(--ink-soft); stroke-width: 6; stroke-opacity: 0.08; stroke-linejoin: round; }
+.bm-lake { fill: var(--map-sea); fill-opacity: 1; stroke: var(--ink-soft); stroke-width: 0.6; stroke-opacity: 0.6; }
+.bm-river { fill: none; stroke: var(--link); stroke-width: 0.8; stroke-opacity: 0.35; }
+.bm-river.major { stroke-width: 1.3; stroke-opacity: 0.5; }
+.bm-sea span {
+  position: absolute; transform: translate(-50%, -50%); white-space: nowrap; pointer-events: none;
+  font-family: var(--font-display); font-style: italic; font-size: 13px; letter-spacing: 0.22em; color: var(--muted); opacity: 0.85;
+}
+
+/* place markers: filled = certain, faint = probable, open and dashed = uncertain */
+.pm { stroke: var(--ink); stroke-width: 1; fill: var(--accent); fill-opacity: 0.9; cursor: pointer; }
+.pm-likely { fill-opacity: 0.4; }
+.pm-uncertain { fill: var(--bg); fill-opacity: 1; stroke-dasharray: 2 2; stroke: var(--ink-soft); }
+.pm-unknown { fill-opacity: 0.5; }
+.pm-region { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 1 2; }
+.pm-river, .pm-water { fill: var(--link); }
+.pm-mountain { fill: var(--ink-soft); }
+.pm.hl { stroke-width: 2.2; stroke: var(--accent); }
+.pm.sel { stroke: var(--ink); stroke-width: 2.5; fill: var(--accent); fill-opacity: 1; stroke-dasharray: none; }
+.pm:hover { stroke-width: 2; }
+
+.pm-label span {
+  position: absolute; left: 6px; top: -9px; white-space: nowrap; pointer-events: none;
+  font-family: var(--font-text); font-size: 12.5px; line-height: 18px; color: var(--ink);
+  text-shadow: 0 0 2px var(--map-land), 0 0 2px var(--map-land), 0 0 3px var(--map-land);
+}
+.pm-label.major span { font-size: 14px; font-weight: 600; }
+.pm-label.region span {
+  left: 0; transform: translateX(-50%); font-family: var(--font-display); font-style: italic; font-weight: 400;
+  font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft);
+}
+.pm-label.sel span { color: var(--accent); font-weight: 600; }
+.leaflet-tooltip.pm-tip {
+  padding: 3px 8px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--panel); color: var(--ink);
+  box-shadow: var(--shadow); font-family: var(--font-text); font-size: 13.5px;
+}
+.leaflet-tooltip.pm-tip span { color: var(--muted); font-family: var(--font-ui); font-size: 11.5px; }
+.leaflet-tooltip-top.pm-tip::before { border-top-color: var(--rule); }
+
+/* Paul's journeys: one ink, four dash patterns */
+.route { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-opacity: 0.85; stroke-linecap: round; }
+.route-1 { stroke-dasharray: none; }
+.route-2 { stroke-dasharray: 8 5; stroke: var(--link); }
+.route-3 { stroke-dasharray: 2 4; }
+.route-4 { stroke-dasharray: 10 4 2 4; stroke: var(--ink-soft); }
+.route-stop { fill: var(--panel); stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: none; }
+.route-stop.route-2 { stroke: var(--link); }
+.route-stop.route-4 { stroke: var(--ink-soft); }
+
+/* ------------------------------------------------------------------ atlas page */
+.atlas-page { position: relative; height: 100%; min-height: 0; overflow: hidden; }
+.atlas-map { position: absolute; inset: 0; }
+.atlas-panel {
+  position: absolute; z-index: 500; top: 12px; left: 12px; bottom: 12px; width: 330px; overflow: auto;
+  display: flex; flex-direction: column; gap: 10px; padding: 14px 16px;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.atlas-panel:not(.has-place) { bottom: auto; max-height: calc(100% - 24px); }
+.atlas-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.atlas-head h1 { margin: 0; font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(28px * var(--display-size)); }
+.atlas-find { position: relative; }
+.atlas-find input {
+  width: 100%; padding: 7px 10px; border: 1px solid var(--rule); border-radius: var(--radius);
+  background: var(--bg); color: var(--ink); font-family: var(--font-text); font-size: 15px;
+}
+.atlas-find input:focus { outline: none; border-color: var(--accent); }
+.atlas-matches { list-style: none; margin: 4px 0 0; padding: 4px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--panel); }
+.atlas-matches button { width: 100%; padding: 5px 6px; border: 0; border-radius: var(--radius); background: transparent; text-align: left; font-family: var(--font-text); font-size: 15px; color: var(--ink); }
+.atlas-matches button:hover { background: var(--panel-2); }
+.atlas-filters { display: flex; align-items: center; gap: 8px; }
+.atlas-filters .seg { margin: 0; flex: none; }
+.atlas-filters select {
+  flex: 1; min-width: 0; padding: 4px 6px; border: 1px solid var(--rule); border-radius: var(--radius);
+  background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 12.5px;
+}
+.atlas-toggles { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--ink-soft); }
+.atlas-toggles label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.atlas-toggles input { accent-color: var(--accent); }
+
+.atlas-legend { border-top: 1px solid var(--rule); padding-top: 8px; }
+.atlas-legend h3, .atlas-card h3 {
+  margin: 4px 0 6px; font-size: 12px; font-weight: 600; color: var(--muted);
+  text-transform: var(--label-transform); font-variant: var(--label-variant); letter-spacing: var(--label-tracking);
+}
+.atlas-legend ul { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 3px; font-size: 13px; color: var(--ink-soft); }
+.atlas-legend p { margin: 4px 0 0; line-height: 1.45; }
+.lg-dot { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 50%; border: 1px solid var(--ink); background: var(--accent); vertical-align: -1px; }
+.lg-dot.likely { background: color-mix(in srgb, var(--accent) 40%, var(--bg)); }
+.lg-dot.uncertain { background: var(--bg); border: 1px dashed var(--ink-soft); }
+.lg-dot.region { background: transparent; border: 1px dotted var(--muted); }
+.lg-route { display: inline-block; width: 26px; height: 0; margin-right: 6px; border-top: 2.5px solid var(--accent); vertical-align: 3px; }
+.lg-route.route-2 { border-top-style: dashed; border-top-color: var(--link); }
+.lg-route.route-3 { border-top-style: dotted; }
+.lg-route.route-4 { border-top-style: dashed; border-top-color: var(--ink-soft); }
+
+.atlas-card { position: relative; border-top: 1px solid var(--rule); padding-top: 10px; }
+.atlas-card h2 { margin: 0 30px 2px 0; font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(26px * var(--display-size)); }
+.atlas-card .sub { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+.atlas-close { position: absolute; top: 8px; right: -6px; }
+.atlas-summary { margin: 8px 0; font-family: var(--font-text); font-size: 15.5px; line-height: 1.45; }
+.atlas-books { display: grid; gap: 2px; font-family: var(--font-text); font-size: 14.5px; }
+.atlas-books strong { font-weight: 600; color: var(--ink); }
+.atlas-books a { margin-left: 4px; }
+.atlas-quote, .ent-samples blockquote {
+  margin: 10px 0; padding: 2px 0 2px 12px; border-left: 2px solid var(--rule);
+  font-family: var(--font-text); font-size: 15px; line-height: 1.5; color: var(--ink-soft);
+}
+.atlas-quote a, .ent-samples a { font-family: var(--font-ui); font-size: 12px; white-space: nowrap; }
+.atlas-list { margin: 0 0 6px; padding-left: 18px; font-family: var(--font-text); font-size: 15px; }
+.atlas-people { margin: 0 0 10px; font-family: var(--font-text); font-size: 15px; line-height: 1.5; }
+.atlas-card .btn { display: inline-block; margin-top: 6px; }
+
+.conf { display: inline-block; margin: 6px 0 2px; padding: 1px 9px; border: 1px solid var(--rule); border-radius: 999px; font-size: 12px; color: var(--ink-soft); }
+.conf::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; border: 1px solid var(--ink); background: var(--accent); }
+.conf-likely::before { background: color-mix(in srgb, var(--accent) 40%, var(--bg)); }
+.conf-uncertain::before { background: var(--bg); border-style: dashed; }
+.conf-unknown::before { background: color-mix(in srgb, var(--accent) 50%, var(--bg)); }
+
+/* ------------------------------------------------------------------ place / person / event pages */
+.ent-hero { grid-template-columns: minmax(0, 1fr) minmax(280px, 440px); }
+.ent-hero h1 { margin-bottom: 6px; }
+.ent-hero-side { display: grid; gap: 12px; align-content: start; }
+.ent-hero-side .wiki-card { margin: 0; }
+.ent-summary { margin: 10px 0 6px; max-width: 60ch; font-family: var(--font-text); font-size: 17px; line-height: 1.5; }
+.ent-ext { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 0 0; font-size: 13px; }
+.ent-tight { margin: 6px 0; font-family: var(--font-text); font-size: 15.5px; }
+.mini-map { position: relative; height: 260px; border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+.book-block .mini-map { height: 220px; margin-bottom: 10px; }
+.mini-map.loading { opacity: 0.6; }
+
+.ent-books { display: grid; gap: 0; margin-top: 6px; }
+.ent-book { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 6px 0; border-bottom: 1px dotted var(--rule); }
+.ent-book-name { font-family: var(--font-text); font-size: 16px; color: var(--ink); }
+.ent-refs { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 13.5px; font-variant-numeric: lining-nums; }
+.ent-refs .link-btn { font-size: 12.5px; }
+.ent-samples { margin-bottom: 6px; }
+
+.ent-events { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.ent-events li { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; align-items: baseline; font-family: var(--font-text); font-size: 15.5px; }
+.ent-year { font-family: var(--font-ui); font-size: 12px; color: var(--muted); text-align: right; font-variant-numeric: lining-nums; white-space: nowrap; }
+.ent-people { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-family: var(--font-text); font-size: 15.5px; }
+.ent-people .muted { font-size: 14px; }
+.ent-nearby { display: flex; flex-wrap: wrap; gap: 3px 14px; margin: 0; font-family: var(--font-text); font-size: 15.5px; }
+.ent-dates { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+.ent-easton { max-height: 240px; overflow: hidden; font-family: var(--font-text); font-size: 15px; line-height: 1.55; color: var(--ink-soft);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent); }
+.ent-easton.open { max-height: none; mask-image: none; }
+.ent-easton p { margin: 0 0 8px; }
+.ent-passage { font-family: var(--font-text); font-size: 17px; line-height: 1.6; margin-bottom: 12px; }
+.ent-passage p { margin: 0 0 4px; }
+.ent-vnum { font-family: var(--font-ui); font-size: 11.5px; color: var(--muted); vertical-align: 2px; }
+.ent-credit { margin-top: 24px; }
+
+.family { display: grid; gap: 6px; padding: 12px 14px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--panel); }
+.fam-row { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.fam-label { font-size: 11.5px; color: var(--muted); text-transform: var(--label-transform); font-variant: var(--label-variant); letter-spacing: var(--label-tracking); }
+.fam-people { display: flex; flex-wrap: wrap; gap: 2px 12px; font-family: var(--font-text); font-size: 15.5px; }
+.fam-self { padding: 4px 0 4px 130px; border-block: 1px dotted var(--rule); font-family: var(--font-display); font-size: calc(19px * var(--display-size)); }
+
+/* ------------------------------------------------------------------ study panel: People & places */
+.verse-entities .ve-row { margin: 0 0 4px; font-size: 14px; line-height: 1.55; }
+.ve-label { display: inline-block; min-width: 52px; margin-right: 6px; font-size: 11.5px; color: var(--muted); }
+.ve-sep { color: var(--muted); }
+.ve-map { margin-left: 10px; font-size: 12px; }
+.ve-map::before { content: "⌖ "; }
+
+@media (max-width: 980px) {
+  .ent-hero { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .atlas-panel, .atlas-panel:not(.has-place) {
+    top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 46vh; padding: 10px 12px; gap: 8px;
+  }
+  .atlas-head h1 { font-size: calc(22px * var(--display-size)); }
+  .atlas-map .leaflet-bottom.leaflet-right { top: 0; left: 0; right: auto; bottom: auto; } /* credits above the sheet */
+  .atlas-panel:not(.has-place) .atlas-legend p { display: none; }
+  .atlas-legend ul { grid-template-columns: 1fr 1fr; }
+  .atlas-find input { font-size: 16px; }
+  .ent-book { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .fam-row { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .fam-self { padding-left: 0; }
+  .mini-map { height: 220px; }
+}

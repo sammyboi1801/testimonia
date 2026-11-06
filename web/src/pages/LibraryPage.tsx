@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Bookshelf } from "../components/Bookshelf";
 import { StoryView } from "../components/Story";
 import { TimelineView } from "../components/Timeline";
@@ -36,6 +36,9 @@ export function LibraryPage() {
               {v.label}
             </button>
           ))}
+          <Link to="/atlas" className="seg-link" title="Map of the places of the Bible">
+            Atlas
+          </Link>
         </div>
       </div>
       {view === "timeline" ? <TimelineView /> : view === "story" ? <StoryView /> : <Bookshelf />}

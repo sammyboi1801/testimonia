@@ -7,7 +7,20 @@ import importlib
 from .base import STEPS, Context, IngestError, Step, step
 
 #: Modules containing ingest steps, in a sensible default order (dependencies decide the real order).
-MODULES = ("curated", "ebible", "openbible", "stepbible", "verses", "btb", "hcf", "ccel", "history", "witnesses")
+MODULES = (
+    "curated",
+    "ebible",
+    "openbible",
+    "stepbible",
+    "verses",
+    "btb",
+    "hcf",
+    "ccel",
+    "history",
+    "witnesses",
+    "geography",
+    "theographic",
+)
 
 __all__ = ["MODULES", "STEPS", "Context", "IngestError", "Step", "load_all", "step"]
 
