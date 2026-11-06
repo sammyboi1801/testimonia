@@ -5,6 +5,7 @@ import { osisLabel, verseUrl } from "../lib";
 import type { Book } from "../types";
 import { Html } from "./Html";
 import { Speak } from "./Speak";
+import { WordChart } from "./WordChart";
 
 export function WordStudy({ strong, books, onBack, onWord }: { strong: string; books: Book[]; onBack: () => void; onWord: (s: string) => void }) {
   const { data, isLoading, error } = useWord(strong);
@@ -13,7 +14,6 @@ export function WordStudy({ strong, books, onBack, onWord }: { strong: string; b
   if (isLoading) return <div className="loading">Loading {strong}…</div>;
   if (error || !data) return <div className="error">Could not load {strong}: {String(error)}</div>;
   const hebrew = strong.startsWith("H");
-  const max = Math.max(1, ...data.by_book.map((b) => b.n));
   const lex = data.lexicons[Math.min(tab, data.lexicons.length - 1)];
 
   return (
@@ -43,11 +43,10 @@ export function WordStudy({ strong, books, onBack, onWord }: { strong: string; b
               </span>
             ))}
           </div>
-          <div className="bars">
-            {data.by_book.map((b) => (
-              <FragmentRow key={b.book} label={b.name} n={b.n} max={max} />
-            ))}
-          </div>
+          <WordChart strong={strong} byBook={data.by_book} books={books} />
+          <Link className="link-btn find-forms" to={`/search?in=grammar&lemma=${encodeURIComponent(strong)}`}>
+            Find all forms like this →
+          </Link>
         </div>
       </details>
 
@@ -99,13 +98,3 @@ const LEX_SHORT: Record<string, string> = {
   lsj: "LSJ",
   bdb: "BDB",
 };
-
-function FragmentRow({ label, n, max }: { label: string; n: number; max: number }) {
-  return (
-    <>
-      <span>{label}</span>
-      <div className="bar" style={{ width: `${Math.max(4, (n / max) * 100)}%` }} />
-      <span className="muted">{n}</span>
-    </>
-  );
-}

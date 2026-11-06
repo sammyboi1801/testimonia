@@ -9,6 +9,7 @@ import { useNotes, type Note } from "../notes";
 import { ReadAloud } from "./ReadAloud";
 import { SelectionToolbar } from "./SelectionToolbar";
 import { speechLang } from "../speech";
+import { PassageLink } from "./PassageLink";
 import { PassagePicker } from "./PassagePicker";
 import { Speak } from "./Speak";
 
@@ -97,7 +98,11 @@ export function Reader({ data, books, editions, selected, onSelect, onWord }: Pr
           <ColumnHeads mode={mode} textEds={textEds} primary={primary} ctx={ctx} />
           {data.verses.map((v) => (
             <Fragment key={v.vkey}>
-              {headings.get(v.vkey) && <h2 className="pericope">{headings.get(v.vkey)}</h2>}
+              {headings.get(v.vkey) && (
+                <h2 className="pericope">
+                  {headings.get(v.vkey)} <PassageLink osis={v.osis} title={headings.get(v.vkey)} variant="heading" />
+                </h2>
+              )}
               <VerseRow v={v} mode={mode} textEds={textEds} primary={primary} ctx={ctx} />
             </Fragment>
           ))}
@@ -324,7 +329,11 @@ function ReadingView({ data, edition, headings, ctx }: { data: Chapter; edition?
     <div className={`reading-view ${ed ? langClass(ed.language) : ""}`} dir={ed && isRtl(ed.language) ? "rtl" : undefined}>
       {paragraphs.map((p, i) => (
         <section key={i}>
-          {p.title && <h2 className="pericope">{p.title}</h2>}
+          {p.title && (
+            <h2 className="pericope">
+              {p.title} <PassageLink osis={p.verses[0]!.osis} title={p.title} variant="heading" />
+            </h2>
+          )}
           <p>
             {p.verses.map((v) => {
               const t = edition ? v.texts[edition] : undefined;

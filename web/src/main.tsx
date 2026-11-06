@@ -30,6 +30,7 @@ import "./settings.css";
 import "./timeline.css";
 import "./story.css";
 import "./ask.css";
+import "./study.css";
 import "./mobile.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -43,6 +44,7 @@ import { TopBar } from "./components/TopBar";
 import { AskPage } from "./pages/AskPage";
 import { BookPage } from "./pages/BookPage";
 import { NotesPage } from "./pages/NotesPage";
+import { PassagePage } from "./pages/PassagePage";
 import { LibraryPage } from "./pages/LibraryPage";
 import { ReadPage } from "./pages/ReadPage";
 import { SearchPage } from "./pages/SearchPage";
@@ -64,6 +66,7 @@ function App() {
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/library/:edition/:ord" element={<WorkPage />} />
           <Route path="/book/:book" element={<BookPage />} />
+          <Route path="/passage/:ref" element={<PassagePage />} />
           <Route path="/ask" element={<AskPage />} />
           <Route path="/notes" element={<NotesPage />} />
           <Route path="/search" element={<SearchPage />} />
