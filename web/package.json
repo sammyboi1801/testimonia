@@ -11,11 +11,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fontsource/charm": "^5.3.0",
     "@fontsource/cormorant-garamond": "^5.3.0",
     "@fontsource/crimson-pro": "^5.3.0",
     "@fontsource/eb-garamond": "^5.3.0",
-    "@fontsource/felipa": "^5.3.0",
     "@fontsource/fraunces": "^5.3.0",
     "@fontsource/gentium-book-plus": "^5.3.0",
     "@fontsource/ibm-plex-sans": "^5.3.0",

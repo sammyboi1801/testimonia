@@ -24,9 +24,6 @@ import "@fontsource/karla/600.css";
 import "@fontsource/gentium-book-plus/400.css";
 import "@fontsource/gentium-book-plus/700.css";
 import "@fontsource/noto-serif-hebrew/400.css";
-// calligraphic display faces (optional, chosen in Settings › Type)
-import "@fontsource/felipa/400.css";
-import "@fontsource/charm/400.css";
 import "./styles.css";
 import "./layout.css";
 import "./settings.css";

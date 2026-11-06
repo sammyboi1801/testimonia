@@ -46,8 +46,6 @@ export const FONTS = {
     { id: "fraunces", label: "Fraunces", css: '"Fraunces", Georgia, serif' },
     { id: "crimson", label: "Crimson Pro", css: '"Crimson Pro", Georgia, serif' },
     { id: "spectral", label: "Spectral", css: '"Spectral", Georgia, serif' },
-    { id: "felipa", label: "Felipa (calligraphic)", css: '"Felipa", "Cormorant Garamond", serif' },
-    { id: "charm", label: "Charm (calligraphic)", css: '"Charm", "Cormorant Garamond", serif' },
   ],
   text: [
     { id: "eb-garamond", label: "EB Garamond", css: '"EB Garamond", Georgia, serif' },
