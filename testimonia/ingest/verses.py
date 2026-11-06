@@ -5,7 +5,7 @@ from __future__ import annotations
 from .base import Context, step
 
 
-@step("verses", requires=["ebible"])
+@step("verses", requires=["ebible", "stepbible-tagnt", "stepbible-tahot"])
 def build_verse_list(ctx: Context) -> None:
     """Hub verse table derived from all mapped texts (validated against book lengths)."""
     ctx.con.execute(

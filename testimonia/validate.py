@@ -49,9 +49,15 @@ CHECKS: list[tuple[str, str, str]] = [
     ),
     (
         "error",
-        "edition without any text",
+        "variant reading without any witness",
+        "SELECT unit_id || '.' || n FROM variant_reading vr WHERE NOT EXISTS "
+        "(SELECT 1 FROM variant_witness w WHERE w.unit_id = vr.unit_id AND w.n = vr.n)",
+    ),
+    (
+        "error",
+        "edition without any text or words",
         "SELECT id FROM edition e WHERE NOT EXISTS (SELECT 1 FROM edition_verse ev WHERE ev.edition_id = e.id) "
-        "AND kind <> 'manuscript'",
+        "AND NOT EXISTS (SELECT 1 FROM token t WHERE t.edition_id = e.id) AND kind <> 'manuscript'",
     ),
     (
         "error",
