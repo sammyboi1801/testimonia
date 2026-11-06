@@ -14,6 +14,7 @@ from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any
 
+import httpx
 from fastapi import HTTPException
 
 from ..refs import parse_refs
@@ -21,6 +22,9 @@ from . import api
 from .store import Store
 
 MAX_RESULT = 9000  # characters per tool result
+WIKIPEDIA = "https://en.wikipedia.org"
+#: a generic client name (Wikipedia asks API clients to identify themselves; no personal details)
+WIKI_HEADERS = {"User-Agent": "Testimonia/0.1 (https://github.com/sammyboi1801/testimonia)"}
 
 TOOLS: list[dict[str, Any]] = [
     {
@@ -121,6 +125,76 @@ TOOLS: list[dict[str, Any]] = [
             "type": "object",
             "properties": {"name": {"type": "string"}},
             "required": ["name"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "book_overview",
+        "description": (
+            "A book of the Bible as a whole: size, setting, outline by section, its most-quoted verses and who quoted it "
+            "most, notable textual variants, and its Old/New Testament links. Input: the book's name, e.g. 'Romans'."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"book": {"type": "string"}},
+            "required": ["book"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "timeline",
+        "description": (
+            "What happened and who was writing in a span of years: events and the early Christian, Jewish and Roman "
+            "writers active then, with their works. Years as numbers; negative for BC, e.g. 90 to 150."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"from_year": {"type": "integer"}, "to_year": {"type": "integer"}},
+            "required": ["from_year", "to_year"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "compare_translations",
+        "description": "One to three verses in all thirteen translations side by side, to compare wording.",
+        "parameters": {
+            "type": "object",
+            "properties": {"reference": {"type": "string"}},
+            "required": ["reference"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "fathers_on",
+        "description": (
+            "Every early Christian, Jewish or Roman writer in the library who quotes a verse, oldest first, with the "
+            "words they wrote and a link to read more (read_work). Optionally only writers before a year, e.g. 325 "
+            "for before Nicaea."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"reference": {"type": "string"}, "before_year": {"type": "integer"}},
+            "required": ["reference"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "wikipedia",
+        "description": (
+            "Background from English Wikipedia, a secondary source outside the library: people, places, manuscripts, "
+            "councils and modern scholarship the library does not cover. Check the library first; cite the article "
+            "link the tool returns and say it is Wikipedia. Input: a short search phrase, e.g. 'Sosthenes'. The first call returns the whole introduction and the list of sections; call again with `section` to read any of them in full."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string"},
+                "section": {
+                    "type": "string",
+                    "description": "optional: a section title from the first call, to read that section in full",
+                },
+            },
+            "required": ["query"],
             "additionalProperties": False,
         },
     },
@@ -305,6 +379,213 @@ def lookup_history(store: Store, name: str) -> str:
     return "\n".join(out[:6]) or f"Nothing in the timeline matches {name!r}. Try search_texts."
 
 
+def _wiki_client() -> httpx.Client:
+    return httpx.Client(timeout=httpx.Timeout(10.0), headers=WIKI_HEADERS, follow_redirects=True)
+
+
+_HEADING = re.compile(r"^(={2,6})\s*(.+?)\s*\1\s*$", re.M)
+
+
+def _wiki_sections(text: str) -> list[tuple[str, str]]:
+    """[(name, body)]: the lead first (name ''), then each section with its subsections."""
+    marks = list(_HEADING.finditer(text))
+    parts = [("", (text[: marks[0].start()] if marks else text).strip())]
+    for i, m in enumerate(marks):
+        level = len(m.group(1))
+        stop = next((n.start() for n in marks[i + 1 :] if len(n.group(1)) <= level), len(text))
+        body = _HEADING.sub(lambda h: f"\n### {h.group(2)}", text[m.end() : stop]).strip()
+        if body:  # reference lists and link sections come back empty in plain-text extracts
+            parts.append((m.group(2), body))
+    return parts
+
+
+def wikipedia(store: Store, query: str, section: str | None = None) -> str:
+    """English Wikipedia, fetched live (nothing stored): the article's whole introduction and its list of sections,
+    or one section in full when `section` is given, so any part of the article can be read."""
+    common: dict[str, str | int] = {"format": "json", "formatversion": 2}
+    try:
+        with _wiki_client() as http:
+            found = http.get(
+                f"{WIKIPEDIA}/w/api.php",
+                params={**common, "action": "query", "list": "search", "srsearch": query, "srlimit": 5},
+            )
+            found.raise_for_status()
+            hits = found.json().get("query", {}).get("search", [])
+            if not hits:
+                return f"No Wikipedia article matches {query!r}."
+            title = str(hits[0]["title"])
+            page = http.get(
+                f"{WIKIPEDIA}/w/api.php",
+                params={
+                    **common,
+                    "action": "query",
+                    "prop": "extracts",
+                    "explaintext": 1,
+                    "exsectionformat": "wiki",
+                    "redirects": 1,
+                    "titles": title,
+                },
+            )
+            page.raise_for_status()
+            pages = page.json().get("query", {}).get("pages", [])
+    except httpx.HTTPError as e:
+        return f"Wikipedia could not be reached ({type(e).__name__}); answer from the library alone."
+    parts = _wiki_sections(str((pages[0].get("extract") if pages else "") or ""))
+    head = (
+        f"# Wikipedia: {title}\n"
+        f"Link: {WIKIPEDIA}/wiki/{title.replace(' ', '_')} (Wikipedia, CC BY-SA 4.0; a secondary source, not part of the library)\n"
+    )
+    names = [name for name, _ in parts[1:]]
+    if section:
+        want = section.strip().lower()
+        hit = next((p for p in parts[1:] if p[0].lower() == want), None) or next(
+            (p for p in parts[1:] if want in p[0].lower()), None
+        )
+        if hit is None:
+            return head + f"\nNo section {section!r} in this article. Sections: {'; '.join(names) or 'none'}"
+        return head + f"\n## {hit[0]}\n{hit[1]}"
+    out = head + "\n" + (parts[0][1] or "(no introduction)")
+    if names:
+        out += "\n\nSections (read any of them in full with the `section` argument): " + "; ".join(names)
+    others = ", ".join(str(h["title"]) for h in hits[1:])
+    return out + (f"\nOther matching articles: {others}" if others else "")
+
+
+TRANSLATIONS = [
+    "kjva",
+    "bsb",
+    "web",
+    "asv",
+    "ylt",
+    "darby",
+    "webster",
+    "lsv",
+    "geneva",
+    "tyndale",
+    "dra",
+    "brenton",
+    "vulgate",
+]
+
+
+def _book_osis(book: str) -> str | None:
+    refs = parse_refs(f"{book} 1") or parse_refs(book)
+    return api._osis(refs[0].start).split(".")[0] if refs else None
+
+
+def book_overview(store: Store, book: str) -> str:
+    """One book: size, setting, outline, its most-quoted verses and who quoted it most, notable variants."""
+    osis = _book_osis(book)
+    if not osis:
+        return f"Could not read {book!r} as a book of the Bible."
+    try:
+        g = api.book_guide(_req(store), osis=osis, preview="bsb")
+    except HTTPException:
+        return f"No book {book!r} in the library."
+    b, st = g["book"], g["stats"]
+    names = " · ".join(x for x in (b.get("hebrew_name"), b.get("greek_name"), b.get("latin_name")) if x)
+    out = [
+        f"# {b['name']} ({names}) — link: /book/{osis}",
+        f"{b.get('testament')} · {b.get('genre') or ''} · {st['chapters']} chapters, {st['verses']} verses · "
+        f"{st['variants']} variant units · quoted {st['citations']} times by early writers",
+    ]
+    when = g.get("chronology") or {}
+    if when.get("start") is not None:
+        out.append(f"Narrative/composition setting (approximate): {when['start']}–{when.get('end')}")
+    if g["outline"]:
+        out.append("\n## Outline")
+        out += [f"- {o['title']} ({_label(o['osis'])})" for o in g["outline"][:60]]
+    if g["quoted"]:
+        out.append("\n## Most quoted by early writers")
+        out += [
+            f"- {_label(q['osis'])} ×{q['n']} ({q['pre_nicene']} before Nicaea): {q.get('text') or ''}"
+            for q in g["quoted"][:12]
+        ]
+    if g["readers"]:
+        out.append("\n## Who quoted it most")
+        out.append(", ".join(f"{r['name']} (d. {r.get('year')}, ×{r['n']})" for r in g["readers"][:12]))
+    if g["notable_variants"]:
+        out.append("\n## Notable variants")
+        out += [f"- {_label(v['osis'])}: {v['label']}" for v in g["notable_variants"][:12]]
+    if g["quotations"]:
+        out.append("\n## Old/New Testament links")
+        out += [f"- {_label(q['here'])} {q['direction']} {_label(q['other'])}" for q in g["quotations"][:20]]
+    return "\n".join(out)
+
+
+def timeline(store: Store, from_year: int, to_year: int) -> str:
+    """Events and writers in a span of years (negative years are BC)."""
+    lo, hi = sorted((from_year, to_year))
+    t = api.timeline(_req(store))
+    out = [f"# {lo}–{hi} (negative = BC; dates approximate)"]
+    events = [
+        e for e in t["events"] if e.get("start") is not None and e["start"] <= hi and (e.get("end") or e["start"]) >= lo
+    ]
+    if events:
+        out.append("\n## Events")
+        out += [
+            f"- {e['start']}–{e.get('end') or e['start']}: {e['title']}. {e.get('description') or ''}"
+            for e in sorted(events, key=lambda e: e["start"])
+        ]
+
+    def active(a: dict[str, Any]) -> bool:
+        a_lo = a.get("floruit_from") or a.get("born") or a.get("died")
+        a_hi = a.get("died") or a.get("floruit_to") or a_lo
+        return a_lo is not None and a_lo <= hi and (a_hi or a_lo) >= lo
+
+    writers = sorted((a for a in t["authors"] if active(a)), key=lambda a: a.get("floruit_from") or a.get("born") or 0)
+    if writers:
+        out.append("\n## Writers active then")
+        out += [
+            f"- {a['name']} ({a.get('born') or '?'}–{a.get('died') or '?'}; {a.get('era') or ''}): "
+            + "; ".join(w["title"] for w in a["works"][:5])
+            for a in writers
+        ]
+    return "\n".join(out) if len(out) > 1 else f"Nothing in the timeline between {lo} and {hi}."
+
+
+def compare_translations(store: Store, reference: str) -> str:
+    """One to three verses in all thirteen translations, for comparing wording."""
+    refs = parse_refs(reference)
+    if refs and refs[0].end - refs[0].start > 2:
+        return "Give at most three verses, e.g. 'John 1:1' or 'John 1:1-3'."
+    return read_passage(store, reference, translations=TRANSLATIONS)
+
+
+def fathers_on(store: Store, reference: str, before_year: int | None = None) -> str:
+    """Every early writer quoting a verse, oldest first, with the words they wrote."""
+    refs = parse_refs(reference)
+    if not refs:
+        return f"Could not read {reference!r} as a Bible reference."
+    osis = api._osis(refs[0].start)
+    try:
+        g = api.verse(_req(store), osis=osis, preview="bsb", limit=500)
+    except HTTPException:
+        return f"No verse {reference}."
+    rows = [
+        f
+        for f in (g.get("fathers") or []) + (g.get("witnesses") or [])
+        if before_year is None or (f.get("year") or 9999) < before_year
+    ]
+    rows.sort(key=lambda f: f.get("year") or 9999)
+    if not rows:
+        return f"No early writer in the library quotes {_label(osis)}" + (
+            f" before {before_year}." if before_year else "."
+        )
+    out = [f"# Quotations of {_label(osis)} — {len(rows)} — link: {_verse_link(osis)}"]
+    for f in rows[:80]:
+        where = (
+            f"[edition={f['edition_id']} section={f['section_ord']}]"
+            if f.get("edition_id") and f.get("section_ord")
+            else ""
+        )
+        out.append(
+            f"- {f.get('author') or 'Anonymous'} (c. {f.get('year') or '?'}), {f.get('work_title')} {f.get('cite') or ''} {where}: "
+            + _plain(f.get("snippet"))[:400]
+        )
+    return "\n".join(out)
+
+
 FUNCTIONS: dict[str, Callable[..., str]] = {
     "search_texts": search_texts,
     "read_passage": read_passage,
@@ -312,7 +593,15 @@ FUNCTIONS: dict[str, Callable[..., str]] = {
     "word_study": word_study,
     "read_work": read_work,
     "lookup_history": lookup_history,
+    "book_overview": book_overview,
+    "timeline": timeline,
+    "compare_translations": compare_translations,
+    "fathers_on": fathers_on,
+    "wikipedia": wikipedia,
 }
+
+#: characters per result; Wikipedia sections are passed on whole so nothing in an article is out of reach
+LIMITS = {"wikipedia": 60_000, "fathers_on": 30_000, "compare_translations": 20_000, "book_overview": 20_000}
 
 
 def validate(name: str, args: Any) -> str | None:
@@ -351,4 +640,5 @@ def run(store: Store, name: str, args: Any) -> tuple[str, bool]:
         text = FUNCTIONS[name](store, **args)
     except Exception as e:  # a tool failure must not end the conversation
         return f"Error: {type(e).__name__}: {e}", True
-    return (text if len(text) <= MAX_RESULT else text[:MAX_RESULT] + "\n…(truncated)"), False
+    limit = LIMITS.get(name, MAX_RESULT)
+    return (text if len(text) <= limit else text[:limit] + "\n…(truncated)"), False

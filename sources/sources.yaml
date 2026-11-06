@@ -610,7 +610,7 @@ sources:
     name: Wikipedia page summaries (introductions shown live in the app)
     url: https://en.wikipedia.org/api/rest_v1/
     kind: api
-    download: fetched by the reader's browser when an author, work or event card is opened; nothing is stored in core.db
+    download: fetched live and never stored in core.db, by the reader's browser for author, work, event and book cards and by the server when the study assistant looks an article up
     license: CC-BY-SA-4.0
     share_alike: true
     attribution: "Introductions to authors, works and events from Wikipedia, CC BY-SA 4.0 (credited on each card)"

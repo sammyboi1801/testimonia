@@ -238,3 +238,73 @@ def test_chat_stream_is_not_gzipped(client):
     assert "gzip" not in r.headers.get("content-encoding", "")
     big = client.get("/api/agent/tools", headers={"Accept-Encoding": "gzip"})  # well over the 1 KB threshold
     assert big.headers.get("content-encoding") == "gzip"
+
+
+def _wiki(monkeypatch, extract: str) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.params.get("list") == "search":
+            return httpx.Response(
+                200, json={"query": {"search": [{"title": "Sosthenes"}, {"title": "Sosthenes (disambiguation)"}]}}
+            )
+        assert request.url.params.get("titles") == "Sosthenes"
+        return httpx.Response(200, json={"query": {"pages": [{"title": "Sosthenes", "extract": extract}]}})
+
+    monkeypatch.setattr(agent_tools, "_wiki_client", lambda: httpx.Client(transport=httpx.MockTransport(handler)))
+
+
+ARTICLE = (
+    "Sosthenes was the chief ruler of the synagogue at Corinth.\n\n"
+    "== Biblical accounts ==\nHe is beaten before Gallio (Acts 18:17).\n\n"
+    "=== In 1 Corinthians ===\nPaul names him as co-sender.\n\n"
+    "== Tradition ==\nEusebius lists a Sosthenes among the Seventy.\n\n"
+    "== References ==\n"
+)
+
+
+def test_wikipedia_gives_the_introduction_and_the_sections(monkeypatch):
+    _wiki(monkeypatch, ARTICLE)
+    text, is_error = agent_tools.run(None, "wikipedia", {"query": "Sosthenes"})  # type: ignore[arg-type]
+    assert not is_error
+    assert "https://en.wikipedia.org/wiki/Sosthenes" in text
+    assert "secondary source" in text
+    assert "chief ruler of the synagogue" in text
+    assert "Sections (read any of them" in text
+    assert "Biblical accounts; In 1 Corinthians; Tradition" in text  # empty "References" is left out
+    assert "beaten before Gallio" not in text  # sections are read on request
+    assert "Sosthenes (disambiguation)" in text
+
+
+def test_wikipedia_reads_a_section_in_full(monkeypatch):
+    _wiki(monkeypatch, ARTICLE)
+    text, _ = agent_tools.run(None, "wikipedia", {"query": "Sosthenes", "section": "biblical"})  # type: ignore[arg-type]
+    assert "## Biblical accounts" in text
+    assert "beaten before Gallio" in text
+    assert "### In 1 Corinthians" in text  # subsections come with their section
+    assert "Eusebius" not in text
+    text, _ = agent_tools.run(None, "wikipedia", {"query": "Sosthenes", "section": "nope"})  # type: ignore[arg-type]
+    assert "No section 'nope'" in text
+
+
+def test_wikipedia_offline(monkeypatch):
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("no network", request=request)
+
+    monkeypatch.setattr(agent_tools, "_wiki_client", lambda: httpx.Client(transport=httpx.MockTransport(handler)))
+    text, is_error = agent_tools.run(None, "wikipedia", {"query": "x"})  # type: ignore[arg-type]
+    assert "could not be reached" in text
+    assert not is_error
+
+
+def test_new_study_tools(store):
+    text, is_error = agent_tools.run(store, "compare_translations", {"reference": "John 1:1-9"})
+    assert "at most three verses" in text
+    for name, args in (
+        ("book_overview", {"book": "John"}),
+        ("timeline", {"from_year": 30, "to_year": 400}),
+        ("compare_translations", {"reference": "John 1:1"}),
+        ("fathers_on", {"reference": "John 1:1", "before_year": 325}),
+    ):
+        text, is_error = agent_tools.run(store, name, args)
+        assert not is_error, (name, text)
+        assert text.strip(), name
+    assert agent_tools.validate("timeline", {"from_year": "30", "to_year": 50}) is not None
