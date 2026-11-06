@@ -61,7 +61,9 @@ TOOLS: list[dict[str, Any]] = [
         "description": (
             "Read a Bible passage (up to 40 verses) in one or more translations, with the translators' footnotes. "
             "Translations: bsb (default), kjva, web, asv, ylt, darby, webster, lsv, geneva, tyndale, dra, brenton "
-            "(Septuagint in English), vulgate (Latin)."
+            "(Septuagint in English), lxx-swete (the Septuagint in Greek, Swete's edition; Old Testament and "
+            "Apocrypha, Theodotion's Daniel), vulgate (Latin). Septuagint verses are given in the standard "
+            "(English) numbering, so Psalm 23 is the Septuagint's Psalm 22."
         ),
         "parameters": {
             "type": "object",
@@ -161,7 +163,10 @@ TOOLS: list[dict[str, Any]] = [
     },
     {
         "name": "compare_translations",
-        "description": "One to three verses in all thirteen translations side by side, to compare wording.",
+        "description": (
+            "One to three verses in all fourteen editions side by side (English translations, Brenton's "
+            "and the Greek Septuagint, the Vulgate), to compare wording."
+        ),
         "parameters": {
             "type": "object",
             "properties": {"reference": {"type": "string"}},
@@ -360,11 +365,11 @@ def search_texts(store: Store, query: str, scope: str = "all") -> str:
     return "\n".join(out) or "No results."
 
 
-def read_passage(store: Store, reference: str, translations: list[str] | None = None) -> str:
+def read_passage(store: Store, reference: str, translations: list[str] | None = None, *, at_most: int = 4) -> str:
     refs = parse_refs(reference)
     if not refs:
         return f"Could not read {reference!r} as a Bible reference."
-    eds = [t for t in (translations or ["bsb"]) if re.fullmatch(r"[a-z0-9]{2,12}", t)][:4] or ["bsb"]
+    eds = [t for t in (translations or ["bsb"]) if re.fullmatch(r"[a-z0-9-]{2,12}", t)][:at_most] or ["bsb"]
     r = refs[0]
     marks = ",".join("?" * len(eds))
     rows = store.all(
@@ -906,6 +911,7 @@ TRANSLATIONS = [
     "tyndale",
     "dra",
     "brenton",
+    "lxx-swete",
     "vulgate",
 ]
 
@@ -987,11 +993,11 @@ def timeline(store: Store, from_year: int, to_year: int) -> str:
 
 
 def compare_translations(store: Store, reference: str) -> str:
-    """One to three verses in all thirteen translations, for comparing wording."""
+    """One to three verses in every translation, for comparing wording."""
     refs = parse_refs(reference)
     if refs and refs[0].end - refs[0].start > 2:
         return "Give at most three verses, e.g. 'John 1:1' or 'John 1:1-3'."
-    return read_passage(store, reference, translations=TRANSLATIONS)
+    return read_passage(store, reference, translations=TRANSLATIONS, at_most=len(TRANSLATIONS))
 
 
 def fathers_on(store: Store, reference: str, before_year: int | None = None) -> str:

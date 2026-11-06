@@ -7,6 +7,7 @@ uses its own read-only SQLite connection (see store.py).
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -648,6 +649,10 @@ def search(
         out["reference"] = ref
     if ORIGINAL_SCRIPT.search(q):
         out.update(original_language_search(s, q, limit))
+        if scope in ("all", "bible"):
+            terms = [normalize(t) for t in q.split() if normalize(t)]
+            greek = greek_text_search(s, terms, limit, edition)
+            out["bible"] = sorted([*out.get("bible", []), *greek], key=lambda h: h["vkey"])
         return out
     if not match:
         return out
@@ -719,6 +724,69 @@ def original_language_search(s: Store, q: str, limit: int) -> dict[str, Any]:
     ]
     lemmas.sort(key=lambda r: (normalize(r["lemma"]) != first, len(r["lemma"] or "")))
     return {"bible": words, "lexicon": lemmas[:limit], "works": []}
+
+
+#: Greek running texts (the Septuagint) with an accent-free copy for search, per database file. The FTS
+#: index folds Latin accents only, so 'λογος' would not find 'λόγος' there.
+_GREEK_TEXTS: dict[str, list[tuple[int, str, str | None, str, str]]] = {}
+
+
+_COMBINING = dict.fromkeys(range(0x300, 0x370))  # Greek accents and breathings after NFD
+_NON_WORD = re.compile(r"\W")
+
+
+def _fold(text: str) -> list[str]:
+    """'Ἐν ἀρχῇ ἐποίησεν' → ['εν', 'αρχη', 'εποιησεν']: the forms ``normalize`` gives word by word, faster."""
+    base = unicodedata.normalize("NFC", unicodedata.normalize("NFD", text).translate(_COMBINING)).lower()
+    return [w for w in (_NON_WORD.sub("", t) for t in base.split()) if w]
+
+
+def _greek_texts(s: Store) -> list[tuple[int, str, str | None, str, str]]:
+    key = str(s.path)
+    rows = _GREEK_TEXTS.get(key)
+    if rows is None:
+        rows = [
+            (r["vkey"], r["edition_id"], r["abbrev"], r["text"], " " + " ".join(_fold(r["text"])))
+            for r in s.all(
+                "SELECT ev.vkey, ev.edition_id, e.abbrev, ev.text FROM edition_verse ev "
+                "JOIN edition e ON e.id = ev.edition_id WHERE e.language = 'grc' ORDER BY ev.vkey"
+            )
+        ]
+        _GREEK_TEXTS[key] = rows
+    return rows
+
+
+def greek_text_search(s: Store, terms: list[str], limit: int, edition: str | None = None) -> list[dict[str, Any]]:
+    """Verses of the Greek editions containing every term as the start of a word, accents ignored."""
+    if not terms:
+        return []
+    hits: list[dict[str, Any]] = []
+    for key, edition_id, abbrev, text, folded in _greek_texts(s):
+        if edition and edition_id != edition:
+            continue
+        if all(f" {t}" in folded for t in terms):
+            hits.append(
+                {
+                    "vkey": key,
+                    "edition_id": edition_id,
+                    "abbrev": abbrev,
+                    "osis": _osis(key),
+                    "snippet": _greek_snippet(text, terms),
+                }
+            )
+            if len(hits) >= limit:
+                break
+    return hits
+
+
+def _greek_snippet(text: str, terms: list[str], width: int = 24) -> str:
+    words = text.split()
+    marked = [any(normalize(w).startswith(t) for t in terms) for w in words]
+    first = marked.index(True) if True in marked else 0
+    lo = max(0, first - width // 3)
+    hi = min(len(words), lo + width)
+    out = " ".join(f"<mark>{w}</mark>" if m else w for w, m in zip(words[lo:hi], marked[lo:hi], strict=True))
+    return ("…" if lo else "") + out + ("…" if hi < len(words) else "")
 
 
 def resolve_ref(text: str) -> dict[str, Any] | None:

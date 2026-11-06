@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { langClass, nativeLabel } from "../lib";
 import { diffWords, type DiffPart } from "../studyLib";
 import type { VerseGuide } from "../types";
 import { Speak } from "./Speak";
@@ -28,7 +29,7 @@ type Text = VerseGuide["texts"][number];
  * The study panel's Translations block, with a "Compare" switch: every translation in the same language as the
  * chosen base (KJV by default) has the words that differ from it marked.
  */
-export function CompareTranslations({ texts }: { texts: Text[] }) {
+export function CompareTranslations({ texts, osis }: { texts: Text[]; osis: string }) {
   const [state, setState] = useState(load);
   const update = (patch: Partial<typeof state>) => {
     const next = { ...state, ...patch };
@@ -75,11 +76,11 @@ export function CompareTranslations({ texts }: { texts: Text[] }) {
               {on && t === base && <span className="cmp-base-tag">base</span>}
             </span>
             <span className="when">
-              {t.native_ref && <span title="Numbered differently in this edition">{t.native_ref} </span>}
-              {t.language === "hbo" && <Speak text={t.text} lang="hbo" />}
+              {t.native_ref && <span title="Numbered differently in this edition">{nativeLabel(t.native_ref, osis)} </span>}
+              {(t.language === "hbo" || t.language === "grc") && <Speak text={t.text} lang={t.language === "grc" ? "grc" : "hbo"} />}
             </span>
           </div>
-          <div className={`text${t.language === "hbo" ? " hebrew" : ""}`} dir={t.script_dir === "rtl" ? "rtl" : undefined}>
+          <div className={`text ${langClass(t.language)}`} lang={t.language} dir={t.script_dir === "rtl" ? "rtl" : undefined}>
             {on && t !== base && t.language === base!.language ? <Diffed base={base!.text} text={t.text} baseName={baseName} /> : t.text}
           </div>
         </div>

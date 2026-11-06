@@ -190,6 +190,9 @@ function load(): Settings {
   if (display && FONTS.display.some((f) => f.id === display)) s = { ...s, fonts: { ...s.fonts, display } };
   const mode = q.get("mode");
   if (mode && MODES.some((m) => m.id === mode)) s = { ...s, mode: mode as ReadingMode };
+  // ?editions=lxx-swete,brenton,kjva shares a parallel view
+  const editions = (q.get("editions") ?? "").split(",").filter((e) => /^[a-z0-9-]{2,24}$/.test(e));
+  if (editions.length) s = { ...s, editions: editions.slice(0, 6) };
   return s;
 }
 
