@@ -9,8 +9,33 @@ the Hebrew and Greek texts and their ancient translations, the manuscripts that 
 (from the Dead Sea Scrolls and the early papyri to the great codices), and the writers of the
 first centuries who quoted, explained and debated them.
 
-> **Status: pre-alpha.** The data model is defined; data ingestion and the user interface are
-> under construction. See [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md).
+> **Status: pre-alpha.** The data pipeline builds the foundation database (texts, words,
+> variants, lexicons, cross references, BTB study aids, chronology). The user interface is not
+> built yet. See [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md).
+
+## Build the database
+
+```bash
+pip install -e ".[dev]"
+python -m testimonia fetch --phase 0     # download the foundation sources (~560 MB, pinned versions)
+python -m testimonia build               # build core.db (atomic; validated before it replaces the old one)
+python -m testimonia info                # paths and row counts
+```
+
+Data goes to `~/TestimoniaData` (override with `TESTIMONIA_DATA`). To reuse an existing BTB
+Obsidian vault instead of downloading it, add `BTB = 'path/to/BTB'` to
+`~/TestimoniaData/config.toml`.
+
+What the foundation build contains today:
+
+| Layer | Content |
+|---|---|
+| Translations | KJV + Apocrypha, WEB (with deuterocanon), BSB, ASV, YLT, Darby, Webster, LSV, Geneva 1599, Tyndale NT, Douay-Rheims, Brenton's Septuagint, Clementine Vulgate — all mapped onto one verse numbering with STEPBible's TVTMS rules, native numbering preserved |
+| Original languages | Leningrad Codex reading text; every Greek NT and Hebrew/Aramaic OT word with lemma, gloss, morphology and morphemes |
+| Text criticism | ~15,500 variant units: which printed Greek editions differ (meaning, omission, word order, spelling) and Hebrew Ketiv/Qere and manuscript readings |
+| Lexicons | STEPBible brief lexicons, Abbott-Smith, LSJ, BDB; Greek & Hebrew morphology codes |
+| Study aids | 345k voted cross references, Treasury of Scripture Knowledge notes, pericope headings, OT quotations in the NT, 5,300-topic concordance, red letters |
+| Chronology | era, period, approximate date and reading order for every verse (BTB), six canon traditions, nine chronology systems |
 
 ## Focus
 
