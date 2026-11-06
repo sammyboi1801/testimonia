@@ -99,26 +99,56 @@ def tool(request: Request, call: ToolCall) -> dict[str, Any]:
 # ----------------------------------------------------------------------------- server-side loop
 
 
-def check_base_url(url: str, allow_private: bool) -> str:
-    """Refuse URLs a public server must not call on a user's behalf (internal hosts, cloud metadata, plain HTTP)."""
+def _is_public(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """Only globally routable unicast addresses: excludes private, loopback, link-local (cloud metadata),
+    carrier-grade NAT (100.64.0.0/10, e.g. Tailscale), reserved and multicast ranges."""
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+        ip = ip.ipv4_mapped
+    return ip.is_global and not ip.is_multicast
+
+
+def resolve_base_url(url: str, allow_private: bool) -> tuple[str, str | None]:
+    """Check a user-supplied endpoint; returns (url, address to connect to). The address is pinned so the
+    host cannot resolve to something else between this check and the request (DNS rebinding)."""
     p = urlparse(url)
     if p.scheme not in ("https", "http") or not p.hostname:
         raise HTTPException(400, "base_url must be an http(s) URL")
     if allow_private:
-        return url.rstrip("/")
+        return url.rstrip("/"), None
     if p.scheme != "https":
         raise HTTPException(400, "base_url must use https on this server")
+    if p.username or p.password:
+        raise HTTPException(400, "base_url must not contain credentials")
     try:
-        addrs = {ai[4][0] for ai in socket.getaddrinfo(p.hostname, p.port or 443)}
+        addrs = [ai[4][0] for ai in socket.getaddrinfo(p.hostname, p.port or 443, type=socket.SOCK_STREAM)]
     except OSError as e:
         raise HTTPException(400, f"cannot resolve {p.hostname}") from e
-    for a in addrs:
-        ip = ipaddress.ip_address(a)
-        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
-            raise HTTPException(
-                400, "this server does not call private or local addresses — use 'run in my browser' for local models"
-            )
-    return url.rstrip("/")
+    ips = [ipaddress.ip_address(str(a).split("%")[0]) for a in addrs]
+    if not ips or not all(_is_public(ip) for ip in ips):
+        raise HTTPException(
+            400, "this server does not call private or local addresses — use 'run in my browser' for local models"
+        )
+    return url.rstrip("/"), str(ips[0])
+
+
+def check_base_url(url: str, allow_private: bool) -> str:
+    """Refuse URLs a public server must not call on a user's behalf (internal hosts, cloud metadata, plain HTTP)."""
+    return resolve_base_url(url, allow_private)[0]
+
+
+def pinned_request(url: str, pin: str | None, headers: dict[str, str]) -> tuple[str, dict[str, str], dict[str, Any]]:
+    """Rewrite a request to go to the checked address while TLS still verifies the original host name."""
+    if pin is None:
+        return url, headers, {}
+    p = urlparse(url)
+    host = p.hostname or ""
+    ip = f"[{pin}]" if ":" in pin else pin
+    port = f":{p.port}" if p.port else ""
+    return (
+        p._replace(netloc=ip + port).geturl(),
+        {**headers, "Host": host + port},
+        {"sni_hostname": host},
+    )
 
 
 @router.post("/chat")
@@ -126,10 +156,11 @@ async def chat(request: Request, body: ChatRequest, x_api_key: str | None = Head
     """Answer one question with the chosen model and the study tools; streams server-sent events."""
     allow_private = bool(getattr(request.app.state, "agent_allow_private", False))
     base = ""
+    pin: str | None = None
     if body.provider == "openai":
         if not body.base_url:
             raise HTTPException(400, "base_url is required for OpenAI-compatible providers")
-        base = await asyncio.to_thread(check_base_url, body.base_url, allow_private)
+        base, pin = await asyncio.to_thread(resolve_base_url, body.base_url, allow_private)
     elif not x_api_key:
         raise HTTPException(401, "an Anthropic API key is required (X-Api-Key header)")
     s = store(request)
@@ -143,7 +174,7 @@ async def chat(request: Request, body: ChatRequest, x_api_key: str | None = Head
             if body.provider == "anthropic":
                 gen = _claude(s, x_api_key or "", body.model or DEFAULT_CLAUDE, system, turns)
             else:
-                gen = _openai(s, x_api_key, base, body.model, system, turns)
+                gen = _openai(s, x_api_key, base, body.model, system, turns, pin=pin)
             async for event in gen:
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
         except anthropic.AuthenticationError:
@@ -265,7 +296,13 @@ def _usage(u: Any) -> dict[str, int]:
 
 
 async def _openai(
-    s: Store, key: str | None, base: str, model: str, system: str, turns: list[dict[str, Any]]
+    s: Store,
+    key: str | None,
+    base: str,
+    model: str,
+    system: str,
+    turns: list[dict[str, Any]],
+    pin: str | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
     headers = {"Content-Type": "application/json"}
     if key:
@@ -286,7 +323,8 @@ async def _openai(
                 payload["tools"] = tool_defs
             text_parts: list[str] = []
             calls: dict[int, dict[str, str]] = {}
-            async with http.stream("POST", f"{base}/chat/completions", headers=headers, json=payload) as resp:
+            url, req_headers, ext = pinned_request(f"{base}/chat/completions", pin, headers)
+            async with http.stream("POST", url, headers=req_headers, json=payload, extensions=ext) as resp:
                 if resp.status_code == 400 and use_tools:
                     # some local models don't support tools: answer from the model alone
                     await resp.aread()

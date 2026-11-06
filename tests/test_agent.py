@@ -92,12 +92,32 @@ def test_tools_over_http(client):
         "https://localhost/v1",
         "https://10.0.0.5/v1",
         "https://169.254.169.254/latest",
+        "https://100.101.102.103/v1",  # Tailscale / carrier-grade NAT
+        "https://[::ffff:10.0.0.1]/v1",  # IPv4-mapped private
+        "https://[fd7a:115c:a1e0::1]/v1",  # Tailscale IPv6
+        "https://user:pw@example.com/v1",
         "ftp://x",
     ],
 )
 def test_public_server_refuses_private_urls(url):
     with pytest.raises(HTTPException):
         agent.check_base_url(url, allow_private=False)
+
+
+def test_public_url_is_pinned_to_the_checked_address(monkeypatch):
+    monkeypatch.setattr(agent.socket, "getaddrinfo", lambda *a, **k: [(2, 1, 6, "", ("93.184.215.14", 443))])
+    url, pin = agent.resolve_base_url("https://models.example.com/v1/", allow_private=False)
+    assert (url, pin) == ("https://models.example.com/v1", "93.184.215.14")
+    target, headers, ext = agent.pinned_request(url + "/chat/completions", pin, {"A": "1"})
+    assert target == "https://93.184.215.14/v1/chat/completions"
+    assert headers == {"A": "1", "Host": "models.example.com"}
+    assert ext == {"sni_hostname": "models.example.com"}
+
+
+def test_hostname_resolving_to_a_private_address_is_refused(monkeypatch):
+    monkeypatch.setattr(agent.socket, "getaddrinfo", lambda *a, **k: [(2, 1, 6, "", ("100.64.0.7", 443))])
+    with pytest.raises(HTTPException):
+        agent.resolve_base_url("https://innocent.example.com/v1", allow_private=False)
 
 
 def test_local_server_may_call_local_models():

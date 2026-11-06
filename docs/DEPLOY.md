@@ -9,6 +9,15 @@ API key for that one request.
 Oracle's Always Free Ampere instances (up to 4 cores / 24 GB) run around the clock without sleeping. An
 instance you already use for something else works too.
 
+**Quickest (VM on Tailscale):** after publishing the database (step 2, release `data-v1`), run on the VM
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/<you>/testimonia/main/deploy/oracle/install.sh | bash -s -- <you>/testimonia
+```
+
+It installs Docker, starts the app and publishes it with Tailscale Funnel; run it again to update. The steps
+below are what it does.
+
 1. **Install Docker** on the VM: `curl -fsSL https://get.docker.com | sudo sh && sudo usermod -aG docker $USER`,
    then log out and back in.
 
