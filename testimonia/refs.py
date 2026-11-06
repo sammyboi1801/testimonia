@@ -148,8 +148,9 @@ def _parse_numbers(book: str, seg: str) -> list[Range]:
         b, c, d = (int(x) if x else None for x in m.group(2, 3, 4))
         if b is not None:  # a:b ...
             chapter = a
-            if c is not None and d is not None:  # a:b-c:d
+            if c is not None and d is not None:  # a:b-c:d (a following ', 29-30' continues chapter c)
                 res.append(Range(book, a, b, c, d))
+                chapter = c
             elif c is not None:  # a:b-c
                 res.append(Range(book, a, b, a, c))
             else:

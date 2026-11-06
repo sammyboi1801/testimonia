@@ -117,6 +117,20 @@ def test_refs_continuation_crossing_a_chapter():
     assert (b.start_id, b.c2, b.v2) == ("Gen.34.30", 35, 1)
     assert c.start_id == "Gen.35.4"
     assert a.start_id == "Gen.34.5"
+    # after a range that ends in another chapter, bare verses continue that chapter (P66: 'John 8:12-14:26, 29-30')
+    (_, d, e) = parse_refs("John 8:12-14:26, 29-30, 15:2")
+    assert (d.start_id, d.c2, d.v2) == ("John.14.29", 14, 30)
+    assert e.start_id == "John.15.2"
+
+
+def test_parts_of_one_manuscript_add_up():
+    assert manuscripts._add_extent("56 leaves", "30 leaves") == "86 leaves"
+    assert manuscripts._add_extent("78 leaves, 1 fragment", "2 fragments") == "78 leaves, 3 fragments"
+    assert manuscripts._add_extent("1 leaf", None) == "1 leaf"
+    assert manuscripts._add_extent("11 columns", "2 fragments") == "11 columns; 2 fragments"
+    assert manuscripts._join("Chester Beatty Library (Dublin); Bodmer", "Chester Beatty Library (Dublin)") == (
+        "Chester Beatty Library (Dublin); Bodmer"
+    )
 
 
 # ----------------------------------------------------------------------------- steps + API

@@ -12,6 +12,11 @@ function siglumKey(m: ManuscriptSummary): string {
   return s.replace(/\d+/g, (d) => d.padStart(5, "0"));
 }
 
+/** A name that says more than the siglum ('Codex Sinaiticus', 'Great Isaiah Scroll'; not 'Papyrus 52'). */
+function telling(m: ManuscriptSummary): boolean {
+  return !!m.name && m.name !== m.sigla && !/^(Papyrus|Uncial|Minuscule|Rahlfs) \S+$/.test(m.name);
+}
+
 function matches(m: ManuscriptSummary, q: string): boolean {
   if (!q) return true;
   const hay = [m.sigla, m.id, m.name, m.contents, m.institution, m.city, m.country, m.date_label, m.script]
@@ -57,6 +62,7 @@ export function ManuscriptsPage() {
   }, [data, collection, q, sort]);
   const counts = useMemo(() => Object.fromEntries((data?.collections ?? []).map((c) => [c.collection, c.n])), [data]);
   const total = data?.manuscripts.length ?? 0;
+  const inKind = collection ? (counts[collection] ?? 0) : total; // what the count line compares against
 
   return (
     <div className="page ms-page">
@@ -110,7 +116,7 @@ export function ManuscriptsPage() {
       {data && (
         <>
           <div className="ms-count muted">
-            {list.length === total ? `${total.toLocaleString()} manuscripts` : `${list.length.toLocaleString()} of ${total.toLocaleString()}`}
+            {list.length === inKind ? `${inKind.toLocaleString()} manuscripts` : `${list.length.toLocaleString()} of ${inKind.toLocaleString()}`}
           </div>
           <ol className="ms-list">
             {list.slice(0, shown).map((m) => (
@@ -120,10 +126,10 @@ export function ManuscriptsPage() {
                 </Link>
                 <div className="ms-row-main">
                   <div className="ms-row-name">
-                    {m.name && m.name !== m.sigla ? m.name : KIND_OF[m.collection]}
+                    {telling(m) ? <span className="ms-row-title">{m.name}</span> : <span className="ms-row-generic">{m.contents || KIND_OF[m.collection]}</span>}
                     {!kind && <span className="ms-kind">{KIND_OF[m.collection]}</span>}
                   </div>
-                  {m.contents && <div className="ms-row-contents">{m.contents}</div>}
+                  {telling(m) && m.contents && <div className="ms-row-contents">{m.contents}</div>}
                 </div>
                 <div className="ms-row-date">{msDate(m)}</div>
                 <div className="ms-row-place">{[m.institution, m.city].filter(Boolean).join(", ")}</div>

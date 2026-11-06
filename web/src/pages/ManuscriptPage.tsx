@@ -121,8 +121,9 @@ function licence(id: string | null): string {
 /** True when the contents text is just the passages listed below it ('John 18:31-33, 18:37-38'). */
 function onlyReferences(contents: string, passages: ManuscriptDetail["passages"]): boolean {
   if (passages.length === 0) return false;
-  const known = new Set(passages.flatMap((p) => p.label.match(/[A-Za-z]+/g) ?? []));
-  return (contents.match(/[A-Za-z]+/g) ?? []).every((w) => known.has(w));
+  const known = new Set([...passages.flatMap((p) => p.label.match(/[A-Za-z]+/g) ?? []), "end"]);
+  // single letters are half verses ('5:3a', '6:35b'), not words
+  return (contents.match(/[A-Za-z]{2,}/g) ?? []).every((w) => known.has(w));
 }
 
 function Links({ data }: { data: ManuscriptDetail }) {

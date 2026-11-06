@@ -33,8 +33,11 @@
 .ms-row:hover { background: color-mix(in srgb, var(--panel-2) 60%, transparent); }
 .ms-row-sig { font-size: 18px; color: var(--ink); text-decoration: none; overflow: hidden; text-overflow: ellipsis; }
 .ms-row-sig:hover { color: var(--link); }
-.ms-row-name { font-family: var(--font-text); font-size: 15.5px; color: var(--ink); }
-.ms-kind { margin-left: 8px; font-family: var(--font-ui); font-size: 11.5px; color: var(--muted); }
+.ms-row-main { min-width: 0; }
+.ms-row-name { display: flex; align-items: baseline; gap: 8px; min-width: 0; font-family: var(--font-text); font-size: 15.5px; color: var(--ink); }
+.ms-row-title, .ms-row-generic { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ms-row-generic { font-size: 14.5px; color: var(--ink-soft); }
+.ms-kind { flex: none; font-family: var(--font-ui); font-size: 11.5px; color: var(--muted); white-space: nowrap; }
 .ms-row-contents { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ms-row-date { font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 .ms-row-place { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -69,17 +72,24 @@
 .ms-verse-foot { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; font-size: 12.5px; }
 
 @media (max-width: 760px) {
-  .ms-intro { font-size: 15px; }
-  .ms-tools { width: 100%; }
-  .ms-search { flex: 1; width: auto; }
-  .ms-kinds { display: flex; flex-wrap: nowrap; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
-  .ms-kinds button { white-space: nowrap; }
-  .ms-row { grid-template-columns: minmax(0, 1fr) auto; gap: 1px 12px; padding: 10px 2px; }
+  .ms-intro { font-size: 15px; margin-bottom: 14px; }
+  .ms-controls { gap: 10px; }
+  /* the six kinds as a 2 × 3 grid of equal cells (hairlines between them) instead of a row that runs off-screen */
+  .ms-kinds { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; width: 100%; background: var(--rule); }
+  .ms-kinds button { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; padding: 7px 10px; font-size: 13.5px; text-align: left; white-space: nowrap; background: var(--bg); }
+  .ms-kinds button.on { background: var(--ink); }
+  .ms-tools { width: 100%; gap: 8px; }
+  .ms-search { flex: 1; min-width: 0; width: auto; padding: 7px 10px; font-size: 15px; }
+  .ms-sort > span { display: none; }
+  .ms-sort select { padding: 6px 4px; font-size: 14px; }
+  /* row: siglum · date / name or contents / contents (when named) */
+  .ms-row { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px 2px; }
   .ms-row-sig { grid-column: 1; grid-row: 1; font-size: 17px; }
-  .ms-row-date { grid-column: 2; grid-row: 1; font-size: 12.5px; }
+  .ms-row-date { grid-column: 2; grid-row: 1; font-size: 12.5px; text-align: right; }
   .ms-row-main { grid-column: 1 / -1; grid-row: 2; }
   .ms-row-name { font-size: 15px; }
-  .ms-row-contents, .ms-row-place { display: none; }
+  .ms-row-generic { font-size: 14px; }
+  .ms-row-place { display: none; }
   .ms-passages { columns: 1; }
 }
 

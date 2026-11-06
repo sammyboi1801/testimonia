@@ -941,14 +941,29 @@ NT_END = (BY_OSIS["Rev"].order + 1) * 1_000_000
 
 
 def _join(*values: str | None) -> str | None:
-    seen = list(dict.fromkeys(v for v in values if v))
-    return "; ".join(seen) or None
+    """Join '; '-separated lists, keeping each item once ('A; B' + 'B; C' → 'A; B; C')."""
+    items = (x.strip() for v in values if v for x in v.split("; "))
+    return "; ".join(dict.fromkeys(x for x in items if x)) or None
+
+
+_PIECES = re.compile(r"(\d+)\s+(leaf|leaves|fragments?)\b", re.I)
+
+
+def _add_extent(a: str | None, b: str | None) -> str | None:
+    """'78 leaves' + '1 fragment' + '2 fragments' → '78 leaves, 3 fragments' (other wording is joined as is)."""
+    totals = {"leaves": 0, "fragments": 0}
+    for text in (a, b):
+        rest = _PIECES.sub("", text or "").strip(" ,;")
+        if rest:  # something else ('11 columns', 'scroll'): keep both texts
+            return _join(a, b)
+        for n, unit in _PIECES.findall(text or ""):
+            totals["leaves" if unit.lower().startswith("lea") else "fragments"] += int(n)
+    parts = [f"{n} {unit if n != 1 else unit[:-1].replace('leave', 'leaf')}" for unit, n in totals.items() if n]
+    return ", ".join(parts) or None
 
 
 def _absorb(into: Manuscript, other: Manuscript) -> None:
     """Fold a second row of the same manuscript (another part, kept elsewhere) into the first."""
-    if other.contents == into.contents and other.institution == into.institution:
-        return  # the same row again (a second line of image links)
     into.coverage = Coverage(merge([*into.coverage.ranges, *other.coverage.ranges]), True)
     into.contents = _join(into.contents, other.contents)
     if other.institution != into.institution:  # 'Chester Beatty Library (Dublin); University of Michigan (Ann Arbor)'
@@ -958,11 +973,7 @@ def _absorb(into: Manuscript, other: Manuscript) -> None:
         into.city = None
         into.country = _join(into.country, other.country)
     into.shelfmark = _join(into.shelfmark, other.shelfmark)
-    leaves = [re.fullmatch(r"(\d+) leaves", d or "") for d in (into.description, other.description)]
-    if leaves[0] and leaves[1]:  # parts in two libraries: 56 + 30 leaves
-        into.description = f"{int(leaves[0].group(1)) + int(leaves[1].group(1))} leaves"
-    else:
-        into.description = _join(into.description, other.description)
+    into.description = _add_extent(into.description, other.description)  # parts in two libraries: 56 + 30 leaves
 
 
 @step("manuscripts", sources=[SOURCE], requires=["curated"])
@@ -976,7 +987,12 @@ def ingest_manuscripts(ctx: Context) -> None:
     for page in minuscule_pages:
         nt.extend(nt_rows(_read(page), "minuscules"))
     by_id: dict[str, Manuscript] = {}
+    parts: set[tuple[str, str | None, str | None, str | None]] = set()
     for ms in nt:  # a manuscript listed over several rows (image links, or parts kept in different libraries)
+        part = (ms.id, ms.contents, ms.institution, ms.shelfmark)
+        if part in parts:
+            continue  # the same part again (a second line of image links)
+        parts.add(part)
         if ms.id in by_id:
             _absorb(by_id[ms.id], ms)
         else:
