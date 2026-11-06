@@ -87,7 +87,7 @@ h1, h2, h3 { font-weight: 600; }
 .app { display: grid; grid-template-rows: auto 1fr; height: 100%; }
 .topbar { display: flex; align-items: center; gap: 16px; padding: 8px 16px; background: var(--panel); border-bottom: 1px solid var(--rule); }
 .brand { display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none !important; }
-.brand-mark { font-family: var(--font-display); font-size: 26px; line-height: 1; color: var(--accent); font-weight: var(--display-weight); }
+.brand-mark { display: block; width: 28px; height: 28px; flex: none; }
 .brand-name { font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(20px * var(--display-size)); letter-spacing: 0.04em; }
 .omnibox { flex: 1; max-width: 640px; }
 .omnibox input { width: 100%; padding: 7px 12px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--bg); color: var(--ink); font: inherit; }

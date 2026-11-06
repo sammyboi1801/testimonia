@@ -33,9 +33,7 @@ export function TopBar() {
   return (
     <header className={`topbar${menu ? " menu-open" : ""}`}>
       <NavLink to="/" className="brand" title="Testimonia">
-        <span className="brand-mark" aria-hidden>
-          ☧
-        </span>
+        <img className="brand-mark" src="/favicon.svg" alt="" width="28" height="28" />
         <span className="brand-name">Testimonia</span>
       </NavLink>
       <form className="omnibox" onSubmit={submit} role="search">
