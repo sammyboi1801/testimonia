@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Testimonia mark: Chi-Rho seal -->
-  <circle cx="32" cy="32" r="30" fill="#f3e9d8"/>
-  <circle cx="32" cy="32" r="28" fill="none" stroke="#9a5b2e" stroke-width="1.6"/>
-  <g fill="none" stroke="#9a5b2e" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(8.32 8.32) scale(0.74)">
-    <path d="M31 7 V57"/>
-    <path d="M31 8 H37 a9 9 0 0 1 0 18 H31"/>
-    <path d="M19 31 L43 55 M43 31 L19 55"/>
+  <!-- Testimonia mark: Chi-Rho on a parchment tile -->
+  <rect width="64" height="64" rx="14" fill="#f3e9d8"/>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="12.5" fill="none" stroke="#c9a77a" stroke-width="3"/>
+  <g fill="none" stroke="#9a5b2e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M31 9 V55"/>
+    <path d="M31 10 H37 a8.5 8.5 0 0 1 0 17 H31"/>
+    <path d="M18 31 L44 54 M44 31 L18 54"/>
   </g>
 </svg>
