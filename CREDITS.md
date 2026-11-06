@@ -15,7 +15,7 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 |---|---|---|
 | Bruhman Translator's Bible | CC-BY-SA-4.0 | 0 |
 | CrossWire SWORD modules (public-domain texts only) | PD | 0 |
-| eBible.org translations (VPL XML) | per-translation (PD or CC-BY-SA; filtered at build from translations.csv) | 0 |
+| eBible.org translations (VPL XML text; USFM for footnotes) | per-translation (PD or CC-BY-SA; filtered at build from translations.csv) | 0 |
 | Open Scriptures Hebrew Bible (WLC + morphology) | PD (WLC text) + CC-BY-4.0 (lemmas/morphology) | 0 |
 | OpenBible.info cross references | CC-BY-4.0 | 0 |
 | STEPBible TAGNT (Translators Amalgamated Greek NT) | CC-BY-4.0 | 0 |
@@ -81,13 +81,13 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
   - `Rotherham` — Rotherham Emphasized
   - `Weymouth` — Weymouth NT
 
-### eBible.org translations (VPL XML)
+### eBible.org translations (VPL XML text; USFM for footnotes)
 
 - **Source:** <https://ebible.org/Scriptures/translations.csv>
 - **Licence:** per-translation (PD or CC-BY-SA; filtered at build from translations.csv)
 - **Credit:** Texts from eBible.org — see per-edition credits
 - **Used for:** `edition`, `edition_verse`
-- **Pinned version:** fetched 2026-11-05
+- **Pinned version:** fetched 2026-11-05, fetched 2026-11-06
 - **Editions:**
   - `eng-kjv` — 1769 Blayney text incl. 14 Apocrypha books (PD)
   - `eng-web` (PD)

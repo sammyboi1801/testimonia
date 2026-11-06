@@ -3,7 +3,10 @@ import { Link } from "react-router-dom";
 import { isRtl, langClass } from "../lib";
 import { MODES, useSettings } from "../settings";
 import type { Book, Chapter, ChapterVerse, Edition, VerseMarks, Word } from "../types";
+import { TextWithNotes } from "./Footnotes";
 import { Marks } from "./Marks";
+import { ReadAloud } from "./ReadAloud";
+import { speechLang } from "../speech";
 import { PassagePicker } from "./PassagePicker";
 import { Speak } from "./Speak";
 
@@ -28,6 +31,20 @@ export function Reader({ data, books, editions, selected, onSelect, onWord }: Pr
   const headings = useMemo(() => new Map(data.headings.map((h) => [h.vkey, h.title])), [data.headings]);
   const container = useRef<HTMLDivElement>(null);
   const mode = settings.mode;
+  const [speaking, setSpeaking] = useState<string | null>(null);
+  const listenEd = primary ? byId.get(primary) : undefined;
+  const listenVerses = useMemo(
+    () =>
+      primary
+        ? data.verses.filter((v) => v.verse > 0 && v.texts[primary]?.text).map((v) => ({ osis: v.osis, text: v.texts[primary]!.text }))
+        : [],
+    [data.verses, primary],
+  );
+  // keep the verse being read in view
+  useEffect(() => {
+    if (!speaking) return;
+    container.current?.querySelector<HTMLElement>(`[data-osis="${CSS.escape(speaking)}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [speaking]);
 
   useEffect(() => {
     if (!selected) {
@@ -38,7 +55,7 @@ export function Reader({ data, books, editions, selected, onSelect, onWord }: Pr
     el?.scrollIntoView({ block: "center" });
   }, [selected, data.book, data.chapter]);
 
-  const ctx: RowCtx = { byId, wordEd, isNT, onSelect, onWord, selected };
+  const ctx: RowCtx = { byId, wordEd, isNT, onSelect, onWord, selected, footnotes: settings.display.footnotes, speaking };
 
   return (
     <div className="reader" ref={container}>
@@ -56,6 +73,13 @@ export function Reader({ data, books, editions, selected, onSelect, onWord }: Pr
           ))}
         </div>
         <EditionPicker editions={editions} chosen={settings.editions} onChange={(eds) => update({ editions: eds })} single={mode !== "parallel"} />
+        <ReadAloud
+          verses={listenVerses}
+          lang={speechLang(listenEd?.language ?? "eng")}
+          title={`${data.name} ${data.chapter} · ${listenEd?.abbrev ?? ""}`}
+          next={data.next}
+          onVerse={setSpeaking}
+        />
       </div>
 
       {mode === "reading" ? (
@@ -86,6 +110,8 @@ interface RowCtx {
   selected: string | null;
   onSelect: (osis: string) => void;
   onWord: (strong: string) => void;
+  footnotes: boolean;
+  speaking: string | null;
 }
 
 function NavArrow({ to, dir }: { to: Chapter["prev"]; dir: string }) {
@@ -119,7 +145,7 @@ function VerseRow({ v, mode, textEds, primary, ctx }: { v: ChapterVerse; mode: s
   const cols = mode === "parallel" ? textEds.length : mode === "original" ? 2 : 1;
   return (
     <div
-      className={`verse-row mode-${mode}${isSel ? " selected" : ""}`}
+      className={`verse-row mode-${mode}${isSel ? " selected" : ""}${v.osis === ctx.speaking ? " speaking" : ""}`}
       data-osis={v.osis}
       id={`v${v.verse}`}
       style={{ ["--cols" as string]: String(Math.max(cols, 1)) }}
@@ -175,7 +201,9 @@ function TextCell({ v, id, ctx }: { v: ChapterVerse; id: string; ctx: RowCtx }) 
     >
       {t ? (
         <>
-          <span className="vtext">{t.text}</span>
+          <span className="vtext">
+            <TextWithNotes text={t.text} notes={ctx.footnotes ? t.notes : undefined} />
+          </span>
           {t.native && (
             <span className="native" title={`Numbered ${t.native.replace(/^[^.]+\./, "").replace(".", ":")} in ${ed?.abbrev ?? id}`}>
               {t.native.replace(/^[^.]+\./, "").replace(".", ":")}
@@ -289,7 +317,7 @@ function ReadingView({ data, edition, headings, ctx }: { data: Chapter; edition?
               return (
                 <span
                   key={v.vkey}
-                  className={`rv${v.osis === ctx.selected ? " selected" : ""}${v.red_letter && ed?.language === "eng" ? " red" : ""}`}
+                  className={`rv${v.osis === ctx.selected ? " selected" : ""}${v.osis === ctx.speaking ? " speaking" : ""}${v.red_letter && ed?.language === "eng" ? " red" : ""}`}
                   data-osis={v.osis}
                   onClick={() => ctx.onSelect(v.osis)}
                 >
@@ -297,7 +325,7 @@ function ReadingView({ data, edition, headings, ctx }: { data: Chapter; edition?
                     <span className="n">{v.verse === 0 ? "" : v.verse}</span>
                     <Marks marks={v.marks} />
                   </sup>
-                  {t.text}{" "}
+                  <TextWithNotes text={t.text} notes={ctx.footnotes ? t.notes : undefined} />{" "}
                 </span>
               );
             })}

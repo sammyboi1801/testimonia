@@ -4,6 +4,7 @@ import { useVerse } from "../api";
 import { formatYear, osisLabel, PRE_NICENE, verseUrl } from "../lib";
 import { useSettings, type FathersScope, type MarkKind, type PanelTab } from "../settings";
 import type { Book, VerseGuide } from "../types";
+import { NOTE_KIND } from "./Footnotes";
 import { Html } from "./Html";
 import { Mark } from "./Marks";
 import { Speak } from "./Speak";
@@ -167,6 +168,20 @@ function TextTab({ g }: { g: VerseGuide }) {
           </div>
         ))}
       </Block>
+      {(g.footnotes?.length ?? 0) > 0 && (
+        <Block title="Translators' notes" note={g.footnotes!.length}>
+          {g.footnotes!.map((f) => (
+            <div key={`${f.edition_id}-${f.n}`} className="item fn-item">
+              <div className="item-head">
+                <span className="who">{f.abbrev ?? f.edition_id}</span>
+                <span className={`tag fn-tag fn-${f.kind ?? "note"}`}>{NOTE_KIND[f.kind ?? "note"] ?? f.kind}</span>
+                {f.anchor && <span className="muted small">after “…{f.anchor.split(" ").slice(-3).join(" ")}”</span>}
+              </div>
+              <Html html={f.body} className="fn-text" />
+            </div>
+          ))}
+        </Block>
+      )}
       <Block title="Translations" note={g.texts.length}>
         {g.texts.map((t) => (
           <div key={t.edition_id} className="item">

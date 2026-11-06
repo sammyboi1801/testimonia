@@ -350,3 +350,40 @@ body.resizing iframe, body.resizing .word-card { pointer-events: none; }
 .panel-rail:hover { color: var(--accent); background: var(--panel-2); }
 .panel-rail span { display: inline-block; padding: 16px 0; }
 .book-more { display: inline-block; margin-top: 4px; }
+
+/* ------------------------------------------------------------------ footnotes */
+sup.fn {
+  margin: 0 1px 0 1px; padding: 0 2px; border-radius: 2px; cursor: help; outline: none;
+  font-family: var(--font-ui); font-size: 0.6em; font-weight: 600; font-style: normal; color: var(--link);
+  vertical-align: super; line-height: 0; text-decoration: none;
+}
+sup.fn:hover, sup.fn:focus-visible { background: var(--accent-soft); color: var(--accent); }
+sup.fn.fn-textual { color: var(--variant); }
+[data-footnotes="off"] sup.fn { display: none; }
+.fn-pop {
+  position: fixed; z-index: 130; display: grid; gap: 4px; width: 320px; padding: 9px 12px;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); box-shadow: var(--shadow);
+  font-family: var(--font-text); font-size: 15px; line-height: 1.45; color: var(--ink); font-style: normal; font-weight: 400;
+  text-align: left; white-space: normal; animation: tl-pop 0.12s ease-out;
+}
+.fn-pop.up { transform: translateY(-100%); animation-name: fade-in; }
+.fn-kind {
+  font-family: var(--font-ui); font-size: 11px; font-weight: 600; color: var(--muted);
+  text-transform: var(--label-transform); font-variant: var(--label-variant); letter-spacing: var(--label-tracking);
+}
+.fn-body i, .fn-text i { color: var(--ink-soft); }
+.fn-item .item-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.fn-text { font-family: var(--font-text); font-size: 15px; line-height: 1.45; margin-top: 2px; }
+.fn-tag.fn-textual { border-color: var(--variant); color: var(--variant); }
+
+/* ------------------------------------------------------------------ scrollbars in the design's colours */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--muted) 45%, transparent) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 40%, transparent); border-radius: 10px;
+  border: 3px solid transparent; background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+::-webkit-scrollbar-button { display: none; height: 0; width: 0; }
+::-webkit-scrollbar-corner { background: transparent; }

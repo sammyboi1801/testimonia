@@ -108,6 +108,15 @@ def chapter(
         ):
             if r["vkey"] in by_key:
                 by_key[r["vkey"]]["texts"][r["edition_id"]] = {"text": r["text"], "native": r["native_ref"]}
+        # translators' footnotes, shown as marks in the text
+        for r in s.all(
+            f"SELECT edition_id, vkey, n, kind, body, anchor FROM edition_note "
+            f"WHERE vkey BETWEEN ? AND ? AND edition_id IN ({marks}) ORDER BY vkey, n",
+            (lo, hi, *text_eds),
+        ):
+            t = by_key.get(r["vkey"], {}).get("texts", {}).get(r["edition_id"])
+            if t is not None:
+                t.setdefault("notes", []).append({k: r[k] for k in ("n", "kind", "body", "anchor")})
     for ed in (e for e in wanted if e in WORD_EDITIONS):
         for r in s.all(
             "SELECT t.vkey, t.pos, t.surface, t.translit, t.gloss, t.strong, t.lemma_id, t.morph, t.editions, "
@@ -293,9 +302,15 @@ def verse(request: Request, osis: str, preview: str = "bsb", limit: int = Query(
         "AND end_vkey >= ? ORDER BY start_vkey DESC LIMIT 1",
         (k, k),
     )
+    notes = s.all(
+        "SELECT n.edition_id, e.abbrev, n.n, n.kind, n.body, n.anchor FROM edition_note n "
+        "JOIN edition e ON e.id = n.edition_id WHERE n.vkey = ? ORDER BY e.sort, n.n",
+        (k,),
+    )
     return {
         "verse": v,
         "texts": texts,
+        "footnotes": notes,
         "words": words,
         "variants": variants,
         "crossrefs": xrefs,

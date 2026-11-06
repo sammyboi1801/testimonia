@@ -27,10 +27,22 @@
       "size": 5005955,
       "source": "ccel-josephus"
     },
+    "http|https://ebible.org/Scriptures/eng-Brenton_usfm.zip|ebible|": {
+      "fetched_at": "2026-11-06T04:51:31+00:00",
+      "sha256": "40115b0d0bdbfd26d8810aa6753e9d70fdddc248358800af4aea26a140d5b63f",
+      "size": 1442695,
+      "source": "ebible"
+    },
     "http|https://ebible.org/Scriptures/eng-Brenton_vpl.zip|ebible|": {
       "fetched_at": "2026-11-05T23:56:02+00:00",
       "sha256": "e5702697f97c536370bc98c46f78d13288c689270f3b00d91909376afd9bcce3",
       "size": 4177876,
+      "source": "ebible"
+    },
+    "http|https://ebible.org/Scriptures/eng-asv_usfm.zip|ebible|": {
+      "fetched_at": "2026-11-06T04:51:21+00:00",
+      "sha256": "00b7b6c76cb1eb67b22ca51bd5ac13c2df526c13e1c38e78b862a7a2367f7071",
+      "size": 2875616,
       "source": "ebible"
     },
     "http|https://ebible.org/Scriptures/eng-asv_vpl.zip|ebible|": {
@@ -39,10 +51,22 @@
       "size": 4333699,
       "source": "ebible"
     },
+    "http|https://ebible.org/Scriptures/eng-kjv_usfm.zip|ebible|": {
+      "fetched_at": "2026-11-06T04:51:19+00:00",
+      "sha256": "121790462a6093a4a02c1f829a8dd755d6c7e2b0c012b22c6f728db0a482cada",
+      "size": 2771073,
+      "source": "ebible"
+    },
     "http|https://ebible.org/Scriptures/eng-kjv_vpl.zip|ebible|": {
       "fetched_at": "2026-11-05T23:55:51+00:00",
       "sha256": "592359206616cdd3ff1cbb229d9d01695dabb4b9603a8bcf15d659cb14b21575",
       "size": 5227912,
+      "source": "ebible"
+    },
+    "http|https://ebible.org/Scriptures/eng-web_usfm.zip|ebible|": {
+      "fetched_at": "2026-11-06T04:51:20+00:00",
+      "sha256": "05b0440bd8994dd4da7cc53dd8167a759ed7c09617e4a562c64eb9b3343589c8",
+      "size": 3250064,
       "source": "ebible"
     },
     "http|https://ebible.org/Scriptures/eng-web_vpl.zip|ebible|": {
@@ -51,10 +75,22 @@
       "size": 5345558,
       "source": "ebible"
     },
+    "http|https://ebible.org/Scriptures/engDBY_usfm.zip|ebible|": {
+      "fetched_at": "2026-11-06T04:51:26+00:00",
+      "sha256": "ebdd506c5cb8c2dccb3e94f834e012123e538ef294556a981f323bd855ab332e",
+      "size": 2798367,
+      "source": "ebible"
+    },
     "http|https://ebible.org/Scriptures/engDBY_vpl.zip|ebible|": {
       "fetched_at": "2026-11-05T23:55:57+00:00",
       "sha256": "7eb1df2a434f5bbd831591aa96c08e94b900b1458fda74ccf1d1739d5af73619",
       "size": 4316919,
+      "source": "ebible"
+    },
+    "http|https://ebible.org/Scriptures/engDRA_usfm.zip|ebible|": {
+      "fetched_at": "2026-11-06T04:51:30+00:00",
+      "sha256": "fcb5de45f1f6083d56b738690e5b4b3bb6f0d87522d1d18329c57a4b09e05210",
+      "size": 2942946,
       "source": "ebible"
     },
     "http|https://ebible.org/Scriptures/engDRA_vpl.zip|ebible|": {
@@ -63,10 +99,22 @@
       "size": 4997223,
       "source": "ebible"
     },
+    "http|https://ebible.org/Scriptures/engbsb_usfm.zip|ebible|": {
+      "fetched_at": "2026-11-06T04:51:20+00:00",
+      "sha256": "75ca91d5a5c69ca4cbdeabdb03ea1a458db20cf3966abe15d86df086acf7fbc4",
+      "size": 3021852,
+      "source": "ebible"
+    },
     "http|https://ebible.org/Scriptures/engbsb_vpl.zip|ebible|": {
       "fetched_at": "2026-11-05T23:55:53+00:00",
       "sha256": "72ecd9e0131e82737b76e1f2d706c85771d6054b6350673f80f49c839133f45e",
       "size": 4326232,
+      "source": "ebible"
+    },
+    "http|https://ebible.org/Scriptures/enggnv_usfm.zip|ebible|": {
+      "fetched_at": "2026-11-06T04:51:28+00:00",
+      "sha256": "6ed7356ea8bee3c042e168c8a1650aefed08f1bf24f158794506608b27715ebe",
+      "size": 1410481,
       "source": "ebible"
     },
     "http|https://ebible.org/Scriptures/enggnv_vpl.zip|ebible|": {
@@ -75,10 +123,22 @@
       "size": 4402877,
       "source": "ebible"
     },
+    "http|https://ebible.org/Scriptures/englsv_usfm.zip|ebible|": {
+      "fetched_at": "2026-11-06T04:51:28+00:00",
+      "sha256": "b5fd551d49086785430ca4d670e2914b53c63fd65cb84717b7b200466305861f",
+      "size": 2806492,
+      "source": "ebible"
+    },
     "http|https://ebible.org/Scriptures/englsv_vpl.zip|ebible|": {
       "fetched_at": "2026-11-05T23:55:59+00:00",
       "sha256": "bccdcefdc4ad7437e4cb2c75bdc6535a11967c5cd89b6f97ce3335f378590fd8",
       "size": 4275881,
+      "source": "ebible"
+    },
+    "http|https://ebible.org/Scriptures/engtnt_usfm.zip|ebible|": {
+      "fetched_at": "2026-11-06T04:51:29+00:00",
+      "sha256": "a86faa9c69f021686e95bc26a7b598d6d7b33da391f523cac49cf8d3cd93822c",
+      "size": 372428,
       "source": "ebible"
     },
     "http|https://ebible.org/Scriptures/engtnt_vpl.zip|ebible|": {
@@ -87,16 +147,34 @@
       "size": 1090634,
       "source": "ebible"
     },
+    "http|https://ebible.org/Scriptures/engwebster_usfm.zip|ebible|": {
+      "fetched_at": "2026-11-06T04:51:27+00:00",
+      "sha256": "0f3c1122422adba66cf1e0c98e11db117beebbe40994d2d8afb5e80cc84942cf",
+      "size": 1424706,
+      "source": "ebible"
+    },
     "http|https://ebible.org/Scriptures/engwebster_vpl.zip|ebible|": {
       "fetched_at": "2026-11-05T23:55:58+00:00",
       "sha256": "402240da209b017c67a31b63773b42471ef7e2513aa76ef067f34af907537270",
       "size": 4342864,
       "source": "ebible"
     },
+    "http|https://ebible.org/Scriptures/engylt_usfm.zip|ebible|": {
+      "fetched_at": "2026-11-06T04:51:22+00:00",
+      "sha256": "c526b4e362fef13916a14765a7e331267f6a1227db58549fc61d3288a930a12b",
+      "size": 1386206,
+      "source": "ebible"
+    },
     "http|https://ebible.org/Scriptures/engylt_vpl.zip|ebible|": {
       "fetched_at": "2026-11-05T23:55:56+00:00",
       "sha256": "653e9f1d8487de46e11574165a6355d3135ae378fb2198ee4128dedc06c8ca56",
       "size": 4318747,
+      "source": "ebible"
+    },
+    "http|https://ebible.org/Scriptures/latVUC_usfm.zip|ebible|": {
+      "fetched_at": "2026-11-06T04:51:31+00:00",
+      "sha256": "5d73ce3473e40b70cfcc976b967e0f259cbb031d6c0cd4f9798fbabf9f5b4e6c",
+      "size": 3554568,
       "source": "ebible"
     },
     "http|https://ebible.org/Scriptures/latVUC_vpl.zip|ebible|": {

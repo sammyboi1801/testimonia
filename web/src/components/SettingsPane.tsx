@@ -263,6 +263,9 @@ export function SettingsPane({ onClose }: { onClose: () => void }) {
             <Row label="Section headings" hint="“The Word Became Flesh”…">
               <Toggle checked={settings.display.headings} onChange={(headings) => sub("display", { headings })} />
             </Row>
+            <Row label="Translators' footnotes" hint="small letters in the text; rest on one to read it">
+              <Toggle checked={settings.display.footnotes} onChange={(footnotes) => sub("display", { footnotes })} />
+            </Row>
             <Row label="Words of Christ in colour">
               <Toggle checked={settings.display.redLetter} onChange={(redLetter) => sub("display", { redLetter })} />
             </Row>

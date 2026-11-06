@@ -119,9 +119,9 @@ export interface Settings {
   fonts: Partial<Record<FontRole, string>>;
   lineSpacing: number | null;
   marks: { size: number } & Record<MarkKind, MarkPref>;
-  display: { verseNumbers: boolean; headings: boolean; redLetter: boolean; underline: boolean; glosses: boolean };
+  display: { verseNumbers: boolean; headings: boolean; redLetter: boolean; underline: boolean; glosses: boolean; footnotes: boolean };
   hover: { cards: boolean; delay: number };
-  speech: { enabled: boolean; rate: number; grc: string | null; hbo: string | null };
+  speech: { enabled: boolean; rate: number; grc: string | null; hbo: string | null; read: string | null; readRate: number };
   panel: { tab: PanelTab; glance: boolean; open: boolean };
   /** Widths (px) of resizable side panels. */
   layout: { study: number; toc: number; context: number };
@@ -143,9 +143,9 @@ export const DEFAULTS: Settings = {
     fat: { show: true, minor: true, symbol: "✝", color: null },
     quo: { show: true, minor: false, symbol: "↺", color: null },
   },
-  display: { verseNumbers: true, headings: true, redLetter: true, underline: true, glosses: true },
+  display: { verseNumbers: true, headings: true, redLetter: true, underline: true, glosses: true, footnotes: true },
   hover: { cards: true, delay: 260 },
-  speech: { enabled: true, rate: 0.8, grc: null, hbo: null },
+  speech: { enabled: true, rate: 0.8, grc: null, hbo: null, read: null, readRate: 1 },
   panel: { tab: "text", glance: true, open: true },
   layout: { study: 440, toc: 260, context: 360 },
 };

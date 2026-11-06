@@ -100,7 +100,7 @@ sources:
     phase: 0
 
   - id: ebible
-    name: eBible.org translations (VPL XML)
+    name: eBible.org translations (VPL XML text; USFM for footnotes)
     url: https://ebible.org/Scriptures/translations.csv
     download: "https://ebible.org/Scriptures/{id}_vpl.zip"
     fetch:
@@ -143,6 +143,45 @@ sources:
         target: ebible
         extract: true
       - http: https://ebible.org/Scriptures/latVUC_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/eng-kjv_usfm.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/eng-web_usfm.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/engbsb_usfm.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/eng-asv_usfm.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/engylt_usfm.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/engDBY_usfm.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/engwebster_usfm.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/englsv_usfm.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/enggnv_usfm.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/engtnt_usfm.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/engDRA_usfm.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/eng-Brenton_usfm.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/latVUC_usfm.zip
         target: ebible
         extract: true
     license: per-translation (PD or CC-BY-SA; filtered at build from translations.csv)

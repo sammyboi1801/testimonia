@@ -66,7 +66,7 @@ export interface ChapterVerse {
   osis: string;
   verse: number;
   red_letter: number;
-  texts: Record<string, { text: string; native: string | null }>;
+  texts: Record<string, { text: string; native: string | null; notes?: Footnote[] }>;
   words: Record<string, Word[]>;
   marks?: VerseMarks;
 }
@@ -159,6 +159,7 @@ export interface VerseGuide {
   variants: VariantUnit[];
   crossrefs: CrossRef[];
   quotations: Quotation[];
+  footnotes?: (Footnote & { edition_id: string; abbrev: string | null })[];
   fathers: FatherCitation[];
   witnesses?: FatherCitation[]; // Josephus, Tacitus… (Jewish & Roman writers)
   commentary: CommentaryEntry[];
@@ -311,4 +312,12 @@ export interface BookGuide {
   chronology: { start: number | null; end: number | null } | null;
   periods: { id: string; name: string; verses: number; osis: string }[];
   witnesses: { osis: string; author: string; work_title: string; cite: string | null; snippet: string | null; edition_id: string | null; section_ord: number | null }[];
+}
+
+/** A translator's footnote: placed after its anchor words in the verse. */
+export interface Footnote {
+  n: number;
+  kind: string | null; // 'textual' | 'alternative' | 'literal' | 'note' | 'study'
+  body: string; // HTML
+  anchor: string | null;
 }

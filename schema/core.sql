@@ -34,7 +34,7 @@
 
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
-PRAGMA user_version = 3;   -- core schema version: bump on every change (core.db is rebuilt, never migrated)
+PRAGMA user_version = 4;   -- core schema version: bump on every change (core.db is rebuilt, never migrated)
 
 -- =====================================================================================
 -- §1  PROVENANCE & LICENSING
@@ -254,8 +254,10 @@ CREATE TABLE edition_note (
   edition_id  TEXT NOT NULL REFERENCES edition(id),
   vkey        INTEGER NOT NULL,
   n           INTEGER NOT NULL,
-  kind        TEXT,                        -- 'translation','alternative','textual','study'
+  kind        TEXT,                        -- 'textual' (manuscripts differ), 'alternative' ('Or …'), 'literal'
+                                           -- ('Heb. …', 'Gr. …'), 'note' (explanation), 'study'
   body        TEXT NOT NULL,               -- HTML
+  anchor      TEXT,                        -- the words the note mark follows in the verse ('' = verse start)
   PRIMARY KEY (edition_id, vkey, n)
 ) STRICT, WITHOUT ROWID;
 

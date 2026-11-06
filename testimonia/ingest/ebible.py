@@ -11,6 +11,7 @@ from lxml import etree
 from .. import versification as V
 from ..books import BY_OSIS
 from ..refs import vkey
+from . import usfm_notes
 from .base import Context, IngestError, step
 
 SOURCE = "ebible"
@@ -123,6 +124,7 @@ def ingest_ebible(ctx: Context) -> None:
                 )
             ],
         )
+        _notes(ctx, ebible_id, edition_id, verses)
         out = []
         for hv in verses:
             if not hv.text:
@@ -156,3 +158,34 @@ def ingest_ebible(ctx: Context) -> None:
 def _testament(verses: list[V.HubVerse]) -> str:
     tests = {"NT" if BY_OSIS[v.hub.book].testament == "NT" else "OT" for v in verses}
     return "both" if len(tests) > 1 else (tests.pop() if tests else "both")
+
+
+def _notes(ctx: Context, ebible_id: str, edition_id: str, verses: list[V.HubVerse]) -> None:
+    """Translators' footnotes from the USFM edition, placed with the text's own native→hub mapping."""
+    try:
+        folder = ctx.find(SOURCE, f"{ebible_id}_usfm")
+    except IngestError:
+        ctx.log.warning("  %s: no USFM download, so no footnotes (run `testimonia fetch ebible`)", ebible_id)
+        return
+    hub: dict[str, int] = {}
+    for hv in verses:
+        k = vkey(hv.hub.book, hv.hub.ch, hv.hub.v)
+        for native in hv.native:
+            hub.setdefault(native, k)
+    rows: list[tuple[str, int, int, str, str, str]] = []
+    counters: dict[int, int] = {}
+    unplaced = 0
+    for note in usfm_notes.read_edition(folder):
+        ref = usfm_notes.native_ref(note)
+        # eBible sometimes letters the first part of a split verse ('1a') where the text has '1', and vice versa
+        place: int | None = None
+        if ref:
+            place = hub.get(ref) or hub.get(ref + "a") or hub.get(ref.rstrip("abcdefghijklmnopqrstuvwxyz"))
+        if place is None:
+            unplaced += 1
+            continue
+        counters[place] = counters.get(place, 0) + 1
+        rows.append((edition_id, place, counters[place], note.kind, note.body, note.anchor))
+    ctx.insert("edition_note", ["edition_id", "vkey", "n", "kind", "body", "anchor"], rows)
+    if rows or unplaced:
+        ctx.log.info("  %-8s %5d footnotes%s", edition_id, len(rows), f" ({unplaced} unplaced)" if unplaced else "")
