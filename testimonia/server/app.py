@@ -17,6 +17,7 @@ from .api import router
 from .geography import router as geography_router
 from .manuscripts import router as manuscripts_router
 from .reading import router as reading_router
+from .rulers import router as rulers_router
 from .store import Store
 from .study import router as study_router
 from .words import router as words_router
@@ -62,6 +63,7 @@ def create_app(db_path: Path | None = None, dist: Path = DIST, agent_allow_priva
     app.include_router(reading_router)
     app.include_router(words_router)
     app.include_router(manuscripts_router)
+    app.include_router(rulers_router)
     # the assistant may call private/local model servers only when this server itself is private (local use)
     app.state.agent_allow_private = agent_allow_private
 

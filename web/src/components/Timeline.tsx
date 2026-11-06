@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent a
 import { Link, useSearchParams } from "react-router-dom";
 import { useTimeline } from "../api";
 import { CATEGORY_LABELS, ERA_LABELS, formatYear } from "../lib";
+import { datesFor, shortLabel, spanOf, useRulers, type Realm, type ReignDates, type Ruler, type Rulers } from "../rulersApi";
 import type { Timeline, TimelineAuthor, TimelineEvent, TimelineWork } from "../types";
 import { WikiCard } from "./Wiki";
 
@@ -18,7 +19,8 @@ const LANE = 26;
 type Item =
   | { kind: "author"; id: string; a: TimelineAuthor; start: number; end: number; label: string }
   | { kind: "work"; id: string; w: TimelineWork; start: number; end: number; label: string }
-  | { kind: "event"; id: string; e: TimelineEvent; start: number; end: number; label: string };
+  | { kind: "event"; id: string; e: TimelineEvent; start: number; end: number; label: string }
+  | { kind: "ruler"; id: string; r: Ruler; realm: Realm; d: ReignDates; start: number; end: number; label: string };
 
 interface Group {
   id: string;
@@ -42,6 +44,21 @@ function groups(t: Timeline): Group[] {
     { id: "fathers", label: "Church fathers", items: t.authors.filter((a) => !outside(a)).map(author) },
     { id: "anonymous", label: "Anonymous writings & councils", items: t.works.map(work) },
   ];
+}
+
+/** Kings, emperors and governors of the realms that ruled Judaea (from /rulers; loaded when the lane is shown). */
+function rulersGroup(data: Rulers | undefined): Group {
+  const items: Item[] = [];
+  for (const realm of data?.realms ?? []) {
+    if (realm.kind === "named" || realm.end < LIMITS[0]) continue; // high priests and the like stay on /rulers
+    for (const r of realm.rulers) {
+      const when = datesFor(r, realm, null);
+      if (!when) continue;
+      const [start, end] = spanOf(when.d);
+      items.push({ kind: "ruler", id: `r:${r.id}`, r, realm, d: when.d, start, end, label: r.name.replace(/\s*\(.*\)$/, "") });
+    }
+  }
+  return { id: "rulers", label: "Rulers", items };
 }
 
 /** Greedy lane packing on the current scale: an item reaches from its start to the end of its label. */
@@ -84,12 +101,14 @@ function rangeLabel(start: number | null, end: number | null, circa: boolean): s
 function itemDates(item: Item): string {
   if (item.kind === "author") return lifeLabel(item.a);
   if (item.kind === "work") return rangeLabel(item.w.date_from, item.w.date_to, true);
+  if (item.kind === "ruler") return shortLabel(item.d);
   return rangeLabel(item.e.start, item.e.end, !!item.e.circa);
 }
 
 function itemNote(item: Item): string | null {
   if (item.kind === "author") return item.a.summary;
   if (item.kind === "work") return item.w.summary ?? CATEGORY_LABELS[item.w.category] ?? null;
+  if (item.kind === "ruler") return `${item.r.office} · ${item.realm.name}`;
   return item.e.description;
 }
 
@@ -109,7 +128,8 @@ export function TimelineView() {
   const [hover, setHover] = useState<{ item: Item; x: number; y: number } | null>(null);
   const hoverTimer = useRef<number | undefined>(undefined);
   const cursor = useRef<HTMLSpanElement>(null);
-  const [hidden, setHidden] = useState<Set<string>>(new Set(["anonymous"]));
+  const [hidden, setHidden] = useState<Set<string>>(new Set(["anonymous", "rulers"]));
+  const rulers = useRulers(!hidden.has("rulers"));
   const [showEvents, setShowEvents] = useState(true);
   const [find, setFind] = useState("");
   const box = useRef<HTMLDivElement>(null);
@@ -148,7 +168,7 @@ export function TimelineView() {
   const span = to - from;
   const x = (y: number) => ((y - from) / span) * width;
   const yearAt = (px: number) => from + (px / width) * span;
-  const all = useMemo(() => (data ? groups(data) : []), [data]);
+  const all = useMemo(() => (data ? [rulersGroup(rulers.data), ...groups(data)] : []), [data, rulers.data]);
   const everything = useMemo(() => all.flatMap((g) => g.items), [all]);
   const milestones = useMemo(() => (data?.events ?? []).filter((e) => e.major), [data]);
   const minorEvents = useMemo(() => (data?.events ?? []).filter((e) => !e.major), [data]);
@@ -157,8 +177,10 @@ export function TimelineView() {
     const m = new Map<string, number>();
     for (const a of data?.authors ?? []) m.set(`a:${a.id}`, a.works.reduce((n, w) => n + w.citations, 0) + a.works.length * 40);
     for (const w of data?.works ?? []) m.set(`w:${w.id}`, w.citations + 40);
+    // rulers: the ones Scripture names first, then the longest reigns
+    for (const realm of rulers.data?.realms ?? []) for (const r of realm.rulers) m.set(`r:${r.id}`, r.verses * 20 + ((r.end ?? 0) - (r.start ?? 0)));
     return m;
-  }, [data]);
+  }, [data, rulers.data]);
 
   // ?sel=a:josephus (author), w:<work id> or e:<event id> opens that item — links can point at a person or event
   const [params, setParams] = useSearchParams();
@@ -544,6 +566,17 @@ function Bar({
       </button>
     );
   }
+  if (item.kind === "ruler") {
+    const shared = item.d.shared_from !== null ? Math.max(x(item.d.start) - left, 0) : 0;
+    return (
+      <button className={`tl-item tl-ruler k-${item.realm.kind}${cls}`} style={{ left, top }} {...handlers}>
+        <i className={`tl-reign${item.d.circa ? " circa" : ""}`} style={{ width: Math.max(w, 4) }}>
+          {shared > 0 && <i className="tl-coreign" style={{ width: shared }} />}
+        </i>
+        <span className="tl-label">{item.label}</span>
+      </button>
+    );
+  }
   if (item.kind === "work") {
     return (
       <button className={`tl-item tl-work cat-${item.w.category}${cls}`} style={{ left, top }} {...handlers}>
@@ -668,7 +701,32 @@ function Detail({ item, onClose }: { item: Item; onClose: () => void }) {
       {item.kind === "author" && <AuthorDetail a={item.a} />}
       {item.kind === "work" && <WorkDetail w={item.w} />}
       {item.kind === "event" && <EventDetail e={item.e} />}
+      {item.kind === "ruler" && <TimelineRulerDetail r={item.r} realm={item.realm} d={item.d} />}
     </aside>
+  );
+}
+
+function TimelineRulerDetail({ r, realm, d }: { r: Ruler; realm: Realm; d: ReignDates }) {
+  return (
+    <>
+      <h2>{r.name}</h2>
+      <div className="sub">
+        {shortLabel(d)} · {r.office}, {realm.name}
+      </div>
+      {r.note && <p className="tl-summary">{r.note}</p>}
+      <p>
+        <Link to={`/rulers?sel=${encodeURIComponent(r.id)}`}>All the rulers of the time →</Link>
+        {r.verses > 0 && (
+          <>
+            {" · "}
+            <Link to={`/person/${encodeURIComponent(r.person_id)}`}>
+              Named in {r.verses} verse{r.verses === 1 ? "" : "s"}
+            </Link>
+          </>
+        )}
+      </p>
+      {r.wikipedia && <WikiCard title={r.wikipedia} />}
+    </>
   );
 }
 

@@ -25,6 +25,7 @@ MODULES = (
     "transcriptions",
     "geography",
     "theographic",
+    "rulers",
 )
 
 __all__ = ["MODULES", "STEPS", "Context", "IngestError", "Step", "load_all", "step"]

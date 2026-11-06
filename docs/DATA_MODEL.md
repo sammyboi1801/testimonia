@@ -44,9 +44,10 @@ Testimonia/                      ← git repository (code + schema + curated dat
 ├── curated/                     ← hand-encoded open data (CSV/YAML, CC BY-SA 4.0, reviewed in PRs)
 │   ├── chronology_systems.csv
 │   ├── periods.csv              (biblical eras, Second Temple, Roman, church eras)
-│   ├── kings_israel_judah.csv   (with Thiele / Galil / Albright regnal dates)
-│   ├── ane_rulers.csv           (Assyria, Babylon, Persia, Ptolemies, Seleucids, Hasmoneans, Herodians)
-│   ├── roman_emperors.csv
+│   ├── realms.csv               (kingdoms, empires and offices: Judah, Assyria, Rome, high priests…)
+│   ├── rulers.csv               (one row per reign: realm, office, Theographic link, Wikipedia title, verses)
+│   ├── reigns.csv               (reign dates per chronology system — Thiele / Galil / Albright for
+│   │                             Israel & Judah, 'scholarly' elsewhere — with coregencies; every row cites)
 │   ├── councils.csv, persecutions.csv, church_events.csv
 │   ├── book_dates.csv           (composition: traditional vs critical, per book)
 │   ├── authors.csv              (fathers & ancient authors: QID, era, dates, place)
@@ -217,6 +218,17 @@ Family ties are `person_relation` (`father_of`, `mother_of`, symmetric `spouse_o
 (`born_at`, `died_at`, `visited`, `located_at`; events also `part_of`, `follows`); event dates are
 `dating` rows under the `jones` system. Paul's journeys are `geo_feature` routes `paul-journey-1…4`.
 
+Kings and rulers (`rulers` step, after `theographic`): each realm is a `period` with scope `realm`
+(`realm-judah`; attributes `realm.*` in `entity_attr`: short name, style, kind local/overlord/named,
+chronology systems with the default first, overlord window). Each reign is an `office_holding`
+`<ruler>@<realm>` (a later reign of the same ruler adds `.2`) with `office.*` attributes on
+`office:<id>`, dated in `dating` with aspect `reign` per chronology system, plus aspect `coregency` or
+`rival` for the years shared with a predecessor before the sole reign. Rulers named in the Bible are
+linked to their Theographic person (by `personLookup`), the others become persons of kind `ruler`; all
+get their Wikipedia title. Years in the curated files are written '931 BC' / 'AD 14'. The optional
+`rulers-wikidata` step adds Wikidata ids and Wikidata's "position held" dates as the `wikidata` system
+(a pinned query, `sources/queries/rulers.rq`), and logs where they differ from the curated dates.
+
 ### 6.7 Chronology — `chronology_system`, `dating`, `verse_date`, `period`, `verse_period`
 Dates are never a single column on an entity. They are rows in `dating`, each under a
 **chronology system** and with an explicit **kind**:
@@ -235,10 +247,11 @@ entity: event 'exodus'
   traditional  point  −1445   (1446 BC, 1 Kgs 6:1 early date)
   scholarly    window −1290 → −1200   (13th-century late date)
 
-entity: office_holding 'hezekiah@king-judah'   aspect='reign'
-  thiele   span −715 → −686  (co-regency from −728)
-  galil    span −726 → −697
-  albright span −714 → −685
+entity: office_holding 'hezekiah@judah'   aspect='reign'
+  thiele   span −715 → −686  (716/15–687/86 BC)
+  galil    span −725 → −696
+  albright span −714 → −686
+entity: office_holding 'uzziah@judah'     aspect='coregency'   thiele span −791 → −766  (then 'reign' −766 → −739)
 
 entity: manuscript 'GA:P66'        aspect='when'   system='scholarly'  window 175 → 225  basis='palaeography'
 entity: work 'irenaeus.haer'       aspect='composition'                window 174 → 189

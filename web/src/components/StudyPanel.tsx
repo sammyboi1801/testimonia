@@ -16,6 +16,7 @@ import { VerseNote } from "./VerseNote";
 import { Mark } from "./Marks";
 import { PassageLink } from "./PassageLink";
 import { Speak } from "./Speak";
+import { UnderRulers } from "./UnderRulers";
 import { WordStudy } from "./WordStudy";
 
 export type Tab = PanelTab;
@@ -79,6 +80,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord }: Props & { g:
           {era && <span> · {era}</span>}
           {period && <span className="muted"> — {period}</span>}
         </div>
+        <UnderRulers osis={g.verse.osis} />
         <PassageLink osis={g.verse.osis} title={g.heading?.title} />
       </header>
       <VerseNote osis={g.verse.osis} label={osisLabel(g.verse.osis, books)} />

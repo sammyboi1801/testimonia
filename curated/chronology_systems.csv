@@ -1,9 +1,9 @@
 id,name,kind,description,citation
 ussher,Ussher (1650),young-earth,"James Ussher, Annales Veteris Testamenti; creation 4004 BC. Per-verse years via TSK/Theographic.","Ussher, Annales (1650), public domain"
 jones,Floyd Nolen Jones (1993),young-earth,The Chronology of the Old Testament; used for Theographic events.,Theographic Bible Metadata (CC BY-SA 4.0)
-thiele,Thiele (1983),conservative,"E. R. Thiele, The Mysterious Numbers of the Hebrew Kings; regnal dates with co-regencies.","Wikipedia, 'Kings of Israel and Judah' (CC BY-SA 4.0)"
-galil,Galil (1996),critical,"G. Galil, The Chronology of the Kings of Israel and Judah.","Wikipedia, 'Kings of Israel and Judah' (CC BY-SA 4.0)"
-albright,Albright (1945),critical,W. F. Albright's regnal chronology.,"Wikipedia, 'Kings of Israel and Judah' (CC BY-SA 4.0)"
+thiele,Thiele (1983),conservative,"E. R. Thiele, The Mysterious Numbers of the Hebrew Kings (3rd ed.); regnal dates with coregencies and rival reigns, the most widely used reconstruction. Double years (716/15) reflect regnal years that straddle two of ours.","Thiele, Mysterious Numbers, 3rd ed. (1983), chronological table p. 217; cross-checked with Wikipedia, 'Kings of Israel and Judah' (rev. 1383533949, CC BY-SA 4.0) and the kings' articles"
+galil,Galil (1996),critical,"G. Galil, The Chronology of the Kings of Israel and Judah; a critical reconstruction from the biblical data and Assyrian–Babylonian synchronisms (overlapping reigns are coregencies).","Galil, The Chronology of the Kings of Israel and Judah (Brill, 1996), as tabulated in Wikipedia, 'Kings of Israel and Judah' (rev. 1383533949, CC BY-SA 4.0)"
+albright,Albright (1945),critical,"W. F. Albright's regnal chronology, which shortens the reigns to fit Assyrian dates without coregencies.","Albright, 'The Chronology of the Divided Monarchy of Israel', BASOR 100 (1945), as tabulated in Wikipedia, 'Kings of Israel and Judah' (rev. 1383533949, CC BY-SA 4.0)"
 traditional,Traditional / internal,conservative,Dates computed from biblical internal data and traditional authorship (e.g. 1 Kgs 6:1 early Exodus).,Testimonia curated
 scholarly,Scholarly consensus,consensus,Mainstream modern scholarship; windows reflect the range of published estimates.,Testimonia curated (row-level citations)
 btb,BTB chronology,conservative,"Era, period and approximate date assigned to each verse by the Bruhman Translator's Bible.",BTB (CC BY-SA 4.0)

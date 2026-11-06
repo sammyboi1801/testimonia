@@ -24,6 +24,7 @@ from ..refs import parse_refs
 from . import api, reading, study, words
 from . import geography as geo_api
 from . import manuscripts as ms_api
+from . import rulers as rulers_api
 from .store import Store
 from .transcription import read_markup
 
@@ -317,6 +318,26 @@ TOOLS: list[dict[str, Any]] = [
             "type": "object",
             "properties": {"name": {"type": "string"}},
             "required": ["name"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "rulers",
+        "description": (
+            "Kings and rulers with their reign dates: the kings of Israel and Judah (under the Thiele, Galil and "
+            "Albright chronologies, with coregencies), Assyria, Babylon, Persia, the Ptolemies and Seleucids, the "
+            "Hasmoneans and Herods, Roman emperors to Theodosius, the governors of Judaea and the high priests. Give "
+            "`name` for one ruler's dates under every chronology, or `year` (negative for BC: -701 = 701 BC) for who "
+            "ruled then, optionally only in one `realm` (e.g. 'Judah', 'Assyria', 'Rome', 'high priests')."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "A ruler, e.g. 'Hezekiah', 'Ahasuerus', 'Pilate'"},
+                "year": {"type": "integer", "description": "A year; negative for BC (-701 = 701 BC)"},
+                "realm": {"type": "string", "description": "Optional realm filter, e.g. 'Judah', 'Persia'"},
+            },
+            "required": [],
             "additionalProperties": False,
         },
     },
@@ -937,6 +958,105 @@ def bible_people_places(store: Store, name: str) -> str:
     return "\n".join(out)
 
 
+def _year(y: int | None) -> str:
+    """Astronomical year → '701 BC' / 'AD 14'."""
+    if y is None:
+        return "?"
+    return f"{1 - y} BC" if y <= 0 else f"AD {y}"
+
+
+def _reign_text(d: dict[str, Any]) -> str:
+    """One system's dates for a reign, as the source gives them where it can."""
+    a, b = d["start"], d["end"]
+    if d.get("label"):
+        text = str(d["label"])
+    elif a == b:
+        text = _year(a)
+    elif b <= 0:
+        text = f"{1 - a}–{1 - b} BC"
+    else:
+        text = f"{_year(a)}–{b}" if a > 0 else f"{_year(a)}–{_year(b)}"
+    if d.get("circa") and not d.get("label"):
+        text = f"c. {text}"
+    if d.get("shared_from") is not None and not d.get("label"):
+        what = "coregent" if d.get("shared_kind") == "coregency" else "rival reign"
+        text += f" ({what} from {_year(d['shared_from'])})"
+    return text
+
+
+def rulers(store: Store, name: str | None = None, year: int | None = None, realm: str | None = None) -> str:
+    """A ruler's reign under every chronology system, or who ruled in a given year."""
+    realms, reigns, names = rulers_api.load(store)
+    only = rulers_api.realm_for(realms, realm) if realm else None
+    if realm and only is None:
+        return f"No realm {realm!r}. Realms: " + "; ".join(r.name for r in realms.values())
+    pool = [g for g in reigns if only is None or g.realm == only.id]
+    if name:
+        q = name.strip().lower()
+
+        def whole_word(g: rulers_api.Reign) -> bool:
+            return q == g.name.lower() or q in {w.strip("()") for w in g.name.lower().split()}
+
+        hits = [g for g in pool if q in g.name.lower() or q == g.person_id]
+        hits.sort(key=lambda g: (not whole_word(g), len(g.name)))
+        if not hits:
+            return f"No ruler named {name!r} in the library. Try another spelling, or bible_people_places."
+        out = []
+        for g in hits[:8]:
+            r = realms[g.realm]
+            out.append(f"# {g.name} — {g.office}, {r.name} — /person/{g.person_id}")
+            order = [*r.systems, *sorted(s for s in g.dates if s not in r.systems)]
+            for sid in order:
+                if sid in g.dates:
+                    d = g.dates[sid]
+                    out.append(
+                        f"- {names.get(sid, sid)}: {_reign_text(d)}" + (f" [{d['basis']}]" if d.get("basis") else "")
+                    )
+            if g.note:
+                out.append(g.note)
+            if g.verses:
+                out.append(
+                    f"Named in {g.verses} verse(s), first [{_label(g.first_osis)}]({_verse_link(g.first_osis)})"
+                    if g.first_osis
+                    else ""
+                )
+        out.append("\nAll realms and chronologies side by side: /rulers")
+        return "\n".join(x for x in out if x)
+    if year is None:
+        return "Give a ruler's `name` (e.g. 'Hezekiah') or a `year` (e.g. -701 for 701 BC)."
+    when = year + 1 if year < 0 else year  # BC → astronomical (701 BC = -700)
+    out = [f"# Rulers in {_year(when)} (dates per chronology system; c. = approximate)"]
+
+    def line(realm: rulers_api.Realm, found: list[rulers_api.Reign], sid: str) -> str:
+        parts = []
+        for g in found:
+            chosen = g.pick(rulers_api.prefer(realm, sid))
+            parts.append(f"{g.name} ({_reign_text(chosen[1]) if chosen else '?'}) /person/{g.person_id}")
+        return "; ".join(parts) or "—"
+
+    for r in realms.values():
+        if only is not None and r.id != only.id:
+            continue
+        mine = [g for g in pool if g.realm == r.id]
+        per_system = {sid: rulers_api.ruling(mine, realms, when, sid) for sid in r.systems}
+        sets = {tuple(g.id for g in found) for found in per_system.values()}
+        if sets == {()}:
+            continue
+        if len(sets) == 1:
+            sid = r.systems[0]
+            out.append(
+                f"- {r.name}: {line(r, per_system[sid], sid)}"
+                + (f" [{names.get(sid, sid)}]" if len(r.systems) > 1 else "")
+            )
+        else:
+            out.append(f"- {r.name} — the chronologies differ:")
+            out += [f"  - {names.get(sid, sid)}: {line(r, found, sid)}" for sid, found in per_system.items()]
+    if len(out) == 1:
+        return f"No ruler in the library reigned in {_year(when)}" + (f" in {only.name}." if only else ".")
+    out.append("\nAll realms side by side: /rulers")
+    return "\n".join(out)
+
+
 def wikipedia(store: Store, query: str, section: str | None = None) -> str:
     """English Wikipedia, fetched live (nothing stored): the article's whole introduction and its list of sections,
     or one section in full when `section` is given, so any part of the article can be read."""
@@ -1144,6 +1264,7 @@ FUNCTIONS: dict[str, Callable[..., str]] = {
     "manuscripts": manuscripts,
     "manuscript_text": manuscript_text,
     "bible_people_places": bible_people_places,
+    "rulers": rulers,
     "wikipedia": wikipedia,
 }
 
