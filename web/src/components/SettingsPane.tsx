@@ -148,6 +148,7 @@ export function SettingsPane({ onClose }: { onClose: () => void }) {
             </Row>
             {(
               [
+                ["display", "Titles & logo"],
                 ["text", "Reading text"],
                 ["ui", "Labels & menus"],
                 ["greek", "Greek"],
@@ -169,6 +170,7 @@ export function SettingsPane({ onClose }: { onClose: () => void }) {
               </Row>
             ))}
             <div className="type-sample">
+              <p className="ts-display">Testimonia · The Word Became Flesh</p>
               <p className="ts-text">In the beginning was the Word, and the Word was with God.</p>
               <p className="greek">Ἐν ἀρχῇ ἦν ὁ λόγος, καὶ ὁ λόγος ἦν πρὸς τὸν θεόν</p>
               <p className="hebrew" dir="rtl">

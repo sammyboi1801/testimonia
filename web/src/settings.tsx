@@ -41,6 +41,14 @@ export const ACCENT_PRESETS = ["#9a5b2e", "#b4532a", "#8c2f2f", "#6b3f6e", "#3d5
 
 /** Bundled (offline) faces, plus a few common system fonts for Hebrew. */
 export const FONTS = {
+  display: [
+    { id: "cormorant", label: "Cormorant Garamond", css: '"Cormorant Garamond", Georgia, serif' },
+    { id: "fraunces", label: "Fraunces", css: '"Fraunces", Georgia, serif' },
+    { id: "crimson", label: "Crimson Pro", css: '"Crimson Pro", Georgia, serif' },
+    { id: "spectral", label: "Spectral", css: '"Spectral", Georgia, serif' },
+    { id: "felipa", label: "Felipa (calligraphic)", css: '"Felipa", "Cormorant Garamond", serif' },
+    { id: "charm", label: "Charm (calligraphic)", css: '"Charm", "Cormorant Garamond", serif' },
+  ],
   text: [
     { id: "eb-garamond", label: "EB Garamond", css: '"EB Garamond", Georgia, serif' },
     { id: "cormorant", label: "Cormorant Garamond", css: '"Cormorant Garamond", Georgia, serif' },
@@ -69,7 +77,7 @@ export const FONTS = {
   ],
 } as const;
 export type FontRole = keyof typeof FONTS;
-const FONT_VARS: Record<FontRole, string> = { text: "--font-text", ui: "--font-ui", greek: "--greek", hebrew: "--hebrew" };
+const FONT_VARS: Record<FontRole, string> = { display: "--font-display", text: "--font-text", ui: "--font-ui", greek: "--greek", hebrew: "--hebrew" };
 
 export const MARK_INFO: Record<MarkKind, { label: string; meaning: string; minorLabel: string; symbols: string[]; token: ColorToken }> = {
   var: {
@@ -177,6 +185,8 @@ function load(): Settings {
   const theme = q.get("theme");
   if (design && DESIGNS.some((d) => d.id === design)) s = { ...s, design: design as Design };
   if (theme === "light" || theme === "dark" || theme === "system") s = { ...s, theme };
+  const display = q.get("display");
+  if (display && FONTS.display.some((f) => f.id === display)) s = { ...s, fonts: { ...s.fonts, display } };
   const mode = q.get("mode");
   if (mode && MODES.some((m) => m.id === mode)) s = { ...s, mode: mode as ReadingMode };
   return s;
