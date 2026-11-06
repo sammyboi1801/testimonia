@@ -51,6 +51,16 @@ def test_greek_omission_and_order():
     assert _witness_ids(readings, 1) == {"TR", "Byz"}
 
 
+def test_greek_spelling_editions_only_under_their_form():
+    eds = S.parse_editions("NA28+NA27+Tyn+SBL+WH+Treg+TR+Byz")
+    unit, readings = S._greek_unit(43001006, "Ἰωάννης", "John", eds, "", "WH: Ἰωάνης", "")
+    assert unit["significance"] == "spelling"
+    assert [r[0] for r in readings] == ["Ἰωάννης", "Ἰωάνης"]
+    assert "WH" not in _witness_ids(readings, 0)
+    assert _witness_ids(readings, 1) == {"WH"}
+    assert readings[1][1] is None  # no placeholder gloss
+
+
 def test_no_unattested_readings():
     # complete edition list plus an extra manuscript: no phantom omission reading
     _, readings = S._greek_unit(

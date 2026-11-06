@@ -394,7 +394,14 @@ def _greek_unit(
         return [("edition", e, None) for e in codes]
 
     complete = set(eds.base) == set(GREEK_EDITIONS)
-    in_place = [e for e in eds.base if e not in eds.reordered]
+    # spelling variants ('WH: Ἰωάνης'): those editions are in the base list too, but print the other form
+    spelled: list[tuple[str, list[str]]] = []
+    for seg in filter(None, (x.strip() for x in spelling.split(";"))):
+        codes, _, form = seg.partition(":")
+        if form.strip():
+            spelled.append((form.strip(), _editions(codes)))
+    respelled = {e for _, codes in spelled for e in codes}
+    in_place = [e for e in eds.base if e not in eds.reordered and e not in respelled]
     readings: list[Reading] = [(word, gloss, wits(in_place) + [_other_witness(o) for o in eds.others])]
     if meaning:
         significance = "meaning"
@@ -412,10 +419,8 @@ def _greek_unit(
         readings.append(("", None, wits(e for e in GREEK_EDITIONS if e not in eds.base)))
     if eds.reordered:
         readings.append((word, "(in a different position)", wits(eds.reordered)))
-    for seg in filter(None, (x.strip() for x in spelling.split(";"))):
-        codes, _, form = seg.partition(":")
-        if form.strip():
-            readings.append((form.strip(), "(spelling)", wits(_editions(codes))))
+    for form, codes in spelled:
+        readings.append((form, None, wits(codes)))
     readings = [r for r in readings if r[2]]  # never emit a reading nobody attests
     label = " / ".join(r[0] or "—" for r in readings)
     unit = {
