@@ -21,6 +21,7 @@ MODULES = (
     "parallels",
     "macula",
     "manuscripts",
+    "transcriptions",
     "geography",
     "theographic",
 )

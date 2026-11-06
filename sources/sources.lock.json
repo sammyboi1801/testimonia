@@ -1,5 +1,10 @@
 {
   "items": {
+    "git|https://github.com/Center-for-New-Testament-Restoration/transcriptions|cntr|": {
+      "commit": "4e743a41a4b2ca010ece53229cd272aa59b1efe6",
+      "fetched_at": "2026-11-06T17:29:36+00:00",
+      "source": "cntr"
+    },
     "git|https://github.com/HistoricalChristianFaith/Commentaries-Database|hcf-commentaries|": {
       "commit": "992bec0d71c611946a595f2746cbfa119c5ac06c",
       "fetched_at": "2026-11-06T01:04:19+00:00",

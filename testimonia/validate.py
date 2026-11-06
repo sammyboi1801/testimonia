@@ -70,7 +70,13 @@ CHECKS: list[tuple[str, str, str]] = [
         "SELECT src_start || '->' || dst_start FROM crossref "
         "WHERE dst_start NOT IN (SELECT vkey FROM verse) OR src_start NOT IN (SELECT vkey FROM verse)",
     ),
-    ("warning", "empty verse text", "SELECT edition_id || ' ' || vkey FROM edition_verse WHERE trim(text) = ''"),
+    (
+        "warning",
+        "empty verse text",
+        # a manuscript transcription stores a verse the manuscript lacks as an empty text marked 'absent'
+        "SELECT edition_id || ' ' || vkey FROM edition_verse WHERE trim(text) = '' "
+        "AND edition_id NOT IN (SELECT id FROM edition WHERE kind = 'manuscript')",
+    ),
 ]
 
 
