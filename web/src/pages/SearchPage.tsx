@@ -23,7 +23,9 @@ export function SearchPage() {
   const scopeParam = params.get("in") as Scope | null;
   const scope: Scope = scopeParam && SCOPES.some((s) => s.id === scopeParam) ? scopeParam : "all";
   const [text, setText] = useState(q);
-  useEffect(() => setText(q), [q]);
+  useEffect(() => {
+    setText(q);
+  }, [q]);
   const { data, isFetching, error } = useSearch(q, scope);
   const meta = useMeta();
   const books = meta.data?.books ?? [];

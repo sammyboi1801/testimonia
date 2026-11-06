@@ -18,7 +18,9 @@ export function ReadPage() {
   const { settings, update } = useSettings();
   const meta = useMeta();
   const ch = Number(chapter);
-  useEffect(() => rememberReading(book, ch), [book, ch]);
+  useEffect(() => {
+    rememberReading(book, ch);
+  }, [book, ch]);
   const needsWords = settings.mode === "interlinear" || settings.mode === "original";
   const editions = needsWords ? [...settings.editions, "tagnt", "tahot"] : settings.editions;
   const data = useChapter(book, ch, editions);

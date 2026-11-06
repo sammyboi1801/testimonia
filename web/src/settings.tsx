@@ -239,7 +239,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     save(next);
     setSettings(next);
   }, []);
-  useEffect(() => applyToDocument(settings, dark), [settings, dark]);
+  useEffect(() => {
+    applyToDocument(settings, dark);
+  }, [settings, dark]);
   const value = useMemo(() => ({ settings, dark, update, replace }), [settings, dark, update, replace]);
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 }

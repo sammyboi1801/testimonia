@@ -35,7 +35,8 @@ import "./mobile.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { lastReadingPath } from "./lib";
 import { AskDrawer } from "./components/AskDrawer";
 import { TopBar } from "./components/TopBar";
@@ -52,21 +53,26 @@ import { SettingsProvider } from "./settings";
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
 
 function App() {
+  const location = useLocation();
   return (
     <div className="app">
       <TopBar />
-      <Routes>
-        <Route path="/" element={<Navigate to={lastReadingPath()} replace />} />
-        <Route path="/read/:book/:chapter" element={<ReadPage />} />
-        <Route path="/library" element={<LibraryPage />} />
-        <Route path="/library/:edition/:ord" element={<WorkPage />} />
-        <Route path="/book/:book" element={<BookPage />} />
-        <Route path="/ask" element={<AskPage />} />
-        <Route path="/notes" element={<NotesPage />} />
-        <Route path="/search" element={<SearchPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-      <AskDrawer />
+      <ErrorBoundary resetKey={location.pathname}>
+        <Routes>
+          <Route path="/" element={<Navigate to={lastReadingPath()} replace />} />
+          <Route path="/read/:book/:chapter" element={<ReadPage />} />
+          <Route path="/library" element={<LibraryPage />} />
+          <Route path="/library/:edition/:ord" element={<WorkPage />} />
+          <Route path="/book/:book" element={<BookPage />} />
+          <Route path="/ask" element={<AskPage />} />
+          <Route path="/notes" element={<NotesPage />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </ErrorBoundary>
+      <ErrorBoundary resetKey={location.pathname}>
+        <AskDrawer />
+      </ErrorBoundary>
     </div>
   );
 }

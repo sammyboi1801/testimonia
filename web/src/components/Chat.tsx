@@ -55,7 +55,10 @@ export function Chat({ context, initial, compact = false }: { context: string | 
       /* storage unavailable */
     }
   }, [messages]);
-  useEffect(() => end.current?.scrollIntoView({ block: "end", behavior: "smooth" }), [messages]);
+  useEffect(() => {
+    // braces matter: scrollIntoView returns a Promise in current browsers, and an effect must not return one
+    end.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+  }, [messages]);
 
   function choosePreset(id: string) {
     const p = PRESETS.find((x) => x.id === id)!;

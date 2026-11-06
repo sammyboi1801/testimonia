@@ -188,3 +188,8 @@ a:hover { text-decoration: none; background-size: 100% 1px; }
 [data-underline="off"] .verse-row:hover .vtext, [data-underline="off"] .rv:hover,
 [data-underline="off"] .word:hover .w-surface { text-decoration: none; }
 [data-glosses="off"] .w-gloss { display: none; }
+
+/* error boundary */
+.crash { max-width: 640px; margin: 0 auto; padding-top: 64px; }
+.crash h1 { font-family: var(--font-display); font-weight: var(--display-weight); }
+.crash pre { white-space: pre-wrap; font-size: 12.5px; color: var(--muted); background: var(--panel-2); padding: 10px 12px; border-radius: var(--radius); }
