@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { resolveRef } from "../api";
 import { verseUrl } from "../lib";
-import { useSettings, type Theme } from "../settings";
+import { DESIGNS, useSettings, type Design, type Theme } from "../settings";
 
 const NEXT_THEME: Record<Theme, Theme> = { system: "light", light: "dark", dark: "system" };
 const THEME_ICON: Record<Theme, string> = { system: "◐", light: "☀", dark: "☾" };
@@ -27,7 +27,9 @@ export function TopBar() {
   return (
     <header className="topbar">
       <NavLink to="/" className="brand" title="Testimonia">
-        <span className="brand-mark">T</span>
+        <span className="brand-mark" aria-hidden>
+          ☧
+        </span>
         <span className="brand-name">Testimonia</span>
       </NavLink>
       <form className="omnibox" onSubmit={submit} role="search">
@@ -44,6 +46,19 @@ export function TopBar() {
         <NavLink to="/search">Search</NavLink>
       </nav>
       <div className="topbar-tools">
+        <select
+          className="design-select"
+          value={settings.design}
+          onChange={(e) => update({ design: e.target.value as Design })}
+          title="Design"
+          aria-label="Design"
+        >
+          {DESIGNS.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.label} — {d.note}
+            </option>
+          ))}
+        </select>
         <button
           className="icon-btn"
           title="Smaller text"

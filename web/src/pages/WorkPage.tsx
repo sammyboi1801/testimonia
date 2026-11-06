@@ -35,7 +35,7 @@ export function WorkPage() {
         <Link to="/library">← Library</Link>
         {toc.data && (
           <>
-            <h3 style={{ fontFamily: "var(--text)", margin: "12px 6px 2px" }}>{toc.data.edition.title}</h3>
+            <h3 style={{ fontFamily: "var(--font-display)", margin: "12px 6px 2px" }}>{toc.data.edition.title}</h3>
             <div className="muted" style={{ margin: "0 6px 10px" }}>
               {toc.data.edition.author ?? CATEGORY_LABELS[toc.data.edition.category]}
               {toc.data.edition.era ? ` · ${ERA_LABELS[toc.data.edition.era] ?? toc.data.edition.era}` : ""}
@@ -62,7 +62,7 @@ export function WorkPage() {
             <div className="muted" style={{ fontSize: 13 }}>
               {toc.data?.edition.title} {sec.data.section.cite} · {volumeLabel(edition)}
             </div>
-            <h2 style={{ fontFamily: "var(--text)", marginTop: 4 }}>{sec.data.section.title}</h2>
+            <h2 style={{ fontFamily: "var(--font-display)", marginTop: 4 }}>{sec.data.section.title}</h2>
             <Html html={sec.data.section.html} footnotes idPrefix={`s${n}`} />
             {sec.data.citations.length > 0 && (
               <p className="muted" style={{ fontSize: 13 }}>
