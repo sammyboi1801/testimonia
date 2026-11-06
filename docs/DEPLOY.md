@@ -21,20 +21,28 @@ instance you already use for something else works too, as long as ports 80 and 4
 2. **Install Docker:** `curl -fsSL https://get.docker.com | sudo sh && sudo usermod -aG docker $USER`, then
    log out and back in.
 
-3. **Get the code and the database** (from your own computer for the database):
+3. **Publish the database** somewhere the VM can download it. A GitHub release asset is free (up to 2 GB);
+   from the computer that built it:
 
    ```bash
-   git clone https://github.com/<you>/testimonia.git && mkdir -p testimonia/deploy/oracle/data
-   scp -i <key> ~/TestimoniaData/build/core-public.db ubuntu@<ip>:testimonia/deploy/oracle/data/core.db
+   gh release create data-v1 ~/TestimoniaData/build/core-public.db --title "Database" --notes "Public build"
    ```
 
-4. **Start it:**
+   (Or copy it straight to the VM with `scp … ubuntu@<ip>:testimonia/deploy/oracle/data/core.db`.)
+
+4. **On the VM** (any SSH client works, e.g. Termux on a phone; `tmux` keeps the build running if the
+   connection drops):
 
    ```bash
-   cd testimonia/deploy/oracle
-   echo "SITE_ADDRESS=<ip with dashes>.sslip.io" > .env     # e.g. 158-101-122-1.sslip.io, or your domain
+   git clone https://github.com/<you>/testimonia.git && cd testimonia/deploy/oracle && mkdir -p data
+   cat > .env <<EOF
+   SITE_ADDRESS=<ip with dashes>.sslip.io
+   TESTIMONIA_CORE_DB_URL=https://github.com/<you>/testimonia/releases/download/data-v1/core-public.db
+   EOF
    docker compose up -d --build
    ```
+
+   The first start downloads the database into `data/core.db`.
 
    Caddy obtains the HTTPS certificate on its own; the site is at `https://<ip with dashes>.sslip.io`. To
    update later: `git pull && docker compose up -d --build`.
