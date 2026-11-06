@@ -588,7 +588,7 @@ function Detail({ item, onClose }: { item: Item; onClose: () => void }) {
   );
 }
 
-function AuthorDetail({ a }: { a: TimelineAuthor }) {
+export function AuthorDetail({ a }: { a: TimelineAuthor }) {
   const works = [...a.works].sort((x, y) => y.citations - x.citations || x.title.localeCompare(y.title));
   return (
     <>
@@ -613,7 +613,7 @@ function AuthorDetail({ a }: { a: TimelineAuthor }) {
   );
 }
 
-function WorkRow({ w }: { w: TimelineWork }) {
+export function WorkRow({ w }: { w: TimelineWork }) {
   return (
     <li>
       {w.edition_id ? <Link to={`/library/${encodeURIComponent(w.edition_id)}/1`}>{w.title}</Link> : w.title}
