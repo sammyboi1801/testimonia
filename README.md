@@ -1,125 +1,150 @@
-# Testimonia
+<p align="center">
+  <img src="web/public/favicon.svg" width="84" height="84" alt="Testimonia logo: a Chi-Rho">
+</p>
 
-**An open-source Bible study application for the Old Testament, the New Testament, the early
-church, the manuscripts and the chronology that connects them — built entirely on open data.**
+<h1 align="center">Testimonia</h1>
 
-*Testimonia* were the collections of scriptural "witnesses" compiled by the earliest
-Christians. This project gathers every kind of witness to the biblical text into one place:
-the Hebrew and Greek texts and their ancient translations, the manuscripts that carry them
-(from the Dead Sea Scrolls and the early papyri to the great codices), and the writers of the
-first centuries who quoted, explained and debated them.
+<p align="center">
+  <strong>The Bible and its earliest witnesses.</strong><br>
+  An open-source study library for the Hebrew and Greek Scriptures, their translations, the manuscripts that
+  carry them, and the first Christian writers who quoted them. Built entirely on open data.
+</p>
 
-> **Status: alpha.** The reader, library, timeline, word study, search, notes and the study
-> assistant work; see [What you can do](#what-you-can-do). Data model: [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md).
+<p align="center">
+  <a href="LICENSE"><img alt="Code: MIT" src="https://img.shields.io/badge/code-MIT-9a5b2e"></a>
+  <a href="DATA_LICENSE.md"><img alt="Data: CC BY-SA 4.0" src="https://img.shields.io/badge/data-CC%20BY--SA%204.0-9a5b2e"></a>
+  <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3a332a">
+  <img alt="React 19" src="https://img.shields.io/badge/react-19-3a332a">
+  <img alt="Status: alpha" src="https://img.shields.io/badge/status-alpha-8b8072">
+</p>
 
-## What you can do
+<p align="center">
+  <a href="https://sammyboi1801.github.io/testimonia/"><strong>Website</strong></a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="docs/DEPLOY.md">Deploy</a> ·
+  <a href="CREDITS.md">Credits</a> ·
+  <a href="docs/DATA_MODEL.md">Data model</a>
+</p>
 
-- **Read** 13 translations side by side, interlinear Greek and Hebrew, with translators' footnotes,
-  red letters and read-aloud (verse by verse, continuing chapter to chapter).
-- **Study a verse**: variants, cross references, the church fathers who quote it, Jewish and Roman
-  writers (Josephus, Tacitus, Suetonius, Pliny, Lucian), Treasury notes and words with lexicons.
-- **Book pages** with an introduction, outline, chronology and how the early church read the book.
-- **Library** of early Christian writings as a bookshelf, an interactive timeline (milestones such as
-  the fall of the Second Temple; Ctrl+scroll zooms) or a century-by-century story, with Wikipedia
-  previews for authors, works, events and books.
-- **Notes and highlights** on verses and on words or phrases, kept in your browser (no account),
-  with export and import.
-- **Ask the assistant** with your own key: Anthropic, OpenAI, Gemini, OpenRouter, Groq, DeepSeek,
-  Mistral, any OpenAI-compatible endpoint, or local models (Ollama, LM Studio). It reads the
-  library through tools and cites what it finds; keys are never stored on the server.
-- Works on phones; colours, fonts, marks and panels are all adjustable in Settings.
+<p align="center">
+  <img src="docs/images/reader-interlinear.jpg" alt="Testimonia reading John 1 in interlinear, with the study panel showing each Greek word" width="100%">
+</p>
 
-## Build the database
+*Testimonia* were the collections of scriptural "witnesses" compiled by the earliest Christians. This project
+gathers every kind of witness to the biblical text in one place: the Hebrew and Greek texts and their ancient
+translations, the variants between the editions, and the writers of the first centuries who quoted, explained and
+debated them, each placed in time.
+
+## Features
+
+| | |
+|---|---|
+| **Read** | Thirteen translations side by side (KJV, Geneva, Tyndale, Douay–Rheims, Brenton's Septuagint, the Vulgate, WEB, BSB and more), aligned verse by verse, with an interlinear of every Greek and Hebrew word, the translators' own footnotes, red letters, and read-aloud that carries on from chapter to chapter. |
+| **Study a verse** | One panel per verse: where the printed editions differ and what each difference means, the church fathers who quoted it (pre-Nicene first), Josephus, Tacitus and other Jewish and Roman writers, cross references, and every word with its lexicon entry and grammar. |
+| **Library** | Early Christian writings as a bookshelf, an interactive timeline beside the events that shaped them (Ctrl + scroll to zoom), or a century-by-century story, with Wikipedia previews for writers, works, events and books. |
+| **Book pages** | An introduction, outline, setting and chronology for every book, and the passages the early church quoted most. |
+| **Notes** | Highlight verses, words or phrases and write notes. Everything stays in your browser: no account, with export and import. |
+| **Assistant** | Optional and bring-your-own-key: Anthropic, OpenAI, Gemini, OpenRouter, Groq, DeepSeek, Mistral, any OpenAI-compatible endpoint, or a model on your own machine (Ollama, LM Studio). It searches the library with tools and cites what it finds. Keys are never stored on the server. |
+| **Anywhere** | Works on phones; colours, fonts, verse marks and panels are adjustable, in light and dark. |
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/reader-variants-dark.jpg" alt="John 1:18 in dark mode, with the variants θεός and υἱός explained"></td>
+    <td width="50%"><img src="docs/images/library-timeline.jpg" alt="The library timeline of Jewish, Roman and Christian writers"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Variants explained: “God” or “Son” at John 1:18</sub></td>
+    <td align="center"><sub>The library on a timeline</sub></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="docs/images/book-page.jpg" alt="The book page for the Gospel of John: outline, chronology and most-quoted verses"></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><sub>A book page: outline, when it happens, and the verses the early church quoted most</sub></td>
+  </tr>
+</table>
+
+## Quick start
+
+Requirements: Python 3.11+, Node 20+ and a few GB of disk.
 
 ```bash
-pip install -e ".[dev]"
-python -m testimonia fetch --phase 0     # download the foundation sources (~560 MB, pinned versions)
-python -m testimonia build               # build core.db (atomic; validated before it replaces the old one)
-python -m testimonia info                # paths and row counts
+git clone https://github.com/sammyboi1801/testimonia.git && cd testimonia
+pip install -e .
+python -m testimonia fetch --phase 0      # download the sources (~560 MB, pinned versions)
+python -m testimonia build                # build the database (validated before it replaces the old one)
+cd web && npm ci && npm run build && cd ..
+python -m testimonia serve --open         # http://127.0.0.1:8765
 ```
 
-Data goes to `~/TestimoniaData` (override with `TESTIMONIA_DATA`). To reuse an existing BTB
-Obsidian vault instead of downloading it, add `BTB = 'path/to/BTB'` to
-`~/TestimoniaData/config.toml`.
+Data is kept outside the repository, in `~/TestimoniaData` (override with `TESTIMONIA_DATA`); see
+[`testimonia/config.py`](testimonia/config.py) for every setting. `python -m testimonia info` shows paths and row counts.
 
-## Run the app
+**Docker.** `docker build -t testimonia .` then
+`docker run -p 7860:7860 -v ~/TestimoniaData/build:/data/build testimonia` serves an existing database.
 
-```bash
-cd web && npm install && npm run build && cd ..   # build the interface once (needs Node 20+)
-python -m testimonia serve --open                 # http://127.0.0.1:8765
-```
+**Hosting it.** [`docs/DEPLOY.md`](docs/DEPLOY.md) covers a free, always-on setup (an Oracle Cloud Always Free VM,
+public through Tailscale Funnel or Caddy, with a one-command installer) and the static landing page in
+[`site/`](site/), which GitHub Pages publishes automatically.
 
-For interface development, run `python -m testimonia serve` and, in `web/`, `npm run dev`
-(Vite on http://localhost:5173 with hot reload, proxying `/api` to the Python server).
-
-To share it publicly for free (an Oracle Cloud Always Free VM, optionally with a Firebase or Vercel front end) or
-to run it in Docker, see [`docs/DEPLOY.md`](docs/DEPLOY.md).
-
-What the foundation build contains today:
+## What is in the database
 
 | Layer | Content |
 |---|---|
-| Translations | KJV + Apocrypha, WEB (with deuterocanon), BSB, ASV, YLT, Darby, Webster, LSV, Geneva 1599, Tyndale NT, Douay-Rheims, Brenton's Septuagint, Clementine Vulgate — all mapped onto one verse numbering with STEPBible's TVTMS rules, native numbering preserved |
+| Translations | KJV with Apocrypha, WEB (with deuterocanon), BSB, ASV, YLT, Darby, Webster, LSV, Geneva 1599, Tyndale NT, Douay–Rheims, Brenton's Septuagint, Clementine Vulgate; mapped onto one verse numbering with STEPBible's TVTMS rules, native numbering preserved; translators' footnotes from the USFM sources |
 | Original languages | Leningrad Codex reading text; every Greek NT and Hebrew/Aramaic OT word with lemma, gloss, morphology and morphemes |
-| Text criticism | ~15,500 variant units: which printed Greek editions differ (meaning, omission, word order, spelling) and Hebrew Ketiv/Qere and manuscript readings |
-| Lexicons | STEPBible brief lexicons, Abbott-Smith, LSJ, BDB; Greek & Hebrew morphology codes |
-| Study aids | 345k voted cross references, Treasury of Scripture Knowledge notes, pericope headings, OT quotations in the NT, 5,300-topic concordance, red letters |
-| Chronology | era, period, approximate date and reading order for every verse (BTB), six canon traditions, nine chronology systems |
+| Text criticism | About 15,500 variant units: where the printed Greek editions differ (meaning, omission, word order, spelling), Hebrew Ketiv/Qere and manuscript readings |
+| Lexicons | STEPBible brief lexicons, Abbott-Smith, LSJ, BDB; Greek and Hebrew morphology codes |
+| Early writers | Ante-Nicene and Nicene/Post-Nicene Fathers with their scripture citations linked to verses (local builds, see below); Josephus, Tacitus, Suetonius, Pliny and Lucian; patristic comments arranged by verse (about 55,000 in the shareable build) |
+| Study aids | 345,000 voted cross references, Treasury of Scripture Knowledge, pericope headings, Old Testament quotations in the New, a 5,300-topic concordance, red letters |
+| Chronology | Era, period, approximate date and reading order for every verse; dated writers, works and events; six canon traditions and nine chronology systems |
 
-## Focus
+## Data and licensing
 
-- **Old and New Testament** in the original languages, with the Septuagint, Vulgate and
-  historic English translations side by side.
-- **The pre-Nicene church** (to AD 325) as the default lens, with the major later fathers
-  (Athanasius, the Cappadocians, Chrysostom, Jerome, Augustine) and Aquinas available.
-- **Textual transmission**: variants, manuscripts, the Dead Sea Scrolls, and a *witness
-  timeline* showing who attests each reading, and when.
-- **Chronology** as a first-class feature, with competing chronologies (Ussher, Thiele, modern
-  scholarly datings) shown side by side and their uncertainty made explicit.
-
-## Planned features
-
-| Area | Highlights |
-|---|---|
-| Reader | linked parallel panes · interlinear · Hebrew/Greek with morphology · red letters |
-| Passage guide | variants · manuscripts containing the verse · church fathers citing it · cross references · parallels · OT in the NT · commentaries · people & places · scholarship |
-| Word study | lexicons (BDB, Abbott-Smith, LSJ, UBS) · semantic domains · every occurrence · Hebrew → Septuagint equivalents |
-| Library | apostolic fathers, apologists, church fathers, NT apocrypha, OT pseudepigrapha, Qumran texts — with every scripture citation linked |
-| Manuscripts | NT papyri & codices, LXX codices, Masoretic codices, Dead Sea Scrolls — dates, contents, transcriptions |
-| Context | timeline · atlas · kings & rulers · canon-history comparison · people/places/events pages |
-| Personal | Obsidian-compatible export · your own translation · reading plans |
-
-## Data
-
-Testimonia only uses **openly licensed data** (public domain, CC0, CC BY, CC BY-SA). The full
-list of datasets, with the credit line each licence requires, is in **[CREDITS.md](CREDITS.md)**
-(generated from [`sources/sources.yaml`](sources/sources.yaml), the single source of truth). Licensing rules are in
+Testimonia only ingests **openly licensed data**: public domain, CC0, CC BY or CC BY-SA. Every dataset and the
+credit line its licence requires is listed in **[CREDITS.md](CREDITS.md)**, generated from
+[`sources/sources.yaml`](sources/sources.yaml), the single source of truth. The rules are in
 [`DATA_LICENSE.md`](DATA_LICENSE.md).
 
-Major sources include the [Bruhman Translator's Bible](https://github.com/revjude/BTB),
-[STEPBible data](https://github.com/STEPBible/STEPBible-Data) (Tyndale House),
-[Open Scriptures Hebrew Bible](https://github.com/openscriptures/morphhb),
-[SBLGNT](https://github.com/Faithlife/SBLGNT), [MACULA](https://github.com/Clear-Bible),
-the [UBS open-licensed resources](https://github.com/ubsicap/ubs-open-license),
-[CNTR](https://github.com/Center-for-New-Testament-Restoration),
-[Open Greek and Latin](https://github.com/OpenGreekAndLatin),
-[Theographic](https://github.com/robertrouse/theographic-bible-metadata),
-[OpenBible.info](https://www.openbible.info/), [Pleiades](https://pleiades.stoa.org/) and
-[Wikidata](https://www.wikidata.org/).
+Used today: [STEPBible data](https://github.com/STEPBible/STEPBible-Data) (Tyndale House),
+[Open Scriptures Hebrew Bible](https://github.com/openscriptures/morphhb), [eBible.org](https://ebible.org/),
+the [Bruhman Translator's Bible](https://github.com/revjude/BTB), [OpenBible.info](https://www.openbible.info/),
+the [HistoricalChristianFaith commentaries](https://github.com/HistoricalChristianFaith/Commentaries-Database),
+[Perseus](https://www.perseus.tufts.edu/) and [Project Gutenberg](https://www.gutenberg.org/), and Wikipedia
+summaries shown live in the browser. The church fathers' texts come from [CCEL](https://www.ccel.org/) and are
+used in local builds only (`testimonia build --public` leaves them out).
+
+Planned: SBLGNT and the Byzantine text, CNTR and INTF transcriptions, MACULA, the UBS open resources, the
+Septuagint (Swete), Theographic, Pleiades and Wikidata.
+
+## Roadmap
+
+| Area | Next |
+|---|---|
+| Manuscripts | NT papyri and codices, LXX and Masoretic codices, the Dead Sea Scrolls: dates, contents, transcriptions, and links to the manuscript images for each verse |
+| Word study | Semantic domains and Hebrew → Septuagint equivalents |
+| Context | Atlas, kings and rulers, canon history, people, places and events pages |
+| Personal | Reading plans, Obsidian-compatible export, your own translation |
 
 ## Development
 
 ```bash
-python -m venv .venv && .venv/Scripts/activate      # Windows (use bin/activate elsewhere)
+python -m venv .venv && . .venv/Scripts/activate   # Windows; use .venv/bin/activate elsewhere
 pip install -e ".[dev]"
-pytest                                              # tests
-ruff check . && ruff format --check .               # lint + format
-mypy testimonia                                     # types
+pytest                                             # tests
+ruff check . && ruff format --check .              # lint and format
+mypy testimonia                                    # types
+python -m testimonia credits --check               # CREDITS.md matches sources.yaml
+
+cd web && npm ci
+npm run dev                                        # http://localhost:5173, proxying /api to the Python server
+npx tsc -b && npx vitest run                       # types and tests
 ```
 
-Data is kept outside the repository, in `~/TestimoniaData` by default (override with
-`TESTIMONIA_DATA`). See [`testimonia/config.py`](testimonia/config.py) for all settings.
+Issues and pull requests are welcome. New data must come from an openly licensed source and be declared in
+[`sources/sources.yaml`](sources/sources.yaml).
 
 ## Licence
 
-Code: [MIT](LICENSE). Data: see [DATA_LICENSE.md](DATA_LICENSE.md) — a built database is CC BY-SA 4.0.
+Code: [MIT](LICENSE). Data: a built database is CC BY-SA 4.0 as a combination of its sources; see
+[DATA_LICENSE.md](DATA_LICENSE.md) and [CREDITS.md](CREDITS.md).
