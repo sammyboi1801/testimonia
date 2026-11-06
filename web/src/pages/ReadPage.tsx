@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
+import { rememberReading } from "./HomePage";
 import { useChapter, useMeta } from "../api";
 import { Reader } from "../components/Reader";
 import { Mark } from "../components/Marks";
@@ -17,6 +18,7 @@ export function ReadPage() {
   const { settings, update } = useSettings();
   const meta = useMeta();
   const ch = Number(chapter);
+  useEffect(() => rememberReading(book, ch), [book, ch]);
   const needsWords = settings.mode === "interlinear" || settings.mode === "original";
   const editions = needsWords ? [...settings.editions, "tagnt", "tahot"] : settings.editions;
   const data = useChapter(book, ch, editions);
