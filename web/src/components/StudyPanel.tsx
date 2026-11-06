@@ -10,6 +10,7 @@ import { GospelParallels } from "./ReadingLinks";
 import { NOTE_KIND } from "./Footnotes";
 import { Html } from "./Html";
 import { VerseManuscripts } from "./Manuscripts";
+import { VerseEntities } from "./VerseEntities";
 import { VerseNote } from "./VerseNote";
 import { Mark } from "./Marks";
 import { PassageLink } from "./PassageLink";
@@ -236,6 +237,7 @@ function LinksTab({ g, books, onWord }: { g: VerseGuide; books: Book[]; onWord: 
   return (
     <>
       <GospelParallels osis={g.verse.osis} />
+      <VerseEntities osis={g.verse.osis} />
       {(quotes.length > 0 || quotedBy.length > 0) && (
         <Block title="Old ↔ New Testament" note={g.quotations.length}>
           {quotes.length > 0 && <p className="muted small">This verse quotes</p>}

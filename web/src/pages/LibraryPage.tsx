@@ -37,6 +37,9 @@ export function LibraryPage() {
               {v.label}
             </button>
           ))}
+          <Link to="/atlas" className="seg-link" title="Map of the places of the Bible">
+            Atlas
+          </Link>
         </div>
         <ReadingLinks />
         <Link to="/manuscripts" className="library-aside-link" title="Papyri, codices and Dead Sea Scrolls">

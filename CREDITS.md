@@ -7,7 +7,7 @@ Testimonia is built entirely on openly licensed data. This page lists every data
 uses, with the credit line its licence requires. A built `core.db` is distributed under
 **CC BY-SA 4.0** as a combination of these sources (see [DATA_LICENSE.md](DATA_LICENSE.md)).
 
-**47 sources** · 22 explicitly excluded
+**48 sources** · 22 explicitly excluded
 
 ## Summary
 
@@ -56,6 +56,7 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 | UBS open-licensed resources (dictionaries, parallels, HOTTP, routes, realia) | CC-BY-SA-4.0 | 3 |
 | HelloAO Free Use Bible API — public-domain commentaries | PD (Henry, JFB, Clarke, Gill, Keil-Delitzsch, Calvin); Tyndale Open Study Notes CC-BY-SA-4.0 | 4 |
 | Itiner-e — Roman road network | CC-BY-4.0 | 4 |
+| Natural Earth (land, coastlines, rivers and lakes, 1:10m) | PD | 4 |
 | OpenBible.info Bible Geocoding Data | CC-BY-4.0 | 4 |
 | Pleiades gazetteer of ancient places | CC-BY-3.0 | 4 |
 | Theographic Bible Metadata | CC-BY-SA-4.0 | 4 |
@@ -409,26 +410,35 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Credit:** Itiner-e, CC BY 4.0
 - **Used for:** `geo_feature`
 
+### Natural Earth (land, coastlines, rivers and lakes, 1:10m)
+
+- **Source:** <https://www.naturalearthdata.com/>
+- **Licence:** PD
+- **Credit:** Made with Natural Earth. Free vector and raster map data @ naturalearthdata.com (public domain)
+- **Pinned version:** fetched 2026-11-06
+
 ### OpenBible.info Bible Geocoding Data
 
 - **Source:** <https://github.com/openbibleinfo/Bible-Geocoding-Data>
 - **Licence:** CC-BY-4.0
 - **Credit:** Bible geocoding data from OpenBible.info, CC BY 4.0
-- **Used for:** `place`, `place_ref`
+- **Used for:** `place`, `place_ref`, `external_id`
+- **Pinned version:** fetched 2026-11-06
 
 ### Pleiades gazetteer of ancient places
 
 - **Source:** <https://pleiades.stoa.org/>
 - **Licence:** CC-BY-3.0
 - **Credit:** Pleiades, CC BY 3.0
-- **Used for:** `place`, `external_id`
+- **Used for:** `external_id`
 
 ### Theographic Bible Metadata
 
 - **Source:** <https://github.com/robertrouse/theographic-bible-metadata>
 - **Licence:** CC-BY-SA-4.0 *(ShareAlike)*
-- **Credit:** Theographic Bible Metadata by Robert Rouse, CC BY-SA 4.0
-- **Used for:** `person`, `person_relation`, `person_ref`, `place`, `place_ref`, `event`, `event_participant`, `event_ref`, `dating`, `verse_date`
+- **Credit:** Theographic Bible Metadata by Robert Rouse, CC BY-SA 4.0 (crediting its sources: STEPBible TIPNR, OpenBible.info, Pleiades, Easton's Bible Dictionary, F. N. Jones's chronology)
+- **Used for:** `person`, `person_relation`, `person_ref`, `event`, `event_participant`, `event_ref`, `dating`, `geo_feature`, `external_id`
+- **Pinned version:** fetched 2026-11-06
 
 ## Phase 5: Optional / future
 

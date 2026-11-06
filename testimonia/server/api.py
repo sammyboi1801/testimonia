@@ -557,7 +557,8 @@ def timeline(request: Request) -> dict[str, Any]:
     )
     events = s.all(
         "SELECT e.id, e.title, e.kind, e.description, d.start_year AS start, d.end_year AS end, d.date_kind, d.circa "
-        "FROM event e JOIN dating d ON d.entity_type = 'event' AND d.entity_id = e.id ORDER BY d.start_year"
+        "FROM event e JOIN dating d ON d.entity_type = 'event' AND d.entity_id = e.id "
+        "WHERE e.source_id IS NOT 'theographic' ORDER BY d.start_year"  # biblical events have their own pages
     )
     major = {
         r["uri"].split(":", 1)[1]

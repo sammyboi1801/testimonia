@@ -21,6 +21,8 @@ MODULES = (
     "parallels",
     "macula",
     "manuscripts",
+    "geography",
+    "theographic",
 )
 
 __all__ = ["MODULES", "STEPS", "Context", "IngestError", "Step", "load_all", "step"]

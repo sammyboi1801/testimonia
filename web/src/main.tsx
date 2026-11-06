@@ -34,10 +34,11 @@ import "./study.css";
 import "./reading.css";
 import "./words.css";
 import "./manuscripts.css";
+import "./geo.css";
 import "./mobile.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StrictMode } from "react";
+import { lazy, StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -61,6 +62,13 @@ import { PlanPage, PlansPage } from "./pages/PlansPage";
 import { ParallelPage, ParallelsPage } from "./pages/ParallelsPage";
 import { NotesProvider } from "./notes";
 import { SettingsProvider } from "./settings";
+
+// the atlas brings Leaflet with it, so it and the place/person/event pages load only when opened
+const AtlasPage = lazy(() => import("./pages/AtlasPage"));
+const PlacePage = lazy(() => import("./pages/EntityPages").then((m) => ({ default: m.PlacePage })));
+const PersonPage = lazy(() => import("./pages/EntityPages").then((m) => ({ default: m.PersonPage })));
+const EventPage = lazy(() => import("./pages/EntityPages").then((m) => ({ default: m.EventPage })));
+const loading = <div className="loading">Loading…</div>;
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
 
@@ -89,6 +97,10 @@ function App() {
           <Route path="/plans/:id" element={<PlanPage />} />
           <Route path="/parallels" element={<ParallelsPage />} />
           <Route path="/parallels/:id" element={<ParallelPage />} />
+          <Route path="/atlas" element={<Suspense fallback={loading}><AtlasPage /></Suspense>} />
+          <Route path="/place/:id" element={<Suspense fallback={loading}><PlacePage /></Suspense>} />
+          <Route path="/person/:id" element={<Suspense fallback={loading}><PersonPage /></Suspense>} />
+          <Route path="/event/:id" element={<Suspense fallback={loading}><EventPage /></Suspense>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ErrorBoundary>

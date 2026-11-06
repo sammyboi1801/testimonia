@@ -201,6 +201,17 @@ One `person` table for biblical figures, church fathers, rulers, heretics, rabbi
 or Irenaeus, Marcus Aurelius and the martyrs of Lyon together. `office_holding` models
 successions: kings of Israel/Judah, high priests, Roman emperors, bishops of Rome/Alexandria/Antioch.
 
+Places come from OpenBible.info (`geography` step): id = its friendly id slugged (`jerusalem`,
+`antioch-1`), coordinates of the best-scored identification, its score in `entity_attr`
+`geo.confidence` (0–1), and Pleiades / Wikidata / Wikipedia / OpenBible ids in `external_id`.
+Biblical people and events come from Theographic (`theographic` step, after `history`): people are
+`kind = 'biblical'` with readable ids when the name is unambiguous (`david`, `mary-mother-of-jesus`),
+otherwise `<name>-<theographic id>`; ids already used by church history are never reused.
+Family ties are `person_relation` (`father_of`, `mother_of`, symmetric `spouse_of`, `sibling_of`,
+`half_sibling_of` stored once); birth/death/visit places and event locations are `entity_link`
+(`born_at`, `died_at`, `visited`, `located_at`; events also `part_of`, `follows`); event dates are
+`dating` rows under the `jones` system. Paul's journeys are `geo_feature` routes `paul-journey-1…4`.
+
 ### 6.7 Chronology — `chronology_system`, `dating`, `verse_date`, `period`, `verse_period`
 Dates are never a single column on an entity. They are rows in `dating`, each under a
 **chronology system** and with an explicit **kind**:
