@@ -7,13 +7,24 @@ import type { Timeline, TimelineAuthor, TimelineEvent, TimelineWork } from "../t
 import { WikiCard } from "./Wiki";
 
 type Range = [number, number];
-const PRESETS: { label: string; range: Range }[] = [
-  { label: "Jesus to Nicaea", range: [-40, 345] },
-  { label: "First five centuries", range: [-60, 520] },
-  { label: "Maccabees to Chalcedon", range: [-180, 470] },
-  { label: "Everything", range: [-300, 1320] },
+/** Each preset picks a period and only the layers that matter for it, so the timeline stays uncluttered. */
+const PRESETS: { label: string; range: Range; layers: string[] }[] = [
+  { label: "Kings of Israel", range: [-1060, -530], layers: ["events", "rulers"] },
+  { label: "Exile to Maccabees", range: [-620, -100], layers: ["events", "rulers"] },
+  { label: "New Testament", range: [-45, 110], layers: ["events", "rulers", "outside", "fathers"] },
+  { label: "Jesus to Nicaea", range: [-40, 345], layers: ["events", "fathers", "outside"] },
+  { label: "First five centuries", range: [-60, 520], layers: ["events", "fathers"] },
+  { label: "Everything", range: [-1060, 1320], layers: ["events", "rulers", "fathers"] },
 ];
-const LIMITS: Range = [-320, 1330];
+const DEFAULT_PRESET = 3; // Jesus to Nicaea
+const LAYERS: { id: string; label: string }[] = [
+  { id: "events", label: "Events" },
+  { id: "rulers", label: "Kings & rulers" },
+  { id: "fathers", label: "Church fathers" },
+  { id: "outside", label: "Jewish & Roman writers" },
+  { id: "anonymous", label: "Anonymous writings & councils" },
+];
+const LIMITS: Range = [-1080, 1330];
 const LANE = 26;
 
 type Item =
@@ -46,19 +57,28 @@ function groups(t: Timeline): Group[] {
   ];
 }
 
-/** Kings, emperors and governors of the realms that ruled Judaea (from /rulers; loaded when the lane is shown). */
-function rulersGroup(data: Rulers | undefined): Group {
-  const items: Item[] = [];
-  for (const realm of data?.realms ?? []) {
-    if (realm.kind === "named" || realm.end < LIMITS[0]) continue; // high priests and the like stay on /rulers
-    for (const r of realm.rulers) {
-      const when = datesFor(r, realm, null);
-      if (!when) continue;
-      const [start, end] = spanOf(when.d);
-      items.push({ kind: "ruler", id: `r:${r.id}`, r, realm, d: when.d, start, end, label: r.name.replace(/\s*\(.*\)$/, "") });
-    }
+/** Kings, emperors and governors (from /rulers; loaded when the layer is on). Collapsed: two lanes, the land's own
+ *  rulers and the empires over it. Expanded: one lane per realm. */
+function rulersGroups(data: Rulers | undefined, expanded: boolean): Group[] {
+  const item = (realm: Realm, r: Ruler): Item | null => {
+    const when = datesFor(r, realm, null);
+    if (!when) return null;
+    const [start, end] = spanOf(when.d);
+    return { kind: "ruler", id: `r:${r.id}`, r, realm, d: when.d, start, end, label: r.name.replace(/\s*\(.*\)$/, "") };
+  };
+  const realms = data?.realms ?? [];
+  if (expanded) {
+    return realms.map((realm) => ({
+      id: `rulers:${realm.id}`,
+      label: realm.name,
+      items: realm.rulers.map((r) => item(realm, r)).filter((x): x is Item => x !== null),
+    }));
   }
-  return { id: "rulers", label: "Rulers", items };
+  const of = (kind: string) => realms.filter((r) => r.kind === kind).flatMap((realm) => realm.rulers.map((r) => item(realm, r)));
+  return [
+    { id: "rulers:local", label: "Kings & governors", items: of("local").filter((x): x is Item => x !== null) },
+    { id: "rulers:empires", label: "Empires", items: of("overlord").filter((x): x is Item => x !== null) },
+  ];
 }
 
 /** Greedy lane packing on the current scale: an item reaches from its start to the end of its label. */
@@ -123,14 +143,23 @@ const ease = (t: number) => 1 - (1 - t) ** 3;
 
 export function TimelineView() {
   const { data, isLoading, error } = useTimeline();
-  const [range, setRange] = useState<Range>(PRESETS[0]!.range);
+  const [range, setRange] = useState<Range>(PRESETS[DEFAULT_PRESET]!.range);
   const [selected, setSelected] = useState<Item | null>(null);
   const [hover, setHover] = useState<{ item: Item; x: number; y: number } | null>(null);
   const hoverTimer = useRef<number | undefined>(undefined);
   const cursor = useRef<HTMLSpanElement>(null);
-  const [hidden, setHidden] = useState<Set<string>>(new Set(["anonymous", "rulers"]));
-  const rulers = useRulers(!hidden.has("rulers"));
-  const [showEvents, setShowEvents] = useState(true);
+  // which layers are on (events, rulers, fathers, outside, anonymous); presets set them, the Layers menu adjusts
+  const [layers, setLayers] = useState<Set<string>>(new Set(PRESETS[DEFAULT_PRESET]!.layers));
+  const [allRealms, setAllRealms] = useState(false);
+  const rulers = useRulers(layers.has("rulers"));
+  const showEvents = layers.has("events");
+  const toggleLayer = (id: string) =>
+    setLayers((h) => {
+      const n = new Set(h);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
   const [find, setFind] = useState("");
   const box = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLDivElement>(null);
@@ -179,7 +208,10 @@ export function TimelineView() {
   const span = to - from;
   const x = (y: number) => ((y - from) / span) * width;
   const yearAt = (px: number) => from + (px / width) * span;
-  const all = useMemo(() => (data ? [rulersGroup(rulers.data), ...groups(data)] : []), [data, rulers.data]);
+  const all = useMemo(
+    () => (data ? [...(layers.has("rulers") ? rulersGroups(rulers.data, allRealms) : []), ...groups(data).filter((g) => layers.has(g.id))] : []),
+    [data, rulers.data, layers, allRealms],
+  );
   const everything = useMemo(() => all.flatMap((g) => g.items), [all]);
   const milestones = useMemo(() => (data?.events ?? []).filter((e) => e.major), [data]);
   const minorEvents = useMemo(() => (data?.events ?? []).filter((e) => !e.major), [data]);
@@ -329,7 +361,8 @@ export function TimelineView() {
 
   const step = tickStep(span, width);
   const ticks: number[] = [];
-  for (let y = Math.ceil(from / step) * step; y <= to; y += step) ticks.push(y);
+  // round years on both sides of the era: astronomical year -999 is 1000 BC (year 0 is 1 BC)
+  for (let y = Math.ceil(from / step) * step; y <= to; y += step) ticks.push(y < 0 ? y + 1 : y);
   const placedMilestones = pack(milestones.map(asItem), x).filter(({ item }) => x(item.end) > -150 && x(item.start) < width + 20);
   const milestoneLanes = Math.min(3, Math.max(1, ...placedMilestones.map((p) => p.lane + 1)));
   // level of detail: the wider the view, the fewer (and more important) names
@@ -342,7 +375,14 @@ export function TimelineView() {
         <div className="tl-toolbar">
           <div className="seg">
             {PRESETS.map((p) => (
-              <button key={p.label} onClick={() => animateTo(p.range)}>
+              <button
+                key={p.label}
+                onClick={() => {
+                  setLayers(new Set(p.layers));
+                  setAllRealms(false);
+                  animateTo(p.range);
+                }}
+              >
                 {p.label}
               </button>
             ))}
@@ -366,29 +406,23 @@ export function TimelineView() {
               <option key={i.id} value={i.label} />
             ))}
           </datalist>
-          <span className="tl-groups">
-            <label>
-              <input type="checkbox" checked={showEvents} onChange={() => setShowEvents(!showEvents)} />
-              Events
-            </label>
-            {all.map((g) => (
-              <label key={g.id}>
-                <input
-                  type="checkbox"
-                  checked={!hidden.has(g.id)}
-                  onChange={() =>
-                    setHidden((h) => {
-                      const n = new Set(h);
-                      if (n.has(g.id)) n.delete(g.id);
-                      else n.add(g.id);
-                      return n;
-                    })
-                  }
-                />
-                {g.label}
-              </label>
-            ))}
-          </span>
+          <details className="tl-layers">
+            <summary>Layers · {layers.size}</summary>
+            <div className="tl-layers-menu">
+              {LAYERS.map((l) => (
+                <label key={l.id}>
+                  <input type="checkbox" checked={layers.has(l.id)} onChange={() => toggleLayer(l.id)} />
+                  {l.label}
+                </label>
+              ))}
+              {layers.has("rulers") && (
+                <label className="tl-layers-sub">
+                  <input type="checkbox" checked={allRealms} onChange={() => setAllRealms(!allRealms)} />
+                  Rulers: every realm in its own lane
+                </label>
+              )}
+            </div>
+          </details>
         </div>
 
         <div
@@ -486,7 +520,7 @@ export function TimelineView() {
                 <span />
               </span>
               {all
-                .filter((g) => !hidden.has(g.id))
+                .filter((g) => g.items.length > 0)
                 .map((g) => {
                   const inView = g.items.filter((item) => x(item.end) > -260 && x(item.start) < width + 50);
                   const ranked = g.id === "outside" ? inView : [...inView].sort((a, b) => (weight.get(b.id) ?? 0) - (weight.get(a.id) ?? 0));

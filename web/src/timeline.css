@@ -29,6 +29,22 @@
 .tl-groups { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--ink-soft); }
 .tl-groups label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
 .tl-groups input { accent-color: var(--accent); }
+/* layers: one small menu instead of a row of checkboxes */
+.tl-layers { position: relative; font-size: 12.5px; }
+.tl-layers > summary {
+  list-style: none; cursor: pointer; padding: 3px 10px; border: 1px solid var(--rule); border-radius: var(--pill);
+  color: var(--ink-soft); background: var(--panel); white-space: nowrap;
+}
+.tl-layers > summary::-webkit-details-marker { display: none; }
+.tl-layers[open] > summary { border-color: var(--accent); color: var(--ink); }
+.tl-layers-menu {
+  position: absolute; z-index: 20; top: calc(100% + 4px); right: 0; min-width: 240px; padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 6px; background: var(--panel); border: 1px solid var(--rule);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.tl-layers-menu label { display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--ink); }
+.tl-layers-menu input { accent-color: var(--accent); }
+.tl-layers-menu .tl-layers-sub { margin-left: 20px; color: var(--ink-soft); font-size: 12px; }
 .tl-hint { margin: 22px 0 0; }
 .tl-find {
   width: 230px; padding: 4px 9px; font: inherit; font-size: 13px; color: var(--ink);
