@@ -26,7 +26,10 @@
 .rl-zoom .muted { margin-left: 6px; font-variant-numeric: lining-nums; }
 
 /* lanes */
-.rl-chart { border: 1px solid var(--rule); border-radius: var(--radius); background: var(--panel); overflow: hidden; }
+.rl-chart { border: 1px solid var(--rule); border-radius: var(--radius); background: var(--panel); overflow-x: auto; overflow-y: hidden; }
+.rl-chart-inner { min-width: 100%; }
+/* long periods are wider than the screen: the realm names stay put while the years scroll */
+.rl-lane-name { position: sticky; left: 0; z-index: 1; }
 .rl-axis-row, .rl-lane { display: grid; grid-template-columns: 168px minmax(0, 1fr); }
 .rl-axis-row { position: sticky; top: 0; z-index: 2; background: var(--panel); border-bottom: 1px solid var(--rule); }
 .rl-axis { position: relative; height: 24px; }

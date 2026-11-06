@@ -218,8 +218,11 @@ function Chart({ realms, range, system, sel, onPick }: { realms: Realm[]; range:
   const pct = (y: number) => ((y - lo) / span) * 100;
   const marks = ticks(lo, hi);
 
+  // at least ~3 px a year, so reigns keep room for their names; wider periods scroll sideways
+  const minWidth = 168 + span * 3;
   return (
     <div className="rl-chart" role="group" aria-label="Rulers on a time axis">
+      <div className="rl-chart-inner" style={{ width: `max(100%, ${minWidth}px)` }}>
       <div className="rl-axis-row">
         <span className="rl-lane-name" />
         <div className="rl-axis" ref={box}>
@@ -287,6 +290,7 @@ function Chart({ realms, range, system, sel, onPick }: { realms: Realm[]; range:
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
