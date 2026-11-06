@@ -7,7 +7,7 @@ Testimonia is built entirely on openly licensed data. This page lists every data
 uses, with the credit line its licence requires. A built `core.db` is distributed under
 **CC BY-SA 4.0** as a combination of these sources (see [DATA_LICENSE.md](DATA_LICENSE.md)).
 
-**41 sources** · 22 explicitly excluded
+**42 sources** · 22 explicitly excluded
 
 ## Summary
 
@@ -25,6 +25,7 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 | Testimonia curated tables (this repository, curated/) | CC-BY-SA-4.0 | 0 |
 | CCEL ThML — Ante-Nicene Fathers 1–9, Nicene & Post-Nicene Fathers series 1 & 2 | PD (translations 1885–1900) | 1 |
 | HistoricalChristianFaith Commentaries-Database | PD (public-domain dedication) | 1 |
+| HistoricalChristianFaith Commentaries-Database — authors after AD 451 | PD (public-domain dedication; some excerpts claimed as fair use) | 1 |
 | M. R. James, The Apocryphal New Testament (1924) | PD (US since 2020; author d. 1936) | 1 |
 | Mark M. Mattison public-domain translations (gospels.net) | PD (explicit public-domain dedication on each page) | 1 |
 | Open Greek and Latin — First1KGreek | CC-BY-SA-4.0 | 1 |
@@ -158,6 +159,8 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Licence:** PD (translations 1885–1900)
 - **Credit:** Philip Schaff (ed.), Ante-Nicene / Nicene and Post-Nicene Fathers; digital text courtesy of the Christian Classics Ethereal Library
 - **Used for:** `work`, `work_edition`, `work_section`, `citation`, `person`
+- **Pinned version:** fetched 2026-11-06
+- **Status:** local builds only — not included in published databases
 
 ### HistoricalChristianFaith Commentaries-Database
 
@@ -165,6 +168,15 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Licence:** PD (public-domain dedication)
 - **Credit:** Historical Christian Faith Commentaries Database (public domain)
 - **Used for:** `commentary`, `commentary_entry`, `person`
+- **Pinned version:** git 992bec0d71
+
+### HistoricalChristianFaith Commentaries-Database — authors after AD 451
+
+- **Source:** <https://github.com/HistoricalChristianFaith/Commentaries-Database>
+- **Licence:** PD (public-domain dedication; some excerpts claimed as fair use)
+- **Credit:** Historical Christian Faith Commentaries Database
+- **Used for:** `commentary`, `commentary_entry`, `person`
+- **Status:** local builds only — not included in published databases
 
 ### M. R. James, The Apocryphal New Testament (1924)
 
@@ -228,6 +240,8 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Licence:** PD
 - **Credit:** Catena Aurea, trans. J.H. Newman (1841), public domain
 - **Used for:** `commentary`, `commentary_entry`
+- **Pinned version:** fetched 2026-11-06
+- **Status:** local builds only — not included in published databases
 
 ### Wikisource (selected PD texts)
 

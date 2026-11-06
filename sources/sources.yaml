@@ -191,6 +191,82 @@ sources:
     name: CCEL ThML — Ante-Nicene Fathers 1–9, Nicene & Post-Nicene Fathers series 1 & 2
     url: https://www.ccel.org/
     download: "https://www.ccel.org/ccel/schaff/{anf01..anf09,npnf101..npnf114,npnf201..npnf214}.xml — fetched on the user's machine at build time"
+    public: false   # local use only until CCEL grants permission to redistribute derived data
+    fetch:
+      - http: https://www.ccel.org/ccel/schaff/anf01.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/anf02.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/anf03.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/anf04.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/anf05.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/anf06.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/anf07.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/anf08.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/anf09.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf101.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf102.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf103.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf104.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf105.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf106.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf107.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf108.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf109.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf110.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf111.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf112.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf113.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf114.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf201.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf202.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf203.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf204.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf205.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf206.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf207.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf208.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf209.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf210.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf211.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf212.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf213.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/schaff/npnf214.xml
+        target: ccel
     license: PD (translations 1885–1900)
     attribution: "Philip Schaff (ed.), Ante-Nicene / Nicene and Post-Nicene Fathers; digital text courtesy of the Christian Classics Ethereal Library"
     feeds: [work, work_edition, work_section, citation, person]
@@ -203,19 +279,45 @@ sources:
   - id: hcf-commentaries
     name: HistoricalChristianFaith Commentaries-Database
     url: https://github.com/HistoricalChristianFaith/Commentaries-Database
-    download: https://github.com/HistoricalChristianFaith/Commentaries-Database/releases/download/latest/commentaries.sqlite
+    download: git clone (pinned commit; the release asset is rebuilt daily so it is not reproducible)
+    fetch:
+      - git: https://github.com/HistoricalChristianFaith/Commentaries-Database
+        target: hcf-commentaries
     license: PD (public-domain dedication)
     attribution: "Historical Christian Faith Commentaries Database (public domain)"
     feeds: [commentary, commentary_entry, person]
     phase: 1
-    notes: Fathers → Aquinas → Reformers, keyed by verse, with years. EXCLUDE authors whose excerpts are claimed as fair use (modern copyrighted authors) — filter by year < 1928 and the FAIR USE list.
+    notes: Patristic authors up to AD 451 (overwhelmingly from the public-domain ANF/NPNF translations). Later authors are the separate source hcf-commentaries-later; authors after 1900 are never imported.
+
+  - id: hcf-commentaries-later
+    name: HistoricalChristianFaith Commentaries-Database — authors after AD 451
+    url: https://github.com/HistoricalChristianFaith/Commentaries-Database
+    download: same checkout as hcf-commentaries
+    license: PD (public-domain dedication; some excerpts claimed as fair use)
+    attribution: "Historical Christian Faith Commentaries Database"
+    public: false   # translations of later authors may be modern or machine-made; not yet verified per excerpt
+    feeds: [commentary, commentary_entry, person]
+    phase: 1
+    fetch:
+      - git: https://github.com/HistoricalChristianFaith/Commentaries-Database
+        target: hcf-commentaries
+    notes: >
+      Medieval and early-modern authors (452–1900) and undated pseudonymous works. Local builds only until the
+      translations behind these excerpts are checked; authors after 1900 are never imported.
 
   - id: catena-aurea
     name: Thomas Aquinas, Catena Aurea (Newman translation, 1841)
     url: https://www.ccel.org/ccel/aquinas/catena1.xml
     download: as ccel-schaff (build-time fetch) or Wikisource
+    public: false   # CCEL-hosted digital text: local use only for now
+    fetch:
+      - http: https://www.ccel.org/ccel/aquinas/catena1.xml
+        target: ccel
+      - http: https://www.ccel.org/ccel/aquinas/catena2.xml
+        target: ccel
     license: PD
     attribution: "Catena Aurea, trans. J.H. Newman (1841), public domain"
+    notes: CCEL hosts ThML for vol. 1 (Matthew) and vol. 2 (Mark) only; Luke and John to come from Wikisource.
     feeds: [commentary, commentary_entry]
     phase: 1
 

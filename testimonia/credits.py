@@ -54,6 +54,8 @@ def _source_block(s: Source, version: str) -> list[str]:
         lines.append(f"- **Pinned version:** {version}")
     if s.verify:
         lines.append("- **Status:** licence/quality under verification — excluded from public builds")
+    elif not s.public:
+        lines.append("- **Status:** local builds only — not included in published databases")
     if s.editions:
         lines.append("- **Editions:**")
         for eid, info in s.editions.items():

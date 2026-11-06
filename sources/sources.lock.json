@@ -1,5 +1,10 @@
 {
   "items": {
+    "git|https://github.com/HistoricalChristianFaith/Commentaries-Database|hcf-commentaries|": {
+      "commit": "992bec0d71c611946a595f2746cbfa119c5ac06c",
+      "fetched_at": "2026-11-06T01:04:19+00:00",
+      "source": "hcf-commentaries"
+    },
     "git|https://github.com/STEPBible/STEPBible-Data|stepbible-data|": {
       "commit": "5de0a47f35f0fc13dfe1430d104e5db8a4285f9c",
       "fetched_at": "2026-11-05T23:55:40+00:00",
@@ -99,6 +104,240 @@
       "sha256": "47e777ddaf033ad023a04b80a863291be72f655a227f29606be038177743234a",
       "size": 732065,
       "source": "ebible"
+    },
+    "http|https://www.ccel.org/ccel/aquinas/catena1.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:05:08+00:00",
+      "sha256": "943a6b5fd668ef021877e99f210d96b84abbbe81212fe5627c6bb206f9ce1618",
+      "size": 3021275,
+      "source": "catena-aurea"
+    },
+    "http|https://www.ccel.org/ccel/aquinas/catena2.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:05:08+00:00",
+      "sha256": "69c8f2d198186de50e444c6a618dd3de24d3b89e8af879042b06c5a46c89168f",
+      "size": 971399,
+      "source": "catena-aurea"
+    },
+    "http|https://www.ccel.org/ccel/schaff/anf01.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:21+00:00",
+      "sha256": "8012ea0e35b497d2fbd783f9d4fd7b3a27d98c6dc66fd427b50d7312e6dd45af",
+      "size": 4511814,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/anf02.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:21+00:00",
+      "sha256": "99cb6b19b1cf7df49546ea73e3b313807ac6d7d84702c1209675a7c34456318a",
+      "size": 4980135,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/anf03.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:22+00:00",
+      "sha256": "a6eee75d691b7a3dfe045bb2998ad01c7f1b5c17d46ec58606678e7aeea82a35",
+      "size": 6246883,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/anf04.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:23+00:00",
+      "sha256": "240b26390c16fb0a7683b6ce6076e86f0d387c4e43fa88f079d9600f385acaf0",
+      "size": 5759964,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/anf05.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:24+00:00",
+      "sha256": "a0623805b4c825198bf4542a4976c58f755808a531fb72b7cb481633ebb59744",
+      "size": 5795506,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/anf06.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:25+00:00",
+      "sha256": "620c7626c3ba4120d55bfaf569da947b3d10b440dc72b2239be3cf1985a13a07",
+      "size": 4639247,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/anf07.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:26+00:00",
+      "sha256": "2a06bbed738de15a688512d4f51c9f28b6543e33284cfa2c28d55632952e8d83",
+      "size": 5451478,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/anf08.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:27+00:00",
+      "sha256": "2e18deb94f36104f63186b4247f01bc2610f76452b02d885341360664aba57fe",
+      "size": 5673295,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/anf09.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:27+00:00",
+      "sha256": "6a3932956be998903672d451fc3a0901b5da8ebecce85273bb6513ae9d7df09f",
+      "size": 4647627,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf101.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:27+00:00",
+      "sha256": "5a251ba0e3ef934821f3998ba1e3ab52ea40dae02ced15fbd36bb111fd81afc0",
+      "size": 4837387,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf102.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:28+00:00",
+      "sha256": "b8ca21dfa7d553681651f85197064b0fe52ae6c17e5e17252df9301536a4ae2a",
+      "size": 4137798,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf103.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:28+00:00",
+      "sha256": "410f240f8105bb6097316a54a867fa5a4ae02c0d3d03606aefc2df71f5bfc455",
+      "size": 3842341,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf104.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:29+00:00",
+      "sha256": "978cdefc45de5bd5bce3aecb0f8e5bbd27129400f531c0c7b6dee88b17c677b9",
+      "size": 4362836,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf105.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:29+00:00",
+      "sha256": "224f0e6a188ddfe691c1433c8db9a883755a9f030b71fede644d4af6c18ee63f",
+      "size": 4501690,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf106.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:30+00:00",
+      "sha256": "3710c6985a8dfc4e4ffafc461a7a8550db609b0506535453dac252f2aa55b604",
+      "size": 4680096,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf107.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:30+00:00",
+      "sha256": "75d52f4c31dde0959974256b3f5d84394b7b96fcd2883e78a3d32e0b66c5869a",
+      "size": 3694413,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf108.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:31+00:00",
+      "sha256": "87b60e90917e69f03c75955517fc996a0e6d22dc9862365b45c308e70e5bf784",
+      "size": 6222968,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf109.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:31+00:00",
+      "sha256": "6d0887393b4d197d7784cbea989aeb422d7e38f55711b4c4d4af85e3de680175",
+      "size": 3017592,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf110.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:32+00:00",
+      "sha256": "e110c98b1f444147bf7baf79e46e56ae6c6a1f0b2983e6fc52f2356fac7f858f",
+      "size": 3956654,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf111.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:33+00:00",
+      "sha256": "46072a7fefb80b4b7ea68544b46c13fc1785bd29d99834fd2f867f8aa5e14f08",
+      "size": 5349065,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf112.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:33+00:00",
+      "sha256": "b8b345e060625cdf495e888322d88e922f66e686863e818a978204c5f564a4dd",
+      "size": 3253154,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf113.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:33+00:00",
+      "sha256": "d62c7c82b262c738739090ffaf5473aa5a76dbadf62ebee0dccac8c4a7db4762",
+      "size": 4441248,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf114.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:34+00:00",
+      "sha256": "b130406978fbceb7bcd0774b0e8b09905f35a020a2300c1baf02f314a2d5a70a",
+      "size": 4728349,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf201.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:35+00:00",
+      "sha256": "da92679dcdd452c10dab212ee4168be1d37f89f758dae8301821a96d49a261c9",
+      "size": 5624937,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf202.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:35+00:00",
+      "sha256": "0139e8dcea6d40c3b1a5e046f3d45bdf6d1b30c503461d7f29f60309b4f2015c",
+      "size": 3292641,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf203.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:35+00:00",
+      "sha256": "f2683481bded09cf90369589dd40330e231c83e6dbd4cb1aec730c9b90f9ec3a",
+      "size": 4264937,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf204.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:36+00:00",
+      "sha256": "bd625a0fa4f5ddd4b2fa13fcee753de8832ea4b316625e0e06454beb81cfa652",
+      "size": 5809854,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf205.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:36+00:00",
+      "sha256": "43e87ed232457fd2d5862f72dd2d5d84fe1e8b69f4c3eec839bad04579327bf3",
+      "size": 4225695,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf206.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:37+00:00",
+      "sha256": "6bf37affb240f5a775995ab2353c00569b34990130c98649a358f30f37f41f8d",
+      "size": 4444300,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf207.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:37+00:00",
+      "sha256": "3ac73f4179c0b7d6e66e6fea04ae572e64c0e4a80e8fa38980b40366c8a13928",
+      "size": 4247548,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf208.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:38+00:00",
+      "sha256": "95cf3dafefccec80e0949a03c7f1f605da293302d0dc7a8bd62a4e711a0c5532",
+      "size": 3303323,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf209.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:38+00:00",
+      "sha256": "b07e2fac0851444a42d2bbd11d39eb7384c518f6fd79e64b7f7bdc404e8a3cc7",
+      "size": 3088610,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf210.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:39+00:00",
+      "sha256": "c6f1a9d66653852d8b743c84a613c72c521dfb1b05602f0a2eff400c17665ee8",
+      "size": 3837030,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf211.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:39+00:00",
+      "sha256": "4ca2fa69fc584c8a697884454a3d95453b044e7548b48ff44a1d95605741a5b2",
+      "size": 4045340,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf212.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:40+00:00",
+      "sha256": "f701b4ce5196bc5890e50adabce4900cd07b803f3221115a7cce526ae0a95570",
+      "size": 3461929,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf213.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:40+00:00",
+      "sha256": "323ecfb6470854de378fdf47375b2e15b108e72559bbe3167da9c37500bbf2ae",
+      "size": 2246124,
+      "source": "ccel-schaff"
+    },
+    "http|https://www.ccel.org/ccel/schaff/npnf214.xml|ccel|": {
+      "fetched_at": "2026-11-06T01:04:40+00:00",
+      "sha256": "4ae3cb29edcb7b8e58bb9246049243c464b6839f88f6730f98b80122770b9bb4",
+      "size": 3196008,
+      "source": "ccel-schaff"
     }
   },
   "version": 1

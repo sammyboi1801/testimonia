@@ -120,7 +120,7 @@ def build(
         ctx = Context(con=con, manifest=manifest, public=public)
         for st in steps:
             blocked = [s for s in st.sources if public and not _public_ok(manifest.get(s))]
-            if blocked:
+            if blocked and len(blocked) == len(st.sources):
                 log.info("· %-28s skipped (not cleared for public builds: %s)", st.id, ", ".join(blocked))
                 report.steps.append(StepResult(st.id, 0.0, 0, skipped="public"))
                 continue
@@ -140,6 +140,11 @@ def build(
             res = StepResult(st.id, time.monotonic() - t0, _total_rows(con) - before)
             report.steps.append(res)
             log.info("  ✓ %s rows in %.1fs", f"{res.rows:,}", res.seconds)
+
+        if public:
+            with db.bulk_load(con):
+                removed = purge_non_public(con)
+            log.info("· public build: removed %s rows from sources not cleared for redistribution", f"{removed:,}")
 
         log.info("· indexing & validating")
         from .ingest import finalize
@@ -179,6 +184,41 @@ def build(
 
 def _public_ok(src: sources.Source) -> bool:
     return src.public and not src.verify
+
+
+#: Tables whose rows belong to a parent row's source rather than carrying source_id themselves:
+#: (child table, child column, parent table, parent key)
+_DEPENDENTS: tuple[tuple[str, str, str, str], ...] = (
+    ("edition_verse", "edition_id", "edition", "id"),
+    ("edition_note", "edition_id", "edition", "id"),
+    ("token", "edition_id", "edition", "id"),
+    ("work_section", "edition_id", "work_edition", "id"),
+    ("commentary_entry", "commentary_id", "commentary", "id"),
+    ("variant_reading", "unit_id", "variant_unit", "id"),
+    ("variant_witness", "unit_id", "variant_unit", "id"),
+    ("topic_ref", "topic_id", "topic", "id"),
+    ("parallel_member", "group_id", "parallel_group", "id"),
+    ("canon_list_item", "list_id", "canon_list", "id"),
+    ("lexicon_entry", "lexicon_id", "lexicon", "id"),
+)
+
+
+def purge_non_public(con: sqlite3.Connection) -> int:
+    """Delete every row that comes from a source not cleared for redistribution (source.public = 0)."""
+    before = int(con.execute("SELECT total_changes()").fetchone()[0])
+    hidden = "(SELECT id FROM source WHERE public = 0)"
+    for child, col, parent, key in _DEPENDENTS:
+        con.execute(f"DELETE FROM {child} WHERE {col} IN (SELECT {key} FROM {parent} WHERE source_id IN {hidden})")
+    tables = [
+        r[0]
+        for r in con.execute(
+            "SELECT m.name FROM sqlite_master m WHERE m.type = 'table' AND m.name NOT LIKE 'fts_%' "
+            "AND EXISTS (SELECT 1 FROM pragma_table_info(m.name) WHERE name = 'source_id') AND m.name <> 'source'"
+        )
+    ]
+    for table in tables:
+        con.execute(f'DELETE FROM "{table}" WHERE source_id IN {hidden}')
+    return int(con.execute("SELECT total_changes()").fetchone()[0]) - before
 
 
 def _replace(tmp: Path, target: Path) -> None:

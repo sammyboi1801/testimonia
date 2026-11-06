@@ -130,3 +130,30 @@ def test_licence_gate_refuses(row, about):
 def test_clean_paragraph_marks():
     assert ebible.clean("¶ And God said") == ("And God said", "<p/>And God said")
     assert ebible.clean("In the beginning ") == ("In the beginning", None)
+
+
+# ----------------------------------------------------------------------------- public builds
+
+
+def test_purge_non_public_removes_rows_and_dependents(tmp_path):
+    from testimonia import db
+
+    con = db.create_core(tmp_path / "core.db")
+    con.executescript(
+        """
+        INSERT INTO source (id, name, license, public) VALUES ('open', 'Open', 'PD', 1), ('local', 'Local', 'PD', 0);
+        INSERT INTO book (osis, ord, name, testament) VALUES ('John', 43, 'John', 'NT');
+        INSERT INTO verse (vkey, osis, book, chapter, verse) VALUES (43001001, 'John.1.1', 'John', 1, 1);
+        INSERT INTO edition (id, title, language, kind, source_id) VALUES
+            ('pub', 'Public text', 'eng', 'translation', 'open'),
+            ('loc', 'Local text', 'eng', 'translation', 'local');
+        INSERT INTO edition_verse (edition_id, vkey, text) VALUES ('pub', 43001001, 'a'), ('loc', 43001001, 'b');
+        INSERT INTO commentary (id, title, kind, source_id) VALUES ('c', 'Later author', 'patristic-excerpts', 'local');
+        INSERT INTO commentary_entry (commentary_id, start_vkey, end_vkey, html) VALUES ('c', 43001001, 43001001, 'x');
+        """
+    )
+    removed = build.purge_non_public(con)
+    assert removed == 4  # edition + its verse, commentary + its entry
+    assert [r[0] for r in con.execute("SELECT edition_id FROM edition_verse")] == ["pub"]
+    assert con.execute("SELECT count(*) FROM commentary_entry").fetchone()[0] == 0
+    assert con.execute("SELECT count(*) FROM source").fetchone()[0] == 2  # provenance rows are kept

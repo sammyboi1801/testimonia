@@ -19,6 +19,12 @@ def run(ctx: Context) -> None:
         "INSERT INTO fts_entity (name, alt_names, summary, entity_type, entity_id) "
         "SELECT title, NULL, summary, type, id FROM entity"
     )
+    con.execute("DELETE FROM fts_work")
+    con.execute(
+        "INSERT INTO fts_work (title, text, edition_id, ord) SELECT title, text, edition_id, ord FROM work_section"
+    )
+    con.execute("DELETE FROM fts_comment")
+    con.execute("INSERT INTO fts_comment (text, entry_id) SELECT html, id FROM commentary_entry")
     # FTS5 merge for faster queries
-    for table in ("fts_verse", "fts_lexicon", "fts_entity"):
+    for table in ("fts_verse", "fts_lexicon", "fts_entity", "fts_work", "fts_comment"):
         con.execute(f"INSERT INTO {table}({table}) VALUES ('optimize')")
