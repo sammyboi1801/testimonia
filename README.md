@@ -42,9 +42,15 @@ debated them, each placed in time.
 | **Read** | Thirteen translations side by side (KJV, Geneva, Tyndale, Douay–Rheims, Brenton's Septuagint, the Vulgate, WEB, BSB and more), aligned verse by verse, with an interlinear of every Greek and Hebrew word, the translators' own footnotes, red letters, and read-aloud that carries on from chapter to chapter. |
 | **Study a verse** | One panel per verse: where the printed editions differ and what each difference means, the church fathers who quoted it (pre-Nicene first), Josephus, Tacitus and other Jewish and Roman writers, cross references, and every word with its lexicon entry and grammar. |
 | **Library** | Early Christian writings as a bookshelf, an interactive timeline beside the events that shaped them (Ctrl + scroll to zoom), or a century-by-century story, with Wikipedia previews for writers, works, events and books. |
+| **Passage guide** | Everything about a whole passage on one page (e.g. John 1:1–18): variants verse by verse, the writers who quote it, the strongest cross references, notes, topics and setting. Compare translations word by word, and copy any verse or passage with its citation. |
+| **Original languages** | Grammar search (every aorist passive of λύω; θεός without the article in John), word studies with an occurrence chart by book, meanings by semantic domain with related words (Louw–Nida, SDBG/SDBH), and Hebrew ↔ Septuagint equivalents. |
+| **Manuscripts** | 2,070 manuscripts: NT papyri, majuscules and minuscules, Septuagint codices and the Dead Sea Scrolls, with dates, contents and holding libraries; for each verse, the earliest manuscripts containing it, with links to their images on NTVMR. |
+| **Gospel parallels** | A synopsis of 152 sections with Matthew, Mark, Luke and John side by side, each Gospel's own wording highlighted, in English or Greek. |
+| **People and places** | An atlas of 1,300 biblical places on a local map (no tracking tile servers), Paul's journeys, and pages for 3,000 biblical people (with families), places and events. |
+| **Topics and plans** | A 5,300-topic concordance with pages per topic, and reading plans: the Bible in a year, chronological, the New Testament in 90 days, and "as the early church read it". |
 | **Book pages** | An introduction, outline, setting and chronology for every book, and the passages the early church quoted most. |
 | **Notes** | Highlight verses, words or phrases and write notes. Everything stays in your browser: no account, with export and import. |
-| **Assistant** | Optional and bring-your-own-key: Anthropic, OpenAI, Gemini, OpenRouter, Groq, DeepSeek, Mistral, any OpenAI-compatible endpoint, or a model on your own machine (Ollama, LM Studio). It searches the library with tools and cites what it finds. Keys are never stored on the server. |
+| **Assistant** | Optional and bring-your-own-key: Anthropic, OpenAI, Gemini, OpenRouter, Groq, DeepSeek, Mistral, any OpenAI-compatible endpoint, or a model on your own machine (Ollama, LM Studio). It works through 17 tools over the whole library (passages, variants, the fathers, grammar search, manuscripts, people and places, topics, Gospel parallels, word meanings, and Wikipedia for background) and cites what it finds. Answers stream live; keys are never stored on the server. |
 | **Anywhere** | Works on phones; colours, fonts, verse marks and panels are adjustable, in light and dark. |
 
 <table>
@@ -94,7 +100,10 @@ public through Tailscale Funnel or Caddy, with a one-command installer) and the 
 | Translations | KJV with Apocrypha, WEB (with deuterocanon), BSB, ASV, YLT, Darby, Webster, LSV, Geneva 1599, Tyndale NT, Douay–Rheims, Brenton's Septuagint, Clementine Vulgate; mapped onto one verse numbering with STEPBible's TVTMS rules, native numbering preserved; translators' footnotes from the USFM sources |
 | Original languages | Leningrad Codex reading text; every Greek NT and Hebrew/Aramaic OT word with lemma, gloss, morphology and morphemes |
 | Text criticism | About 15,500 variant units: where the printed Greek editions differ (meaning, omission, word order, spelling), Hebrew Ketiv/Qere and manuscript readings |
-| Lexicons | STEPBible brief lexicons, Abbott-Smith, LSJ, BDB; Greek and Hebrew morphology codes |
+| Lexicons | STEPBible brief lexicons, Abbott-Smith, LSJ, BDB; Greek and Hebrew morphology codes; semantic domains and senses (MACULA with the UBS SDBG/SDBH) and Septuagint equivalents |
+| Manuscripts | 2,070 manuscripts (NT papyri, majuscules, minuscules, LXX codices, Dead Sea Scrolls) with dates, contents as verse ranges, institutions and image links |
+| People and places | 1,300 places with coordinates and verse references (OpenBible.info), 3,000 biblical people with family relations, events and Paul's journeys (Theographic) |
+| Gospel parallels | 152 synoptic sections (BTB pericopes) with word-level agreement from the UBS Parallel Passage Database |
 | Early writers | Ante-Nicene and Nicene/Post-Nicene Fathers with their scripture citations linked to verses (local builds, see below); Josephus, Tacitus, Suetonius, Pliny and Lucian; patristic comments arranged by verse (about 55,000 in the shareable build) |
 | Study aids | 345,000 voted cross references, Treasury of Scripture Knowledge, pericope headings, Old Testament quotations in the New, a 5,300-topic concordance, red letters |
 | Chronology | Era, period, approximate date and reading order for every verse; dated writers, works and events; six canon traditions and nine chronology systems |
@@ -112,21 +121,24 @@ the [Bruhman Translator's Bible](https://github.com/revjude/BTB), [OpenBible.inf
 the [HistoricalChristianFaith commentaries](https://github.com/HistoricalChristianFaith/Commentaries-Database),
 [Perseus](https://www.perseus.tufts.edu/) and [Project Gutenberg](https://www.gutenberg.org/),
 [Theographic](https://github.com/robertrouse/theographic-bible-metadata) (people, events, Paul's journeys),
-[Natural Earth](https://www.naturalearthdata.com/) (the atlas basemap), and Wikipedia
-summaries shown live in the browser. The church fathers' texts come from [CCEL](https://www.ccel.org/) and are
-used in local builds only (`testimonia build --public` leaves them out).
+[Natural Earth](https://www.naturalearthdata.com/) (the atlas basemap),
+[MACULA](https://github.com/Clear-Bible) (semantic domains and Septuagint equivalents), the
+[UBS open resources](https://github.com/ubsicap/ubs-open-license) (Gospel parallels), Wikipedia's manuscript and
+Dead Sea Scrolls lists (pinned revisions), and Wikipedia summaries fetched live. The church fathers' texts come
+from [CCEL](https://www.ccel.org/) and are used in local builds only (`testimonia build --public` leaves them out).
+Manuscript images are linked on [NTVMR](https://ntvmr.uni-muenster.de), never copied.
 
-Planned: SBLGNT and the Byzantine text, CNTR and INTF transcriptions, MACULA, the UBS open resources, the
-Septuagint (Swete), Pleiades and Wikidata, and Roman roads (Itiner-e).
+Planned: SBLGNT and the Byzantine text, CNTR and INTF transcriptions, the Septuagint (Swete), Pleiades and
+Wikidata, and Roman roads (Itiner-e).
 
 ## Roadmap
 
 | Area | Next |
 |---|---|
-| Manuscripts | NT papyri and codices, LXX and Masoretic codices, the Dead Sea Scrolls: dates, contents, transcriptions, and links to the manuscript images for each verse |
-| Word study | Semantic domains and Hebrew → Septuagint equivalents |
-| Context | Atlas, kings and rulers, canon history, people, places and events pages |
-| Personal | Reading plans, Obsidian-compatible export, your own translation |
+| Manuscripts | Transcriptions (CNTR, INTF), Masoretic codices, Dead Sea Scrolls mapped to English verse numbers |
+| Texts | SBLGNT and the Byzantine text, the Greek Septuagint (Swete) |
+| Context | Roman roads on the atlas, kings and rulers, canon history |
+| Personal | Obsidian-compatible export, your own translation |
 
 ## Development
 
