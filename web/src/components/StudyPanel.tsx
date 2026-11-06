@@ -10,6 +10,7 @@ import { GospelParallels } from "./ReadingLinks";
 import { NOTE_KIND } from "./Footnotes";
 import { Html } from "./Html";
 import { VerseManuscripts } from "./Manuscripts";
+import { VerseTranscriptions } from "./Transcription";
 import { VerseEntities } from "./VerseEntities";
 import { VerseNote } from "./VerseNote";
 import { Mark } from "./Marks";
@@ -167,6 +168,7 @@ function TextTab({ g }: { g: VerseGuide }) {
           <Variant key={v.id} v={v} hebrew={hebrew} />
         ))}
       </Block>
+      <VerseTranscriptions key={g.verse.osis} osis={g.verse.osis} />
       {(g.footnotes?.length ?? 0) > 0 && <TranslatorsNotes notes={g.footnotes!} texts={g.texts} osis={g.verse.osis} />}
       <VerseManuscripts osis={g.verse.osis} />
       <CompareTranslations texts={g.texts} />

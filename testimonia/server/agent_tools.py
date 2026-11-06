@@ -25,6 +25,7 @@ from . import api, reading, study, words
 from . import geography as geo_api
 from . import manuscripts as ms_api
 from .store import Store
+from .transcription import read_markup
 
 MAX_RESULT = 9000  # characters per tool result
 WIKIPEDIA = "https://en.wikipedia.org"
@@ -275,12 +276,28 @@ TOOLS: list[dict[str, Any]] = [
             "Manuscript evidence. Give a verse (e.g. 'John 18:31', 'Isaiah 53:5') for the earliest New Testament and "
             "Septuagint manuscripts containing it and the Dead Sea Scrolls that attest it; or give a manuscript's "
             "siglum or name (e.g. 'P66', 'Codex Sinaiticus', '1QIsa') for its date, contents, holding library and "
-            "image links (NTVMR, Leon Levy)."
+            "image links (NTVMR, Leon Levy). To quote what a manuscript actually reads, use manuscript_text."
         ),
         "parameters": {
             "type": "object",
             "properties": {"query": {"type": "string"}},
             "required": ["query"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "manuscript_text",
+        "description": (
+            "What the early Greek New Testament manuscripts actually read at a verse, quoted from their transcriptions "
+            "(CNTR, about 125 papyri and majuscules up to c. AD 400: P45, P46, P66, P75, 01 Sinaiticus, 02, 03 "
+            "Vaticanus, 04, 05 Bezae, 032 W …), earliest first, with lacunae, nomina sacra, corrections and the words "
+            "that differ from the printed NA28 text. Give a verse ('John 1:18'); optionally a manuscript siglum "
+            "('P66', '01') to read just that manuscript over up to 10 verses ('John 1:1-10')."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"reference": {"type": "string"}, "manuscript": {"type": "string"}},
+            "required": ["reference"],
             "additionalProperties": False,
         },
     },
@@ -741,6 +758,12 @@ def manuscripts(store: Store, query: str) -> str:
             out += [f"- {_ms_line(m)} — /manuscript/{m['id']}" for m in v["dss"]]
         if v.get("ntvmr_verse"):
             out.append(f"\nEvery manuscript of this verse on NTVMR (images © holding institutions): {v['ntvmr_verse']}")
+        transcribed = ms_api.verse_transcriptions(_req(store), osis, limit=50)["manuscripts"]
+        if transcribed:
+            out.append(
+                "\nTranscribed (quote their wording with manuscript_text): "
+                + ", ".join(m["sigla"] or m["id"] for m in transcribed)
+            )
         return "\n".join(out) if len(out) > 1 else f"No manuscript in the catalogue lists {_label(osis)}."
 
     def norm(text: str | None) -> str:
@@ -777,7 +800,75 @@ def manuscripts(store: Store, query: str) -> str:
         out.append(f"Images: {m['image_url']}")
     if d.get("wikipedia"):
         out.append(f"Wikipedia article: {d['wikipedia']} (use the wikipedia tool for more)")
+    t = d.get("transcription")
+    if t:
+        books = ", ".join(b["name"] for b in t["books"][:12])
+        out.append(
+            f"Transcription: {t['verses']} verses ({books}); quote it with manuscript_text "
+            f"({t['source_name']}, {t['license']})"
+        )
     return "\n".join(out)
+
+
+_LEIDEN_KEY = (
+    "Key: [ ] letters or words lost in a lacuna and supplied by the editor; […] text lost; a dot below = damaged "
+    "letter; overline = nomen sacrum or numeral as the scribe abbreviated it (θ̅σ̅ = θεός, ι̅υ̅ = Ἰησοῦ); (ν) = nu "
+    "written as a stroke; {corr. …} = what other hands wrote. Spelling is the scribe's (itacisms such as ει for ι "
+    "are normal)."
+)
+
+
+def manuscript_text(store: Store, reference: str, manuscript: str | None = None) -> str:
+    """What the transcribed manuscripts read at a verse (or one manuscript over a few verses)."""
+    refs = parse_refs(reference)
+    if not refs:
+        return f"Could not read {reference!r} as a Bible reference."
+    r = refs[0]
+    credit = store.one("SELECT attribution FROM source WHERE id = 'cntr'")
+    foot = f"\nTranscriptions: {credit['attribution']}" if credit else ""
+    if manuscript:
+        q = re.sub(r"[\s.𝔓]+", "", unicodedata.normalize("NFKC", manuscript)).upper()
+        q = re.sub(r"^(PAPYRUS|P)(\d+)$", r"P\2", q)
+        ed = store.one(
+            "SELECT e.id, e.manuscript_id, m.sigla, m.name, m.date_label FROM edition e "
+            "JOIN manuscript m ON m.id = e.manuscript_id WHERE e.kind = 'manuscript' AND (e.abbrev = ? OR m.id = ? "
+            "OR upper(m.name) = ?) ORDER BY e.sort LIMIT 1",
+            (q, f"GA:{q}", manuscript.strip().upper()),
+        )
+        if ed is None:
+            return f"No transcription of {manuscript!r} in the library (try a siglum such as P66, 01, 03)."
+        rows = store.all(
+            "SELECT vkey, markup FROM edition_verse WHERE edition_id = ? AND vkey BETWEEN ? AND ? ORDER BY vkey "
+            "LIMIT 10",
+            (ed["id"], r.start, r.end),
+        )
+        head = f"# {ed['sigla']} {ed['name'] or ''} ({ed['date_label'] or '?'}) — /manuscript/{ed['manuscript_id']}"
+        if not rows:
+            return f"{head}\nNo transcribed text for {reference} (lost or not part of this manuscript)."
+        out = [head]
+        for row in rows:
+            osis = api._osis(row["vkey"])
+            out.append(f"- {_label(osis)}: {read_markup(row['markup']).leiden}")
+        return "\n".join([*out, "", _LEIDEN_KEY]) + foot
+    osis = api._osis(r.start)
+    readings, printed = ms_api.verse_readings(store, r.start)
+    if not readings:
+        return f"No transcribed manuscript has text for {_label(osis)}."
+    out = [f"# {_label(osis)} as the manuscripts read it — {len(readings)} transcribed manuscripts, earliest first"]
+    if printed:
+        out.append(f"Printed text (NA28): {' '.join(printed)}")
+    else:
+        out.append("The printed NA28 text does not have this verse.")
+    for m in readings[:10]:
+        line = f"- {m['sigla']} {m['name'] or ''} ({m['date_label'] or '?'}, /manuscript/{m['id']}): {m['leiden']}"
+        if printed and not m["absent"]:
+            line += f" — {m['differs']} difference(s) from NA28" if m["differs"] else " — agrees with NA28"
+        if m["extant"] and m["extant"] < 1 and not m["absent"]:
+            line += f"; {round(m['extant'] * 100)}% of its letters survive"
+        out.append(line)
+    if len(readings) > 10:
+        out.append(f"…and {len(readings) - 10} later manuscripts.")
+    return "\n".join([*out, "", _LEIDEN_KEY]) + foot
 
 
 def _verse_refs(v: dict[str, Any]) -> str:
@@ -1045,6 +1136,7 @@ FUNCTIONS: dict[str, Callable[..., str]] = {
     "gospel_parallels": gospel_parallels,
     "word_meanings": word_meanings,
     "manuscripts": manuscripts,
+    "manuscript_text": manuscript_text,
     "bible_people_places": bible_people_places,
     "wikipedia": wikipedia,
 }

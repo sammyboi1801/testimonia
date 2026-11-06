@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { NtvmrNote, Siglum } from "../components/Manuscripts";
+import { TranscriptionSection } from "../components/Transcription";
 import { WikiCard, wikiUrl } from "../components/Wiki";
 import { formatYear, verseUrl } from "../lib";
 import { KINDS, KIND_OF, msDate, useManuscript, type ManuscriptDetail } from "../manuscriptsApi";
@@ -109,6 +110,7 @@ export function ManuscriptPage() {
           </p>
         </aside>
       </div>
+      {data.transcription && <TranscriptionSection msId={m.id} t={data.transcription} />}
     </div>
   );
 }

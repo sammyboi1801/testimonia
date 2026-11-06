@@ -93,6 +93,87 @@
   .ms-passages { columns: 1; }
 }
 
+/* --- transcriptions: the manuscript's own text (markup from testimonia/ingest/transcriptions.py) */
+.mst { font-family: var(--greek); color: var(--ink); }
+.mst.uncial .mst-text { letter-spacing: 0.045em; }
+/* the overline of a nomen sacrum, drawn just above the letters (a text-decoration overline sits at the top of the
+   line box, where it reads as an underline of the line above) */
+.mst .ns, .mst .num { background-image: linear-gradient(var(--ink-soft), var(--ink-soft)); background-repeat: no-repeat; background-size: 100% 1px; background-position: 0 0.2em; }
+.mst:not(.uncial) .ns, .mst:not(.uncial) .num { background-position: 0 0.3em; }
+.mst .d { text-decoration: underline dotted var(--muted); text-underline-offset: 0.22em; }
+.mst .nu { margin-left: -0.05em; color: var(--ink-soft); }
+/* lacunae: lost letters and supplied words keep their width but are not shown; "filled" shows the editor's letters */
+.mst .m, .mst .sup { color: transparent; background: color-mix(in srgb, var(--panel-2) 80%, var(--rule)); border-radius: 2px; }
+.mst .m .nu, .mst .sup .nu { color: transparent; }
+.mst.filled .m, .mst.filled .sup, .mst.filled .m .nu, .mst.filled .sup .nu { color: var(--muted); }
+.mst.filled .m, .mst.filled .sup { background: color-mix(in srgb, var(--panel-2) 70%, transparent); }
+.mst .gap { display: inline-block; width: 1.6em; height: 0.8em; vertical-align: -0.04em; margin: 0 0.12em; background: color-mix(in srgb, var(--panel-2) 80%, var(--rule)); border-radius: 2px; }
+.mst .gap.v { width: 2.6em; }
+.mst .lb, .mst .cb, .mst .pb { display: none; }
+.mst.lines .lb, .mst.lines .cb { display: inline; }
+.mst.lines .lb::before, .mst.lines .cb::before { content: "\A"; white-space: pre; }
+.mst.lines .pb { display: block; height: 0; margin: 8px 0; border-top: 1px dashed var(--rule); }
+/* corrections and differences from the printed text: quiet until tapped */
+.mst .corr { cursor: pointer; border-bottom: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); }
+.mst .corr.empty { border: 0; }
+.mst .corr.empty::after { content: "⸆"; font-size: 0.7em; vertical-align: 0.5em; color: var(--accent); margin: 0 0.05em; }
+.mst .diff { cursor: pointer; background: color-mix(in srgb, var(--accent) 13%, transparent); border-radius: 3px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 13%, transparent); }
+.mst .om { cursor: pointer; }
+.mst .om::before { content: "‸"; color: var(--accent); font-family: var(--font-ui); font-size: 0.85em; margin: 0 0.06em; }
+.mst-absent { font-family: var(--font-ui); font-style: italic; font-size: 13px; color: var(--muted); letter-spacing: 0; }
+.mst-note { display: block; margin: 4px 0 2px; padding: 4px 8px; font-family: var(--font-ui); font-size: 12.5px; letter-spacing: 0; color: var(--ink-soft); background: var(--panel-2); border-radius: var(--radius); }
+
+.mst-section { max-width: 46rem; margin-top: 28px; padding-top: 6px; border-top: 1px solid var(--rule); scroll-margin-top: 64px; }
+.mst-section h2 { margin: 12px 0 10px; font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(24px * var(--display-size)); }
+.mst-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.mst-picker select { font: inherit; font-size: 13.5px; color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: var(--radius); padding: 4px 6px; }
+.mst-chapters { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px; }
+.mst-book { font-size: 13.5px; color: var(--ink-soft); margin-right: 6px; }
+.mst-chapters button { min-width: 2.1em; padding: 3px 6px; border: 0; border-radius: var(--radius); background: transparent; color: var(--ink-soft); font-size: 13px; font-variant-numeric: tabular-nums; }
+.mst-chapters button:hover { background: var(--panel-2); color: var(--ink); }
+.mst-chapters button.on { background: var(--ink); color: var(--bg); }
+.mst-options { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: 12px 0 4px; }
+.mst-options .seg { margin-bottom: 0; }
+.mst-options .seg button { font-family: var(--greek); font-size: 13px; }
+.mst-heading { margin: 14px 0 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.mst-chapter { font-size: calc(20px * var(--font-scale, 1)); line-height: 1.75; transition: opacity 0.15s ease; }
+.mst-chapter.mst-busy { opacity: 0.55; }
+.mst-chapter.lines { line-height: 1.6; }
+.mst-chapter.lines .mst-v { display: inline; }
+.mst-chapter .vnum { text-decoration: none; letter-spacing: 0; }
+.mst-nav { display: flex; justify-content: space-between; gap: 12px; margin: 14px 0 4px; }
+.mst-nav button { border: 0; background: transparent; color: var(--link); padding: 4px 0; font-size: 13.5px; }
+.mst-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 16px 0 0; font-size: 12.5px; color: var(--muted); }
+.mst-key { display: inline-block; width: 1.6em; height: 0.75em; vertical-align: -0.02em; border-radius: 2px; background: color-mix(in srgb, var(--panel-2) 80%, var(--rule)); }
+.mst-key-ns, .mst-key-d, .mst-key-corr { font-family: var(--greek); font-size: 14px; color: var(--ink); margin-right: 2px; }
+.mst-key-ns { background: linear-gradient(var(--ink-soft), var(--ink-soft)) no-repeat 0 0.2em / 100% 1px; }
+.mst-key-d { text-decoration: underline dotted var(--muted); text-underline-offset: 0.22em; }
+.mst-key-corr { border-bottom: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); }
+
+/* study panel: "As the manuscripts read it" */
+.mst-block h3 { display: flex; align-items: baseline; gap: 6px; }
+.mst-case { margin-left: auto; border: 1px solid var(--rule); border-radius: var(--radius); background: transparent; padding: 0 6px; font-family: var(--greek); font-size: 12px; color: var(--muted); text-transform: none; letter-spacing: 0; }
+.mst-case:hover { color: var(--ink); }
+.mst-lines { list-style: none; margin: 0; padding: 0; }
+.mst-lines li { display: grid; grid-template-columns: 4.4rem minmax(0, 1fr); gap: 2px 10px; align-items: baseline; padding: 7px 0; border-bottom: 1px dashed var(--rule); }
+.mst-lines li:last-child { border-bottom: 0; }
+.mst-who { display: flex; flex-direction: column; text-decoration: none; min-width: 0; }
+.mst-who .ms-siglum { font-size: 15px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
+.mst-who:hover .ms-siglum { color: var(--link); }
+.mst-date { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mst-line { font-size: 17px; line-height: 1.65; min-width: 0; overflow-wrap: anywhere; }
+.mst-foot { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; font-size: 12.5px; }
+.mst-foot .more { align-self: flex-start; }
+
+@media (max-width: 760px) {
+  .mst-section { margin-top: 20px; }
+  .mst-chapter { font-size: 18.5px; line-height: 1.7; }
+  .mst-chapters button { min-width: 2.4em; padding: 5px 6px; font-size: 14px; }
+  .mst-options { gap: 8px 14px; }
+  .mst-lines li { grid-template-columns: minmax(0, 1fr); gap: 1px; }
+  .mst-who { flex-direction: row; align-items: baseline; gap: 8px; }
+}
+
 /* Library page: the entry point to the manuscripts */
 .library-aside-link { margin-left: auto; font-size: 13.5px; color: var(--ink-soft); text-decoration: none; }
 .library-aside-link:hover { color: var(--link); }
