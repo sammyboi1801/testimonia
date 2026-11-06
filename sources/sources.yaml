@@ -618,6 +618,17 @@ sources:
     phase: 1
     notes: Article titles are curated in curated/people.csv, events.csv and work_links.csv (checked to resolve; life dates cross-checked against Wikidata).
 
+  - id: commons-landing-images
+    name: Historical images on the front page (Wikimedia Commons)
+    url: https://commons.wikimedia.org/
+    kind: curated
+    download: resized copies kept in web/public/landing/; file, author and licence of each in web/public/landing/credits.json
+    license: PD
+    attribution: "Front-page images from Wikimedia Commons, public domain or CC0 (each credited and linked in its caption)"
+    feeds: []
+    phase: 1
+    notes: Arch of Titus relief, Menologion of Basil II, Papyri 52 and 66, Nicaea icon, Codex Sinaiticus (CC0), Caravaggio's Saint Jerome Writing, Leningrad Codex carpet page, 1611 King James title page.
+
   - id: mam-aleppo
     name: Miqra according to the Masorah (Aleppo-based Hebrew text)
     url: https://github.com/bdenckla/MAM-basics

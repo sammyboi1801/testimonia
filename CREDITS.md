@@ -7,7 +7,7 @@ Testimonia is built entirely on openly licensed data. This page lists every data
 uses, with the credit line its licence requires. A built `core.db` is distributed under
 **CC BY-SA 4.0** as a combination of these sources (see [DATA_LICENSE.md](DATA_LICENSE.md)).
 
-**46 sources** · 22 explicitly excluded
+**47 sources** · 22 explicitly excluded
 
 ## Summary
 
@@ -25,6 +25,7 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 | Testimonia curated tables (this repository, curated/) | CC-BY-SA-4.0 | 0 |
 | CCEL ThML — Ante-Nicene Fathers 1–9, Nicene & Post-Nicene Fathers series 1 & 2 | PD (translations 1885–1900) | 1 |
 | CCEL ThML — The Works of Flavius Josephus (tr. William Whiston, 1737) | PD (Whiston 1737) | 1 |
+| Historical images on the front page (Wikimedia Commons) | PD | 1 |
 | HistoricalChristianFaith Commentaries-Database | PD (public-domain dedication) | 1 |
 | HistoricalChristianFaith Commentaries-Database — authors after AD 451 | PD (public-domain dedication; some excerpts claimed as fair use) | 1 |
 | M. R. James, The Apocryphal New Testament (1924) | PD (US since 2020; author d. 1936) | 1 |
@@ -174,6 +175,12 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Used for:** `work`, `work_edition`, `work_section`, `citation`
 - **Pinned version:** fetched 2026-11-06
 - **Status:** local builds only — not included in published databases
+
+### Historical images on the front page (Wikimedia Commons)
+
+- **Source:** <https://commons.wikimedia.org/>
+- **Licence:** PD
+- **Credit:** Front-page images from Wikimedia Commons, public domain or CC0 (each credited and linked in its caption)
 
 ### HistoricalChristianFaith Commentaries-Database
 
