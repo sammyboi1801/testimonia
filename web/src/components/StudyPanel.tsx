@@ -7,6 +7,7 @@ import type { Book, VerseGuide } from "../types";
 import { openAsk } from "./AskDrawer";
 import { NOTE_KIND } from "./Footnotes";
 import { Html } from "./Html";
+import { VerseManuscripts } from "./Manuscripts";
 import { VerseNote } from "./VerseNote";
 import { Mark } from "./Marks";
 import { Speak } from "./Speak";
@@ -162,6 +163,7 @@ function TextTab({ g }: { g: VerseGuide }) {
         ))}
       </Block>
       {(g.footnotes?.length ?? 0) > 0 && <TranslatorsNotes notes={g.footnotes!} texts={g.texts} osis={g.verse.osis} />}
+      <VerseManuscripts osis={g.verse.osis} />
       <Block title="Translations" note={g.texts.length}>
         {g.texts.map((t) => (
           <div key={t.edition_id} className="item">

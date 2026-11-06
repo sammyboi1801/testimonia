@@ -539,23 +539,65 @@ sources:
   - id: wikipedia-manuscripts
     name: Wikipedia manuscript lists (NT papyri, uncials, minuscules, LXX codices, DSS)
     url: https://en.wikipedia.org/wiki/List_of_New_Testament_papyri
-    download: "index.php?action=raw for each list page"
+    download: "raw wikitext of pinned revisions (index.php?oldid=…&action=raw)"
+    fetch:  # pinned revision ids, so the raw wikitext never changes; move a pin forward deliberately
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1366826565&action=raw", filename: nt-papyri.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1354573610&action=raw", filename: nt-uncials.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1380625538&action=raw", filename: lxx-manuscripts.wiki }
+      # "List of New Testament minuscules (1–100)" … "(2901–)": only minuscules with their own article are kept
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1248122718&action=raw", filename: nt-minuscules-0001.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1207686793&action=raw", filename: nt-minuscules-0101.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1370845571&action=raw", filename: nt-minuscules-0201.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1207687181&action=raw", filename: nt-minuscules-0301.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1207687387&action=raw", filename: nt-minuscules-0401.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1207687517&action=raw", filename: nt-minuscules-0501.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1207687689&action=raw", filename: nt-minuscules-0601.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1207688436&action=raw", filename: nt-minuscules-0701.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1352279876&action=raw", filename: nt-minuscules-0801.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1207689993&action=raw", filename: nt-minuscules-0901.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1198873841&action=raw", filename: nt-minuscules-1001.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1256783298&action=raw", filename: nt-minuscules-1101.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1207695232&action=raw", filename: nt-minuscules-1201.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1348462251&action=raw", filename: nt-minuscules-1301.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1374149401&action=raw", filename: nt-minuscules-1401.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1348462263&action=raw", filename: nt-minuscules-1501.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1198874292&action=raw", filename: nt-minuscules-1601.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1370677260&action=raw", filename: nt-minuscules-1701.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1198874528&action=raw", filename: nt-minuscules-1801.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1299410541&action=raw", filename: nt-minuscules-1901.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1376410109&action=raw", filename: nt-minuscules-2001.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1341975862&action=raw", filename: nt-minuscules-2101.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1279018786&action=raw", filename: nt-minuscules-2201.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1183326065&action=raw", filename: nt-minuscules-2301.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1294612704&action=raw", filename: nt-minuscules-2401.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1168530725&action=raw", filename: nt-minuscules-2501.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1348462271&action=raw", filename: nt-minuscules-2601.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1348462295&action=raw", filename: nt-minuscules-2701.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1374149406&action=raw", filename: nt-minuscules-2801.wiki }
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1371657827&action=raw", filename: nt-minuscules-2901.wiki }
     license: CC-BY-SA-4.0
     attribution: "Wikipedia contributors, CC BY-SA 4.0"
     share_alike: true
-    feeds: [manuscript, manuscript_coverage, dating]
+    feeds: [manuscript, manuscript_coverage, dating, external_id]
     phase: 2
-    notes: Replaces INTF Liste metadata for dates, contents, institutions.
+    notes: >
+      Replaces INTF Liste metadata for dates, contents, institutions. Lists: New Testament papyri, uncials,
+      minuscules (those with their own article) and Septuagint manuscripts (Rahlfs sigla A–Z plus witnesses
+      before AD 600). An LXX codex that is also a Gregory–Aland uncial (Sinaiticus, Alexandrinus, Vaticanus…)
+      is one manuscript with both its Old and New Testament contents. Images stay on the holding
+      institutions' and INTF's sites (link only).
 
   # ---------------------------------------------------------------- Dead Sea Scrolls
   - id: wikipedia-dss
     name: Wikipedia "List of the Dead Sea Scrolls" (+ per-cave lists, Murabba'at, Nahal Hever, Masada)
     url: https://en.wikipedia.org/wiki/List_of_the_Dead_Sea_Scrolls
-    download: "index.php?action=raw for the list page and each per-cave page"
+    download: "raw wikitext of a pinned revision (the per-cave lists transclude this page)"
+    fetch:
+      - { http: "https://en.wikipedia.org/w/index.php?oldid=1373049163&action=raw", filename: dead-sea-scrolls.wiki }
     license: CC-BY-SA-4.0
     attribution: "Wikipedia contributors, CC BY-SA 4.0"
     share_alike: true
-    feeds: [manuscript, manuscript_coverage, dating]
+    feeds: [manuscript, manuscript_coverage, dating, external_id]
     phase: 2
     notes: >
       ~436 rows (siglum, name, language, script/date label, description); ~202 biblical rows give

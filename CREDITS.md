@@ -356,14 +356,16 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Source:** <https://en.wikipedia.org/wiki/List_of_the_Dead_Sea_Scrolls>
 - **Licence:** CC-BY-SA-4.0 *(ShareAlike)*
 - **Credit:** Wikipedia contributors, CC BY-SA 4.0
-- **Used for:** `manuscript`, `manuscript_coverage`, `dating`
+- **Used for:** `manuscript`, `manuscript_coverage`, `dating`, `external_id`
+- **Pinned version:** fetched 2026-11-06
 
 ### Wikipedia manuscript lists (NT papyri, uncials, minuscules, LXX codices, DSS)
 
 - **Source:** <https://en.wikipedia.org/wiki/List_of_New_Testament_papyri>
 - **Licence:** CC-BY-SA-4.0 *(ShareAlike)*
 - **Credit:** Wikipedia contributors, CC BY-SA 4.0
-- **Used for:** `manuscript`, `manuscript_coverage`, `dating`
+- **Used for:** `manuscript`, `manuscript_coverage`, `dating`, `external_id`
+- **Pinned version:** fetched 2026-11-06
 
 ## Phase 3: Linguistic data — syntax, semantic domains, parallels
 

@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Bookshelf } from "../components/Bookshelf";
 import { StoryView } from "../components/Story";
 import { TimelineView } from "../components/Timeline";
@@ -37,6 +37,9 @@ export function LibraryPage() {
             </button>
           ))}
         </div>
+        <Link to="/manuscripts" className="library-aside-link" title="Papyri, codices and Dead Sea Scrolls">
+          Manuscripts →
+        </Link>
       </div>
       {view === "timeline" ? <TimelineView /> : view === "story" ? <StoryView /> : <Bookshelf />}
     </div>

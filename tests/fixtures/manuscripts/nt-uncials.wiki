@@ -1,0 +1,58 @@
+<!-- Excerpt of https://en.wikipedia.org/w/index.php?oldid=1354573610 (List of New Testament uncials), CC BY-SA 4.0 -->
+=== Uncials with sigla ===
+{| class="wikitable sortable" style="text-align:center"
+|-
+!#!!Sign!!Name!!Date!!Content!!Pages!!Institution!!City!!Country!!Images<ref name="csntm.org">The two primary collections.</ref>
+|-
+|rowspan=3| 01
+|rowspan=3| {{lang|he|א}}
+|rowspan=3| [[Codex Sinaiticus|Sinaiticus]]
+|rowspan=3| 4th
+|rowspan=3| [[New Testament]]
+|rowspan=3| 148
+|rowspan=3| [[British Library]], Add. 43725
+|rowspan=3| [[London]]
+|rowspan=3| [[United Kingdom]]
+|bgcolor="sandybrown"|[[Codex Sinaiticus|CS]],<ref>{{cite web|url=http://codexsinaiticus.org/en/manuscript.aspx| title=Codex Sinaiticus}}</ref> INTF
+|-
+|bgcolor="sandybrown"|[[British Library|BL]]
+|-
+|bgcolor="lightgray"|[http://www.csntm.org/Manuscript/View/GA_01 CSNTM]
+|-
+|rowspan=2| 03
+|rowspan=2| B
+|rowspan=2| [[Codex Vaticanus|Vaticanus]]
+|rowspan=2| 4th
+|rowspan=2| [[Gospel]]s, [[Acts of the Apostles|Acts]], [[Catholic epistles|General Epistles]], [[Pauline Epistles]]† (lacking [[First Epistle to Timothy|1 Timothy]]–[[Epistle to Philemon|Philemon]])
+|rowspan=2| 142
+|rowspan=2| [[Vatican Library]], Gr. 1209, p.&nbsp;1235-1518
+|rowspan=2| [[Vatican City]]
+|rowspan=2| [[Vatican City|Vatican]]
+|bgcolor="sandybrown"|[[Vatican Library|DVL]] INTF
+|-
+|bgcolor="lightgray"|[http://www.csntm.org/Manuscript/View/GA_03 CSNTM]
+|}
+
+=== Uncials 046-0100 ===
+{| class="wikitable sortable" style="text-align:center"
+|-
+!#!!Date!!Content!!Pages!!Institution!!City!!Country!!Images<ref name="csntm.org"/>
+|-
+| '''[[Codex Vaticanus 2066|046]]'''
+| 10th
+| [[Book of Revelation|Revelation]]
+| 20
+| [[Vatican Library]], Vat. gr. 2066, fol. 249–268
+| Vatican City
+| Vatican City
+|bgcolor="lightgray"| [http://ntvmr.uni-muenster.de/manuscript-workspace?docID=20046 INTF]
+|-
+| '''[[Dura Parchment 24|0212]]'''
+| 3rd
+| [[Gospel]]s [[Diatessaron]]
+| 1
+| [[Yale University]], P. Dura 24
+| New Haven
+| United States
+|bgcolor="lightgray"| INTF
+|}
