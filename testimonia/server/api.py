@@ -107,8 +107,11 @@ def chapter(
                 by_key[r["vkey"]]["texts"][r["edition_id"]] = {"text": r["text"], "native": r["native_ref"]}
     for ed in (e for e in wanted if e in WORD_EDITIONS):
         for r in s.all(
-            "SELECT vkey, pos, surface, translit, gloss, strong, lemma_id, morph, editions, word_type "
-            "FROM token WHERE edition_id = ? AND vkey BETWEEN ? AND ? ORDER BY vkey, pos",
+            "SELECT t.vkey, t.pos, t.surface, t.translit, t.gloss, t.strong, t.lemma_id, t.morph, t.editions, "
+            "t.word_type, l.lemma, l.gloss AS lemma_gloss, mc.description AS morph_text "
+            "FROM token t LEFT JOIN lemma l ON l.id = t.lemma_id "
+            "LEFT JOIN morph_code mc ON mc.code = t.morph "
+            "WHERE t.edition_id = ? AND t.vkey BETWEEN ? AND ? ORDER BY t.vkey, t.pos",
             (ed, lo, hi),
         ):
             if r["vkey"] in by_key:
@@ -118,6 +121,9 @@ def chapter(
         "AND start_vkey BETWEEN ? AND ? ORDER BY start_vkey",
         (lo, hi),
     )
+    for k, m in chapter_marks(s, lo, hi).items():
+        if k in by_key:
+            by_key[k]["marks"] = m
     return {
         "book": book,
         "chapter": chapter,
@@ -128,6 +134,45 @@ def chapter(
         "prev": _neighbour(s, book, chapter, -1),
         "next": _neighbour(s, book, chapter, +1),
     }
+
+
+MAX_MARK_SPAN = 12  # citations of long passages (whole chapters) are not marked on every verse
+
+
+def chapter_marks(s: Store, lo: int, hi: int) -> dict[int, dict[str, int]]:
+    """Per-verse indicators for the reader margin: variants, church-father citations, OT/NT links."""
+    marks: dict[int, dict[str, int]] = {}
+
+    def bump(k: int, key: str, n: int = 1) -> None:
+        m = marks.setdefault(k, {})
+        m[key] = m.get(key, 0) + n
+
+    for r in s.all(
+        "SELECT start_vkey, count(*) AS n, sum(significance IN ('meaning', 'omission', 'ketiv-qere')) AS major "
+        "FROM variant_unit WHERE start_vkey BETWEEN ? AND ? GROUP BY start_vkey",
+        (lo, hi),
+    ):
+        bump(r["start_vkey"], "variants", r["n"])
+        if r["major"]:
+            bump(r["start_vkey"], "major_variants", r["major"])
+    book_lo = lo - lo % 1_000_000
+    for r in s.all(
+        "SELECT start_vkey, end_vkey, year FROM citation WHERE start_vkey BETWEEN ? AND ? AND end_vkey >= ?",
+        (book_lo, hi, lo),
+    ):
+        if r["end_vkey"] - r["start_vkey"] > MAX_MARK_SPAN:
+            continue
+        for k in range(max(r["start_vkey"], lo), min(r["end_vkey"], hi) + 1):
+            bump(k, "fathers")
+            if r["year"] is not None and r["year"] <= 325:
+                bump(k, "pre_nicene")
+    for r in s.all(
+        "SELECT src_start AS k FROM quotation WHERE src_start BETWEEN ? AND ? "
+        "UNION ALL SELECT dst_start FROM quotation WHERE dst_start BETWEEN ? AND ?",
+        (lo, hi, lo, hi),
+    ):
+        bump(r["k"], "quotations")
+    return marks
 
 
 def _neighbour(s: Store, book: str, chapter: int, step: int) -> dict[str, Any] | None:

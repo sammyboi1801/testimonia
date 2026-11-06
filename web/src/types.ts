@@ -48,6 +48,15 @@ export interface Word {
   parts?: string | null;
   lemma?: string | null;
   lemma_gloss?: string | null;
+  morph_text?: string | null;
+}
+
+export interface VerseMarks {
+  variants?: number;
+  major_variants?: number;
+  fathers?: number;
+  pre_nicene?: number;
+  quotations?: number;
 }
 
 export interface ChapterVerse {
@@ -57,6 +66,7 @@ export interface ChapterVerse {
   red_letter: number;
   texts: Record<string, { text: string; native: string | null }>;
   words: Record<string, Word[]>;
+  marks?: VerseMarks;
 }
 
 export interface ChapterRef {

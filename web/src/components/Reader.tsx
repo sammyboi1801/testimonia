@@ -1,28 +1,32 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { isRtl, langClass } from "../lib";
-import { useSettings } from "../settings";
-import type { Chapter, Edition, Word } from "../types";
+import { MODES, useSettings } from "../settings";
+import type { Book, Chapter, ChapterVerse, Edition, VerseMarks, Word } from "../types";
+import { PassagePicker } from "./PassagePicker";
+import { Speak } from "./Speak";
 
 const ALL_GREEK = "NA28+NA27+Tyn+SBL+WH+Treg+TR+Byz";
 
 interface Props {
   data: Chapter;
+  books: Book[];
   editions: Edition[];
   selected: string | null;
   onSelect: (osis: string) => void;
   onWord: (strong: string) => void;
 }
 
-export function Reader({ data, editions, selected, onSelect, onWord }: Props) {
+export function Reader({ data, books, editions, selected, onSelect, onWord }: Props) {
   const { settings, update } = useSettings();
   const byId = useMemo(() => new Map(editions.map((e) => [e.id, e])), [editions]);
-  const isNT = data.verses.some((v) => v.words.tagnt);
+  const isNT = data.verses.some((v) => v.words.tagnt?.length);
   const wordEd = isNT ? "tagnt" : "tahot";
   const textEds = data.editions.filter((e) => e !== "tagnt" && e !== "tahot");
-  const showWords = settings.original && data.verses.some((v) => v.words[wordEd]?.length);
+  const primary = textEds[0];
   const headings = useMemo(() => new Map(data.headings.map((h) => [h.vkey, h.title])), [data.headings]);
   const container = useRef<HTMLDivElement>(null);
+  const mode = settings.mode;
 
   useEffect(() => {
     if (!selected) {
@@ -33,135 +37,294 @@ export function Reader({ data, editions, selected, onSelect, onWord }: Props) {
     el?.scrollIntoView({ block: "center" });
   }, [selected, data.book, data.chapter]);
 
-  const columns = textEds.length + (showWords ? 1 : 0);
+  const ctx: RowCtx = { byId, wordEd, isNT, onSelect, onWord, selected };
 
   return (
     <div className="reader" ref={container}>
       <div className="reader-head">
         <div className="chapter-title">
-          {data.prev ? (
-            <Link className="nav-arrow" to={`/read/${data.prev.book}/${data.prev.chapter}`} title={`${data.prev.name} ${data.prev.chapter}`}>
-              ‹
-            </Link>
-          ) : (
-            <span className="nav-arrow disabled">‹</span>
-          )}
-          <h1>
-            {data.name} {data.chapter}
-          </h1>
-          {data.next ? (
-            <Link className="nav-arrow" to={`/read/${data.next.book}/${data.next.chapter}`} title={`${data.next.name} ${data.next.chapter}`}>
-              ›
-            </Link>
-          ) : (
-            <span className="nav-arrow disabled">›</span>
-          )}
+          <NavArrow to={data.prev} dir="‹" />
+          <PassagePicker books={books} book={data.book} chapter={data.chapter} />
+          <NavArrow to={data.next} dir="›" />
         </div>
-        <EditionPicker editions={editions} chosen={settings.editions} onChange={(eds) => update({ editions: eds })} />
-        <label className="toggle">
-          <input type="checkbox" checked={settings.original} onChange={(e) => update({ original: e.target.checked })} />
-          {isNT ? "Greek" : "Hebrew"} interlinear
-        </label>
+        <div className="modes" role="tablist" aria-label="Reading mode">
+          {MODES.map((m) => (
+            <button key={m.id} role="tab" aria-selected={mode === m.id} className={mode === m.id ? "on" : ""} title={m.hint} onClick={() => update({ mode: m.id })}>
+              {m.label}
+            </button>
+          ))}
+        </div>
+        <EditionPicker editions={editions} chosen={settings.editions} onChange={(eds) => update({ editions: eds })} single={mode !== "parallel"} />
       </div>
 
-      <div className="verses" style={{ ["--cols" as string]: String(Math.max(columns, 1)) }}>
-        {columns > 1 && (
-          <div className="verse-row column-heads">
-            {textEds.map((id) => (
-              <div key={id} className="col-head" title={byId.get(id)?.title}>
-                {byId.get(id)?.abbrev ?? id}
-              </div>
-            ))}
-            {showWords && <div className="col-head">{isNT ? "Greek (TAGNT)" : "Hebrew (TAHOT)"}</div>}
-          </div>
-        )}
-        {data.verses.map((v) => {
-          const heading = headings.get(v.vkey);
-          const isSel = v.osis === selected;
-          return (
-            <div key={v.vkey} className="verse-block">
-              {heading && <h2 className="pericope">{heading}</h2>}
-              <div
-                className={`verse-row${isSel ? " selected" : ""}`}
-                data-osis={v.osis}
-                id={`v${v.verse}`}
-                onClick={() => onSelect(v.osis)}
-              >
-                {textEds.map((id, i) => {
-                  const ed = byId.get(id);
-                  const t = v.texts[id];
-                  const rtl = ed ? isRtl(ed.language) : false;
-                  return (
-                    <div
-                      key={id}
-                      className={`cell ${ed ? langClass(ed.language) : ""}${v.red_letter && ed?.language === "eng" ? " red" : ""}`}
-                      dir={rtl ? "rtl" : undefined}
-                      lang={ed?.language}
-                    >
-                      {i === 0 && <span className="vnum">{v.verse === 0 ? "title" : v.verse}</span>}
-                      {t ? (
-                        <>
-                          {t.text}
-                          {t.native && (
-                            <span className="native" title="Numbered differently in this edition">
-                              {t.native.replace(/^[^.]+\./, "").replace(".", ":")}
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="missing">—</span>
-                      )}
-                    </div>
-                  );
-                })}
-                {showWords && (
-                  <div className={`cell words ${isNT ? "greek" : "hebrew"}`} dir={isNT ? "ltr" : "rtl"}>
-                    {textEds.length === 0 && <span className="vnum">{v.verse}</span>}
-                    {(v.words[wordEd] ?? []).map((w) => (
-                      <WordChip key={w.pos} w={w} onWord={onWord} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+      {mode === "reading" ? (
+        <ReadingView data={data} edition={primary} headings={headings} ctx={ctx} />
+      ) : (
+        <div className="verses">
+          <ColumnHeads mode={mode} textEds={textEds} primary={primary} ctx={ctx} />
+          {data.verses.map((v) => (
+            <Fragment key={v.vkey}>
+              {headings.get(v.vkey) && <h2 className="pericope">{headings.get(v.vkey)}</h2>}
+              <VerseRow v={v} mode={mode} textEds={textEds} primary={primary} ctx={ctx} />
+            </Fragment>
+          ))}
+        </div>
+      )}
+      <div className="chapter-foot">
+        <NavArrow to={data.prev} dir="‹ Previous chapter" />
+        <NavArrow to={data.next} dir="Next chapter ›" />
       </div>
     </div>
   );
 }
 
-function WordChip({ w, onWord }: { w: Word; onWord: (s: string) => void }) {
-  const variant = w.editions && w.editions !== ALL_GREEK && w.editions.includes("+") ? w.editions : null;
-  const id = w.lemma_id ?? w.strong?.split(" ").find((s) => /^[GH]\d{4}/.test(s) && !/^H9\d{3}/.test(s)) ?? null;
+interface RowCtx {
+  byId: Map<string, Edition>;
+  wordEd: string;
+  isNT: boolean;
+  selected: string | null;
+  onSelect: (osis: string) => void;
+  onWord: (strong: string) => void;
+}
+
+function NavArrow({ to, dir }: { to: Chapter["prev"]; dir: string }) {
+  if (!to) return <span className="nav-arrow disabled">{dir}</span>;
   return (
-    <button
-      className={`word${variant ? " variant" : ""}`}
-      title={[w.translit, w.morph, variant ? `Only in: ${variant.replaceAll("+", ", ")}` : null].filter(Boolean).join(" · ")}
+    <Link className="nav-arrow" to={`/read/${to.book}/${to.chapter}`} title={`${to.name} ${to.chapter}`}>
+      {dir}
+    </Link>
+  );
+}
+
+function ColumnHeads({ mode, textEds, primary, ctx }: { mode: string; textEds: string[]; primary?: string; ctx: RowCtx }) {
+  const label = (id?: string) => (id ? ctx.byId.get(id)?.abbrev ?? id : "");
+  const heads = mode === "parallel" ? textEds.map(label) : mode === "original" ? [ctx.isNT ? "Greek (SBLGNT)" : "Hebrew (Leningrad)", label(primary)] : [];
+  if (heads.length < 2) return null;
+  return (
+    <div className="verse-row column-heads" style={{ ["--cols" as string]: String(heads.length) }}>
+      <span className="gutter" />
+      {heads.map((h) => (
+        <div key={h} className="col-head">
+          {h}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function VerseRow({ v, mode, textEds, primary, ctx }: { v: ChapterVerse; mode: string; textEds: string[]; primary?: string; ctx: RowCtx }) {
+  const words = v.words[ctx.wordEd] ?? [];
+  const isSel = v.osis === ctx.selected;
+  const cols = mode === "parallel" ? textEds.length : mode === "original" ? 2 : 1;
+  return (
+    <div
+      className={`verse-row mode-${mode}${isSel ? " selected" : ""}`}
+      data-osis={v.osis}
+      id={`v${v.verse}`}
+      style={{ ["--cols" as string]: String(Math.max(cols, 1)) }}
+      onClick={() => ctx.onSelect(v.osis)}
+    >
+      <Gutter marks={v.marks} verse={v.verse} />
+      {mode === "parallel" && textEds.map((id) => <TextCell key={id} v={v} id={id} ctx={ctx} />)}
+      {mode === "original" && (
+        <>
+          <OriginalCell words={words} ctx={ctx} />
+          {primary && <TextCell v={v} id={primary} ctx={ctx} />}
+        </>
+      )}
+      {mode === "interlinear" && (
+        <div className="stack">
+          {primary && <TextCell v={v} id={primary} ctx={ctx} />}
+          <div className={`cell words ${ctx.isNT ? "greek" : "hebrew"}`} dir={ctx.isNT ? "ltr" : "rtl"}>
+            {words.map((w) => (
+              <WordChip key={w.pos} w={w} lang={ctx.isNT ? "grc" : "hbo"} onWord={ctx.onWord} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Gutter({ marks, verse }: { marks?: VerseMarks; verse: number }) {
+  const m = marks ?? {};
+  const tips: string[] = [];
+  if (m.variants) tips.push(`${m.variants} textual variant${m.variants > 1 ? "s" : ""}${m.major_variants ? ` (${m.major_variants} significant)` : ""}`);
+  if (m.fathers) tips.push(`cited ${m.fathers}× by church fathers (${m.pre_nicene ?? 0} before AD 325)`);
+  if (m.quotations) tips.push(`${m.quotations} Old ↔ New Testament link${m.quotations > 1 ? "s" : ""}`);
+  return (
+    <span className="gutter" title={tips.join("\n")}>
+      <span className="vnum">{verse === 0 ? "title" : verse}</span>
+      <span className="marks">
+        {m.major_variants ? <i className="mk mk-var">◆</i> : m.variants ? <i className="mk mk-var minor">◇</i> : null}
+        {m.pre_nicene ? <i className="mk mk-fat">✝</i> : m.fathers ? <i className="mk mk-fat minor">✝</i> : null}
+        {m.quotations ? <i className="mk mk-quo">↺</i> : null}
+      </span>
+    </span>
+  );
+}
+
+function TextCell({ v, id, ctx }: { v: ChapterVerse; id: string; ctx: RowCtx }) {
+  const ed = ctx.byId.get(id);
+  const t = v.texts[id];
+  const rtl = ed ? isRtl(ed.language) : false;
+  return (
+    <div
+      className={`cell ${ed ? langClass(ed.language) : ""}${v.red_letter && ed?.language === "eng" ? " red" : ""}`}
+      dir={rtl ? "rtl" : undefined}
+      lang={ed?.language}
+    >
+      {t ? (
+        <>
+          <span className="vtext">{t.text}</span>
+          {t.native && (
+            <span className="native" title={`Numbered ${t.native.replace(/^[^.]+\./, "").replace(".", ":")} in ${ed?.abbrev ?? id}`}>
+              {t.native.replace(/^[^.]+\./, "").replace(".", ":")}
+            </span>
+          )}
+        </>
+      ) : (
+        <span className="missing">—</span>
+      )}
+    </div>
+  );
+}
+
+/** Running Greek (SBLGNT words) or Hebrew (Leningrad) text, every word hoverable and clickable. */
+function OriginalCell({ words, ctx }: { words: Word[]; ctx: RowCtx }) {
+  const shown = ctx.isNT ? words.filter((w) => !w.editions || w.editions.split("+").includes("SBL")) : words;
+  const lang = ctx.isNT ? "grc" : "hbo";
+  return (
+    <div className={`cell original ${ctx.isNT ? "greek" : "hebrew"}`} dir={ctx.isNT ? "ltr" : "rtl"} lang={lang}>
+      {shown.map((w) => (
+        <Fragment key={w.pos}>
+          <HoverWord w={w} lang={lang} onWord={ctx.onWord}>
+            <span className={`ow${w.editions && w.editions !== ALL_GREEK && ctx.isNT ? " variant" : ""}`}>{w.surface}</span>
+          </HoverWord>{" "}
+        </Fragment>
+      ))}
+      {shown.length > 0 && (
+        <span className="verse-speak">
+          <Speak text={shown.map((w) => w.surface).join(" ")} lang={lang} />
+        </span>
+      )}
+    </div>
+  );
+}
+
+function WordChip({ w, lang, onWord }: { w: Word; lang: "grc" | "hbo"; onWord: (s: string) => void }) {
+  const variant = lang === "grc" && w.editions && w.editions !== ALL_GREEK ? w.editions : null;
+  return (
+    <HoverWord w={w} lang={lang} onWord={onWord}>
+      <span className={`word${variant ? " variant" : ""}`}>
+        <span className="w-surface">{w.surface}</span>
+        <span className="w-gloss">{w.gloss}</span>
+      </span>
+    </HoverWord>
+  );
+}
+
+function lemmaId(w: Word): string | null {
+  return w.lemma_id ?? w.strong?.split(" ").find((s) => /^[GH]\d{4}/.test(s) && !/^H9\d{3}/.test(s)) ?? null;
+}
+
+/** Hover card for an original-language word: dictionary form, gloss, parsing, editions, pronunciation. */
+function HoverWord({ w, lang, onWord, children }: { w: Word; lang: "grc" | "hbo"; onWord: (s: string) => void; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const timer = useRef<number | undefined>(undefined);
+  const id = lemmaId(w);
+  const variant = lang === "grc" && w.editions && w.editions !== ALL_GREEK ? w.editions.replaceAll("+", ", ") : null;
+  return (
+    <span
+      className="hover-word"
+      onMouseEnter={() => {
+        window.clearTimeout(timer.current);
+        timer.current = window.setTimeout(() => setOpen(true), 260);
+      }}
+      onMouseLeave={() => {
+        window.clearTimeout(timer.current);
+        timer.current = window.setTimeout(() => setOpen(false), 120);
+      }}
       onClick={(e) => {
         e.stopPropagation();
         if (id) onWord(id);
       }}
     >
-      <span className="w-surface">{w.surface}</span>
-      <span className="w-gloss">{w.gloss}</span>
-    </button>
+      {children}
+      {open && (
+        <span className="word-card" dir="ltr" role="tooltip" onClick={(e) => e.stopPropagation()}>
+          <span className="wc-head">
+            <span className={`wc-lemma ${lang === "grc" ? "greek" : "hebrew"}`}>{w.lemma ?? w.surface}</span>
+            <Speak text={w.surface} lang={lang} />
+          </span>
+          {w.translit && <span className="wc-translit">{w.translit}</span>}
+          <span className="wc-gloss">{w.gloss ?? w.lemma_gloss}</span>
+          {(w.morph_text || w.morph) && <span className="wc-morph">{w.morph_text ?? w.morph}</span>}
+          {variant && <span className="wc-var">Only in: {variant}</span>}
+          {id && <span className="wc-hint">Click for word study · {id}</span>}
+        </span>
+      )}
+    </span>
   );
 }
 
-function EditionPicker({ editions, chosen, onChange }: { editions: Edition[]; chosen: string[]; onChange: (e: string[]) => void }) {
+/** Book-like reading: one text in paragraphs that break at section headings. */
+function ReadingView({ data, edition, headings, ctx }: { data: Chapter; edition?: string; headings: Map<number, string>; ctx: RowCtx }) {
+  const ed = edition ? ctx.byId.get(edition) : undefined;
+  const paragraphs: { title?: string; verses: ChapterVerse[] }[] = [];
+  for (const v of data.verses) {
+    const title = headings.get(v.vkey);
+    if (title || !paragraphs.length) paragraphs.push({ title, verses: [] });
+    paragraphs[paragraphs.length - 1]!.verses.push(v);
+  }
+  return (
+    <div className={`reading-view ${ed ? langClass(ed.language) : ""}`} dir={ed && isRtl(ed.language) ? "rtl" : undefined}>
+      {paragraphs.map((p, i) => (
+        <section key={i}>
+          {p.title && <h2 className="pericope">{p.title}</h2>}
+          <p>
+            {p.verses.map((v) => {
+              const t = edition ? v.texts[edition] : undefined;
+              if (!t) return null;
+              const m = v.marks ?? {};
+              return (
+                <span
+                  key={v.vkey}
+                  className={`rv${v.osis === ctx.selected ? " selected" : ""}${v.red_letter && ed?.language === "eng" ? " red" : ""}`}
+                  data-osis={v.osis}
+                  onClick={() => ctx.onSelect(v.osis)}
+                >
+                  <sup className="vnum">
+                    {v.verse === 0 ? "" : v.verse}
+                    {m.major_variants ? <i className="mk mk-var">◆</i> : null}
+                    {m.pre_nicene ? <i className="mk mk-fat">✝</i> : null}
+                    {m.quotations ? <i className="mk mk-quo">↺</i> : null}
+                  </sup>
+                  {t.text}{" "}
+                </span>
+              );
+            })}
+          </p>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function EditionPicker({ editions, chosen, onChange, single }: { editions: Edition[]; chosen: string[]; onChange: (e: string[]) => void; single: boolean }) {
   const [open, setOpen] = useState(false);
   const texts = editions.filter((e) => e.kind !== "interlinear");
-  const add = texts.filter((e) => !chosen.includes(e.id));
+  const visible = single ? chosen.slice(0, 1) : chosen;
+  const add = texts.filter((e) => !visible.includes(e.id));
   return (
     <div className="edition-picker">
-      {chosen.map((id) => {
+      {visible.map((id) => {
         const e = editions.find((x) => x.id === id);
         if (!e) return null;
         return (
           <span key={id} className="chip" title={e.title}>
             {e.abbrev ?? e.id}
-            {chosen.length > 1 && (
+            {!single && chosen.length > 1 && (
               <button aria-label={`Remove ${e.title}`} onClick={() => onChange(chosen.filter((c) => c !== id))}>
                 ×
               </button>
@@ -171,7 +334,7 @@ function EditionPicker({ editions, chosen, onChange }: { editions: Edition[]; ch
       })}
       <div className="add-wrap">
         <button className="chip add" onClick={() => setOpen(!open)} aria-expanded={open}>
-          + translation
+          {single ? "change" : "+ translation"}
         </button>
         {open && (
           <ul className="menu" onMouseLeave={() => setOpen(false)}>
@@ -179,7 +342,7 @@ function EditionPicker({ editions, chosen, onChange }: { editions: Edition[]; ch
               <li key={e.id}>
                 <button
                   onClick={() => {
-                    onChange([...chosen, e.id].slice(0, 6));
+                    onChange(single ? [e.id, ...chosen.filter((c) => c !== e.id)] : [...chosen, e.id].slice(0, 6));
                     setOpen(false);
                   }}
                 >

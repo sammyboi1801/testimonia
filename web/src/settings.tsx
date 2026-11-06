@@ -3,6 +3,14 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 export type Theme = "system" | "light" | "dark";
 export type FathersScope = "pre-nicene" | "to-451" | "all";
 export type Design = "vellum" | "folio" | "atelier" | "archive";
+export type ReadingMode = "parallel" | "interlinear" | "original" | "reading";
+
+export const MODES: { id: ReadingMode; label: string; hint: string }[] = [
+  { id: "parallel", label: "Parallel", hint: "Translations side by side" },
+  { id: "interlinear", label: "Interlinear", hint: "A translation with the Greek/Hebrew words beneath" },
+  { id: "original", label: "Original", hint: "Greek/Hebrew text beside a translation" },
+  { id: "reading", label: "Reading", hint: "One text in flowing paragraphs" },
+];
 
 export const DESIGNS: { id: Design; label: string; note: string }[] = [
   { id: "vellum", label: "Vellum", note: "cream · Garamond · sienna" },
@@ -13,7 +21,7 @@ export const DESIGNS: { id: Design; label: string; note: string }[] = [
 
 export interface Settings {
   editions: string[]; // translation columns in the reader
-  original: boolean; // show the Hebrew/Greek interlinear column
+  mode: ReadingMode;
   theme: Theme;
   design: Design;
   fathers: FathersScope;
@@ -22,7 +30,7 @@ export interface Settings {
 
 const DEFAULTS: Settings = {
   editions: ["kjva", "bsb"],
-  original: true,
+  mode: "parallel",
   theme: "system",
   design: "vellum",
   fathers: "pre-nicene",
@@ -38,12 +46,14 @@ function load(): Settings {
   } catch {
     /* private mode / corrupted value: fall back to defaults */
   }
-  // ?design=folio&theme=light in the URL overrides (handy for previews and sharing a look)
+  // ?design=folio&theme=light&mode=interlinear in the URL overrides (handy for previews and sharing a look)
   const q = new URLSearchParams(window.location.search);
   const design = q.get("design");
   const theme = q.get("theme");
   if (design && DESIGNS.some((d) => d.id === design)) s = { ...s, design: design as Design };
   if (theme === "light" || theme === "dark" || theme === "system") s = { ...s, theme };
+  const mode = q.get("mode");
+  if (mode && MODES.some((m) => m.id === mode)) s = { ...s, mode: mode as ReadingMode };
   return s;
 }
 

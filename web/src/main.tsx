@@ -25,6 +25,7 @@ import "@fontsource/gentium-book-plus/400.css";
 import "@fontsource/gentium-book-plus/700.css";
 import "@fontsource/noto-serif-hebrew/400.css";
 import "./styles.css";
+import "./layout.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";

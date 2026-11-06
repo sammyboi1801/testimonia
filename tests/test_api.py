@@ -134,3 +134,11 @@ def test_original_language_search(client):
     assert r["bible"][0]["osis"] == "John.1.18"
     assert r["lexicon"][0]["id"] == "G3439"
     assert client.get("/api/search", params={"q": "μονογενὴς"}).json()["bible"][0]["osis"] == "John.1.18"
+
+
+def test_chapter_marks(client):
+    r = client.get("/api/chapter/John/1", params={"editions": "kjva,tagnt"}).json()
+    v18 = next(v for v in r["verses"] if v["verse"] == 18)
+    assert v18["marks"] == {"variants": 1, "major_variants": 1, "fathers": 1, "pre_nicene": 1}
+    assert v18["words"]["tagnt"][0]["lemma"] == "μονογενής"
+    assert "marks" not in next(v for v in r["verses"] if v["verse"] == 1)

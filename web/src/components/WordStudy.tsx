@@ -4,6 +4,7 @@ import { useWord } from "../api";
 import { osisLabel, verseUrl } from "../lib";
 import type { Book } from "../types";
 import { Html } from "./Html";
+import { Speak } from "./Speak";
 
 export function WordStudy({ strong, books, onBack, onWord }: { strong: string; books: Book[]; onBack: () => void; onWord: (s: string) => void }) {
   const { data, isLoading, error } = useWord(strong);
@@ -18,14 +19,15 @@ export function WordStudy({ strong, books, onBack, onWord }: { strong: string; b
   return (
     <div className="guide-inner">
       <button className="back" onClick={onBack}>
-        ← back to the verse
+        ← all words in this verse
       </button>
       <div className="lemma-head">
         <span className={`lemma ${hebrew ? "hebrew" : "greek"}`} dir={hebrew ? "rtl" : undefined}>
           {data.lemma?.lemma ?? strong}
         </span>
+        {data.lemma?.lemma && <Speak text={data.lemma.lemma} lang={hebrew ? "hbo" : "grc"} />}
         <span className="muted">{data.lemma?.translit}</span>
-        <span className="pill">{strong}</span>
+        <span className="tag">{strong}</span>
       </div>
       {data.lemma?.gloss && <div style={{ fontSize: 16, margin: "4px 0 8px" }}>{data.lemma.gloss}</div>}
 
@@ -36,7 +38,7 @@ export function WordStudy({ strong, books, onBack, onWord }: { strong: string; b
         <div className="section-body">
           <div style={{ marginBottom: 8 }}>
             {data.glosses.slice(0, 12).map((g) => (
-              <span key={g.gloss} className="pill">
+              <span key={g.gloss} className="tag">
                 {g.gloss} <span className="muted">{g.n}</span>
               </span>
             ))}
