@@ -518,13 +518,26 @@ sources:
   - id: cntr
     name: Center for New Testament Restoration — manuscript transcriptions
     url: https://github.com/Center-for-New-Testament-Restoration/transcriptions
-    download: git clone
+    download: sparse git checkout of "class 1" (Greek manuscripts), commit pinned in sources.lock.json (4e743a4, 2026-10-01)
+    fetch:
+      - git: https://github.com/Center-for-New-Testament-Restoration/transcriptions
+        target: cntr
+        sparse: ["class 1"]
     license: CC-BY-SA-4.0
-    attribution: "Center for New Testament Restoration, CC BY-SA 4.0"
+    attribution: >-
+      Alan Bunning, Center for New Testament Restoration (CNTR), Electronic Transcriptions,
+      https://github.com/Center-for-New-Testament-Restoration/transcriptions, CC BY-SA 4.0
     share_alike: true
-    feeds: [edition (kind=manuscript), edition_verse, manuscript_coverage]
+    feeds: [edition (kind=manuscript), edition_verse]
     phase: 2
-    notes: ~130 early papyri/majuscules + early fathers/versions. CNTR WEBSITE metadata is NOT open — use transcriptions only.
+    notes: >
+      Licence checked 2026-11-06 in the repository (README.md, README.txt and LICENSE.md: "Copyright © 2020-2026 by
+      Alan Bunning … Released under the Creative Commons Attribution-ShareAlike 4.0 International License"; credit
+      must go to Alan Bunning and the Center for New Testament Restoration). Used: the "class 1" folder, verse-by-verse
+      transcriptions of 129 Greek manuscripts up to about AD 400 (papyri, majuscules, one ostracon) in the Manuscript
+      Encoding Specification (MES: lacunae, supplied letters, nomina sacra, corrections, line and page breaks).
+      Not used: "class 2/3" (versions and fathers, keyed by CNTR's own ids) and "critical texts". The CNTR website and
+      its manuscript metadata are not openly licensed and are not used; no images are copied.
 
   - id: intf-transcriptions
     name: INTF NTVMR TEI transcriptions
@@ -534,7 +547,12 @@ sources:
     attribution: "Institut für Neutestamentliche Textforschung, Münster, CC BY 4.0"
     feeds: [edition (kind=manuscript), edition_verse]
     phase: 2
-    notes: Transcriptions only. The Liste metadata endpoint has NO stated licence → not used.
+    notes: >
+      Transcriptions only. The Liste metadata endpoint has NO stated licence → not used. Licence re-checked
+      2026-11-06: transcript/get?format=teiraw (e.g. docID=10066, P66) carries "(C) 2026 Institut für
+      Neutestamentliche Textforschung. This work is licensed under a Creative Commons Attribution 4.0 Unported
+      License" in its publicationStmt. Not fetched yet: the early papyri and majuscules come from CNTR (cntr);
+      INTF transcriptions are the route to later majuscules and minuscules. Images are never copied.
 
   - id: wikipedia-manuscripts
     name: Wikipedia manuscript lists (NT papyri, uncials, minuscules, LXX codices, DSS)

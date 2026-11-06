@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from ..books import BY_OSIS
 from ..refs import key_to_parts
 from .api import _osis, _verse_key, store
+from .transcription import compare, mark_markup, read_markup
 
 router = APIRouter(prefix="/api")
 
@@ -167,6 +168,148 @@ def manuscript(request: Request, ms_id: str) -> dict[str, Any]:
         "dating": dating,
         "passages": passages,
         "ntvmr": ntvmr_links(ga),
+        "transcription": transcription_summary(s, ms_id),
+    }
+
+
+# ----------------------------------------------------------------------------- transcriptions
+
+_TRANSCRIPTION = (
+    "SELECT e.id, e.title, e.description, src.name AS source_name, src.attribution, src.license, "
+    "src.url AS source_url, src.version FROM edition e JOIN source src ON src.id = e.source_id "
+    "WHERE e.kind = 'manuscript' AND e.manuscript_id = ? ORDER BY e.sort LIMIT 1"
+)
+
+
+def transcription_summary(s: Any, ms_id: str) -> dict[str, Any] | None:
+    """The manuscript's transcription, if there is one: source and licence, and the chapters it has text for."""
+    ed = s.one(_TRANSCRIPTION, (ms_id,))
+    if ed is None:
+        return None
+    books: list[dict[str, Any]] = []
+    total = 0
+    for r in s.all(
+        "SELECT vkey / 1000 AS bc, count(*) AS n FROM edition_verse WHERE edition_id = ? GROUP BY bc ORDER BY bc",
+        (ed["id"],),
+    ):
+        book, ch, _ = key_to_parts(r["bc"] * 1000)
+        total += r["n"]
+        if not books or books[-1]["osis"] != book:
+            books.append({"osis": book, "name": BY_OSIS[book].name, "chapters": []})
+        books[-1]["chapters"].append({"chapter": ch, "verses": r["n"]})
+    return {**ed, "verses": total, "books": books}
+
+
+@router.get("/manuscript/{ms_id}/text")
+def manuscript_text(
+    request: Request,
+    ms_id: str,
+    book: str | None = Query(None, max_length=12),
+    chapter: int | None = Query(None, ge=1, le=200),
+) -> dict[str, Any]:
+    """One chapter of a manuscript's transcription (the first it has, unless asked), with its neighbours."""
+    s = store(request)
+    ed = s.one(_TRANSCRIPTION, (ms_id,))
+    if ed is None:
+        raise HTTPException(404, f"no transcription of {ms_id!r}")
+    chapters = [
+        key_to_parts(r["bc"] * 1000)[:2]
+        for r in s.all(
+            "SELECT DISTINCT vkey / 1000 AS bc FROM edition_verse WHERE edition_id = ? ORDER BY bc", (ed["id"],)
+        )
+    ]
+    want = (book, chapter) if book and chapter else None
+    if want is None and book:
+        want = next((c for c in chapters if c[0] == book), None)
+    want = want or chapters[0]
+    if want not in chapters:
+        raise HTTPException(404, f"{ms_id} has no transcribed text in {want[0]} {want[1]}")
+    i = chapters.index(want)
+    b, c = want
+    lo = BY_OSIS[b].order * 1_000_000 + c * 1_000
+    verses = []
+    for r in s.all(
+        "SELECT vkey, native_ref, markup FROM edition_verse WHERE edition_id = ? AND vkey BETWEEN ? AND ? "
+        "ORDER BY vkey",
+        (ed["id"], lo, lo + 999),
+    ):
+        verses.append(
+            {"osis": _osis(r["vkey"]), "verse": r["vkey"] % 1000, "native": r["native_ref"], "markup": r["markup"]}
+        )
+
+    def ref(bc: tuple[str, int]) -> dict[str, Any]:
+        return {"book": bc[0], "chapter": bc[1], "label": f"{BY_OSIS[bc[0]].name} {bc[1]}"}
+
+    return {
+        "edition": ed["id"],
+        "book": b,
+        "chapter": c,
+        "label": f"{BY_OSIS[b].name} {c}",
+        "verses": verses,
+        "prev": ref(chapters[i - 1]) if i > 0 else None,
+        "next": ref(chapters[i + 1]) if i + 1 < len(chapters) else None,
+    }
+
+
+def printed_words(s: Any, k: int) -> list[str]:
+    """The printed critical text of a NT verse (NA28, from the TAGNT word data)."""
+    return [
+        r["surface"]
+        for r in s.all(
+            "SELECT surface FROM token WHERE edition_id = 'tagnt' AND vkey = ? AND editions LIKE '%NA28%' ORDER BY pos",
+            (k,),
+        )
+    ]
+
+
+def verse_readings(s: Any, k: int, limit: int | None = None) -> tuple[list[dict[str, Any]], list[str]]:
+    """Every transcribed manuscript with text at a verse, earliest first: its markup (differences from the printed
+    text marked), a Leiden-style plain rendering, and how much of the verse survives. Verses wholly lost in a
+    lacuna are left out; verses the manuscript lacks are kept (``absent``)."""
+    printed = printed_words(s, k)
+    out: list[dict[str, Any]] = []
+    for r in s.all(
+        f"SELECT {_COLUMNS}, e.id AS edition_id, ev.markup FROM edition_verse ev "
+        "JOIN edition e ON e.id = ev.edition_id JOIN manuscript m ON m.id = e.manuscript_id "
+        f"WHERE ev.vkey = ? AND e.kind = 'manuscript' ORDER BY {EARLIEST}",
+        (k,),
+    ):
+        reading = read_markup(r["markup"])
+        if not reading.absent and reading.extant == 0:
+            continue
+        markup, differs = r.pop("markup"), 0
+        if printed and not reading.absent:
+            marks, missing = compare(reading, printed)
+            differs = sum(1 for m in marks if m and m != "…") + len(missing)
+            markup = mark_markup(markup, marks, missing)
+        out.append(
+            {
+                **r,
+                "markup": markup,
+                "leiden": reading.leiden,
+                "absent": reading.absent,
+                "extant": round(reading.extant / reading.letters, 2) if reading.letters else 0,
+                "differs": differs,
+            }
+        )
+        if limit and len(out) >= limit:
+            break
+    return out, printed
+
+
+@router.get("/verse/{osis}/transcriptions")
+def verse_transcriptions(request: Request, osis: str, limit: int = Query(3, ge=1, le=50)) -> dict[str, Any]:
+    """The verse as written in the earliest transcribed manuscripts that have it."""
+    s = store(request)
+    k = _verse_key(osis)
+    rows, printed = verse_readings(s, k)
+    src = s.one("SELECT name, attribution, license, url FROM source WHERE id = 'cntr'")
+    return {
+        "osis": _osis(k),
+        "manuscripts": rows[:limit],
+        "total": len(rows),
+        "printed": " ".join(printed) if printed else None,
+        "source": src,
     }
 
 

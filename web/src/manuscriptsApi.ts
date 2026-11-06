@@ -61,6 +61,54 @@ export interface ManuscriptDetail {
   }[];
   passages: { osis: string; label: string; testament: "OT" | "NT"; completeness: string | null }[];
   ntvmr: NtvmrLinks | null;
+  transcription: TranscriptionSummary | null;
+}
+
+/** A manuscript's transcription (CNTR, CC BY-SA): its source and the chapters it has text for. */
+export interface TranscriptionSummary {
+  id: string;
+  title: string;
+  description: string | null;
+  source_name: string;
+  attribution: string | null;
+  license: string;
+  source_url: string | null;
+  version: string | null;
+  verses: number;
+  books: { osis: string; name: string; chapters: { chapter: number; verses: number }[] }[];
+}
+
+export interface ChapterRef {
+  book: string;
+  chapter: number;
+  label: string;
+}
+
+/** One chapter of a transcription: each verse's markup (light HTML: words, lacunae, nomina sacra, corrections). */
+export interface ManuscriptText {
+  edition: string;
+  book: string;
+  chapter: number;
+  label: string;
+  verses: { osis: string; verse: number; native: string | null; markup: string }[];
+  prev: ChapterRef | null;
+  next: ChapterRef | null;
+}
+
+/** A verse as written in the transcribed manuscripts, earliest first; differences from NA28 marked in the markup. */
+export interface VerseTranscriptions {
+  osis: string;
+  manuscripts: (ManuscriptSummary & {
+    edition_id: string;
+    markup: string;
+    leiden: string;
+    absent: boolean;
+    extant: number;
+    differs: number;
+  })[];
+  total: number;
+  printed: string | null;
+  source: { name: string; attribution: string | null; license: string; url: string | null } | null;
 }
 
 export interface VerseManuscripts {
@@ -91,6 +139,35 @@ export const useVerseManuscripts = (osis: string | null) =>
     enabled: !!osis,
     ...FOREVER,
   });
+
+export const useManuscriptText = (id: string, book: string | null, chapter: number | null, enabled = true) =>
+  useQuery({
+    queryKey: ["manuscript-text", id, book, chapter],
+    queryFn: () =>
+      getJson<ManuscriptText>(`/api/manuscript/${encodeURIComponent(id)}/text`, {
+        book: book ?? undefined,
+        chapter: chapter ?? undefined,
+      }),
+    enabled: enabled && !!id,
+    placeholderData: (prev) => prev,
+    ...FOREVER,
+  });
+
+export const useVerseTranscriptions = (osis: string | null, limit: number) =>
+  useQuery({
+    queryKey: ["verse-transcriptions", osis, limit],
+    queryFn: () => getJson<VerseTranscriptions>(`/api/verse/${osis}/transcriptions`, { limit }),
+    enabled: !!osis,
+    // keep the shorter list on screen while "show more" loads, but never another verse's
+    placeholderData: (prev, prevQuery) => (prevQuery?.queryKey[1] === osis ? prev : undefined),
+    ...FOREVER,
+  });
+
+/** Link to a manuscript's page open at a chapter of its transcription. */
+export function transcriptionUrl(id: string, osis: string): string {
+  const [book, chapter] = osis.split(".");
+  return `${manuscriptUrl(id)}?b=${book}&c=${chapter}#transcription`;
+}
 
 export function manuscriptUrl(id: string): string {
   return `/manuscript/${encodeURIComponent(id)}`;

@@ -48,7 +48,8 @@ def meta(request: Request) -> dict[str, Any]:
     s = store(request)
     editions = s.all(
         "SELECT id, title, abbrev, language, script_dir, kind, testament, versification_id, year, description, sort "
-        "FROM edition ORDER BY sort, id"
+        # manuscript transcriptions are read on their manuscript's page, not offered as reading texts
+        "FROM edition WHERE kind <> 'manuscript' ORDER BY sort, id"
     )
     present = {
         r["book"]: r["chapters"] for r in s.all("SELECT book, max(chapter) AS chapters FROM verse GROUP BY book")
@@ -225,7 +226,7 @@ def verse(request: Request, osis: str, preview: str = "bsb", limit: int = Query(
 
     texts = s.all(
         "SELECT ev.edition_id, ev.text, ev.native_ref, e.abbrev, e.language, e.script_dir FROM edition_verse ev "
-        "JOIN edition e ON e.id = ev.edition_id WHERE ev.vkey = ? ORDER BY e.sort",
+        "JOIN edition e ON e.id = ev.edition_id WHERE ev.vkey = ? AND e.kind <> 'manuscript' ORDER BY e.sort",
         (k,),
     )
     words = {

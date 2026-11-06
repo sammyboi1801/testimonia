@@ -299,8 +299,9 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 
 - **Source:** <https://github.com/Center-for-New-Testament-Restoration/transcriptions>
 - **Licence:** CC-BY-SA-4.0 *(ShareAlike)*
-- **Credit:** Center for New Testament Restoration, CC BY-SA 4.0
-- **Used for:** `edition (kind=manuscript)`, `edition_verse`, `manuscript_coverage`
+- **Credit:** Alan Bunning, Center for New Testament Restoration (CNTR), Electronic Transcriptions, https://github.com/Center-for-New-Testament-Restoration/transcriptions, CC BY-SA 4.0
+- **Used for:** `edition (kind=manuscript)`, `edition_verse`
+- **Pinned version:** git 4e743a41a4
 
 ### Hebrew Wikisource — Dead Sea Scrolls transcriptions (מגילות מדבר יהודה)
 

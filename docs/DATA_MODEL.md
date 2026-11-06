@@ -159,7 +159,12 @@ One `source` row per dataset in `sources.yaml` (licence, attribution, version, s
 ### 6.3 Texts — `edition`, `edition_verse`, `edition_note`
 One model for translations (KJV, BSB, WEB, Brenton, Douay…), original-language editions
 (WLC, SBLGNT, Byzantine, Swete LXX, Aleppo/MAM), the Vulgate, Peshitta translations and
-**manuscript transcriptions** (`kind='manuscript'`, `manuscript_id` set: P66, 01, …).
+**manuscript transcriptions** (`kind='manuscript'`, `manuscript_id` set: P66, 01, …). Transcriptions come from
+CNTR (`cntr:P66` → `GA:P66`, step `transcriptions`): `text` is the verse as the manuscript reads it (plain letters,
+nomina sacra as abbreviated) and `markup` keeps lacunae, supplied/damaged letters, nomina sacra, corrections and
+line/page breaks as light HTML (documented in `testimonia/ingest/transcriptions.py`); a verse the manuscript lacks
+is stored with empty `text` and `markup='<span class="absent"></span>'`. They are read on the manuscript's page and
+in the study panel, never offered as reading texts (`/api/meta` leaves them out).
 A parallel view is just `SELECT … FROM edition_verse WHERE vkey BETWEEN ? AND ? AND edition_id IN (…)`.
 
 ### 6.4 Words — `lemma`, `lexicon`, `lexicon_entry`, `semantic_domain`, `lemma_sense`, `morph_code`, `token`, `syntax_node`, `alignment`
