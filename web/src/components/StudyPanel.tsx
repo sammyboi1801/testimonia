@@ -2,13 +2,14 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useVerse } from "../api";
 import { formatYear, osisLabel, PRE_NICENE, verseUrl } from "../lib";
-import { useSettings, type FathersScope } from "../settings";
+import { useSettings, type FathersScope, type MarkKind, type PanelTab } from "../settings";
 import type { Book, VerseGuide } from "../types";
 import { Html } from "./Html";
+import { Mark } from "./Marks";
 import { Speak } from "./Speak";
 import { WordStudy } from "./WordStudy";
 
-export type Tab = "text" | "fathers" | "links" | "words";
+export type Tab = PanelTab;
 const TABS: { id: Tab; label: string }[] = [
   { id: "text", label: "Text" },
   { id: "fathers", label: "Fathers" },
@@ -71,8 +72,9 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord }: Props & { g:
         </div>
       </header>
 
+      {settings.panel.glance && (
       <div className="glance">
-        <GlanceRow sym="◆" on={major.length > 0} onClick={() => onTab("text")}>
+        <GlanceRow kind="var" on={major.length > 0} onClick={() => onTab("text")}>
           {major.length ? (
             <>
               {major.length} significant variant{major.length > 1 ? "s" : ""}:{" "}
@@ -84,15 +86,16 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord }: Props & { g:
             "The printed editions agree here"
           )}
         </GlanceRow>
-        <GlanceRow sym="✝" on={preNicene > 0} onClick={() => onTab("fathers")}>
+        <GlanceRow kind="fat" on={preNicene > 0} onClick={() => onTab("fathers")}>
           {preNicene} pre-Nicene citation{preNicene === 1 ? "" : "s"} · {g.fathers.length} in all ·{" "}
           {g.commentary.length} comments
         </GlanceRow>
-        <GlanceRow sym="↺" on={quotes.length > 0} onClick={() => onTab("links")}>
+        <GlanceRow kind="quo" on={quotes.length > 0} onClick={() => onTab("links")}>
           {quotes.length ? `${quotes.length} Old ↔ New Testament link${quotes.length > 1 ? "s" : ""}` : "No OT ↔ NT quotation"} ·{" "}
           {g.crossrefs.length} cross references
         </GlanceRow>
       </div>
+      )}
 
       <nav className="tabs panel-tabs" role="tablist">
         {TABS.map((t) => (
@@ -122,10 +125,10 @@ function tabCount(t: Tab, g: VerseGuide, fathers: number): string {
 
 const RANK: Record<string, number> = { meaning: 0, "ketiv-qere": 1, omission: 2 };
 
-function GlanceRow({ sym, on, onClick, children }: { sym: string; on: boolean; onClick: () => void; children: ReactNode }) {
+function GlanceRow({ kind, on, onClick, children }: { kind: MarkKind; on: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button className={`glance-row${on ? " on" : ""}`} onClick={onClick}>
-      <i className="mk">{sym}</i>
+      <Mark kind={kind} minor={!on} />
       <span>{children}</span>
     </button>
   );

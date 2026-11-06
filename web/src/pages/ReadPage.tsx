@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { Navigate, useParams, useSearchParams } from "react-router-dom";
 import { useChapter, useMeta } from "../api";
 import { Reader } from "../components/Reader";
+import { Mark } from "../components/Marks";
 import { StudyPanel, type Tab } from "../components/StudyPanel";
 import { useSettings } from "../settings";
 
@@ -19,7 +20,7 @@ export function ReadPage() {
   const selected = params.get("v");
   const word = params.get("w");
   const tabParam = params.get("t") as Tab | null;
-  const tab: Tab = tabParam && TABS.includes(tabParam) ? tabParam : "text";
+  const tab: Tab = tabParam && TABS.includes(tabParam) ? tabParam : settings.panel.tab;
 
   const setParam = useCallback(
     (patch: Record<string, string | null>, replace = false) =>
@@ -61,9 +62,10 @@ export function ReadPage() {
             <h2>Study panel</h2>
             <p>Choose a verse to see what stands behind it — how the editions and manuscripts differ, which early Christians quoted it, where the Old and New Testaments meet, and every word in Greek or Hebrew.</p>
             <p className="legend">
-              <span><i className="mk mk-var">◆</i> editions differ</span>
-              <span><i className="mk mk-fat">✝</i> cited by the fathers</span>
-              <span><i className="mk mk-quo">↺</i> Old ↔ New Testament</span>
+              <span><Mark kind="var" /> editions differ</span>
+              <span><Mark kind="fat" /> quoted by the fathers (faded: only after AD 325)</span>
+              <span><Mark kind="quo" /> Old ↔ New Testament</span>
+              <span className="muted">Change these in Settings ⚙</span>
             </p>
             {meta.data && (
               <p className="muted small">

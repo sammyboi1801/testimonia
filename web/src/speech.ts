@@ -32,8 +32,15 @@ function voices(): SpeechSynthesisVoice[] {
   return typeof window !== "undefined" && "speechSynthesis" in window ? window.speechSynthesis.getVoices() : [];
 }
 
-export function voiceFor(lang: SpeechLang): SpeechSynthesisVoice | null {
+/** Every installed voice for a language (for the settings pane). */
+export function listVoices(lang: SpeechLang): SpeechSynthesisVoice[] {
+  return voices().filter((v) => LANG_TAGS[lang].some((t) => v.lang.toLowerCase().startsWith(t.slice(0, 2).toLowerCase())));
+}
+
+export function voiceFor(lang: SpeechLang, preferred?: string | null): SpeechSynthesisVoice | null {
   const all = voices();
+  const chosen = preferred ? all.find((v) => v.name === preferred) : undefined;
+  if (chosen) return chosen;
   for (const tag of LANG_TAGS[lang]) {
     const exact = all.filter((v) => v.lang.toLowerCase() === tag.toLowerCase());
     const pick = exact.find((v) => /natural|neural|online/i.test(v.name)) ?? exact[0];
@@ -56,10 +63,10 @@ export function voicesReady(timeoutMs = 1500): Promise<void> {
   });
 }
 
-export async function speak(text: string, lang: SpeechLang, rate = 0.8): Promise<boolean> {
+export async function speak(text: string, lang: SpeechLang, rate = 0.8, voiceName?: string | null): Promise<boolean> {
   if (!speechSupported()) return false;
   await voicesReady();
-  const voice = voiceFor(lang);
+  const voice = voiceFor(lang, voiceName);
   const utterance = new SpeechSynthesisUtterance(lang === "grc" ? speakableGreek(text) : speakableHebrew(text));
   utterance.lang = voice?.lang ?? LANG_TAGS[lang][0]!;
   if (voice) utterance.voice = voice;

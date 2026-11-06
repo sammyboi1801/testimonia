@@ -1,14 +1,16 @@
 import { useState, type MouseEvent } from "react";
+import { useSettings } from "../settings";
 import { speak, speechSupported, type SpeechLang } from "../speech";
 
 /** A small speaker button that pronounces Greek or Hebrew text with the system's speech voices. */
 export function Speak({ text, lang, label }: { text: string; lang: SpeechLang; label?: string }) {
+  const { settings } = useSettings();
   const [missing, setMissing] = useState(false);
-  if (!speechSupported()) return null;
+  if (!speechSupported() || !settings.speech.enabled) return null;
   const language = lang === "grc" ? "Greek" : "Hebrew";
   async function onClick(e: MouseEvent) {
     e.stopPropagation();
-    const ok = await speak(text, lang);
+    const ok = await speak(text, lang, settings.speech.rate, settings.speech[lang]);
     setMissing(!ok);
   }
   return (

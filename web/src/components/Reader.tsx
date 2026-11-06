@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { isRtl, langClass } from "../lib";
 import { MODES, useSettings } from "../settings";
 import type { Book, Chapter, ChapterVerse, Edition, VerseMarks, Word } from "../types";
+import { Marks } from "./Marks";
 import { PassagePicker } from "./PassagePicker";
 import { Speak } from "./Speak";
 
@@ -156,9 +157,7 @@ function Gutter({ marks, verse }: { marks?: VerseMarks; verse: number }) {
     <span className="gutter" title={tips.join("\n")}>
       <span className="vnum">{verse === 0 ? "title" : verse}</span>
       <span className="marks">
-        {m.major_variants ? <i className="mk mk-var">◆</i> : m.variants ? <i className="mk mk-var minor">◇</i> : null}
-        {m.pre_nicene ? <i className="mk mk-fat">✝</i> : m.fathers ? <i className="mk mk-fat minor">✝</i> : null}
-        {m.quotations ? <i className="mk mk-quo">↺</i> : null}
+        <Marks marks={marks} />
       </span>
     </span>
   );
@@ -230,6 +229,7 @@ function lemmaId(w: Word): string | null {
 
 /** Hover card for an original-language word: dictionary form, gloss, parsing, editions, pronunciation. */
 function HoverWord({ w, lang, onWord, children }: { w: Word; lang: "grc" | "hbo"; onWord: (s: string) => void; children: React.ReactNode }) {
+  const { settings } = useSettings();
   const [open, setOpen] = useState(false);
   const timer = useRef<number | undefined>(undefined);
   const id = lemmaId(w);
@@ -239,7 +239,7 @@ function HoverWord({ w, lang, onWord, children }: { w: Word; lang: "grc" | "hbo"
       className="hover-word"
       onMouseEnter={() => {
         window.clearTimeout(timer.current);
-        timer.current = window.setTimeout(() => setOpen(true), 260);
+        if (settings.hover.cards) timer.current = window.setTimeout(() => setOpen(true), settings.hover.delay);
       }}
       onMouseLeave={() => {
         window.clearTimeout(timer.current);
@@ -251,7 +251,7 @@ function HoverWord({ w, lang, onWord, children }: { w: Word; lang: "grc" | "hbo"
       }}
     >
       {children}
-      {open && (
+      {open && settings.hover.cards && (
         <span className="word-card" dir="ltr" role="tooltip" onClick={(e) => e.stopPropagation()}>
           <span className="wc-head">
             <span className={`wc-lemma ${lang === "grc" ? "greek" : "hebrew"}`}>{w.lemma ?? w.surface}</span>
@@ -286,7 +286,6 @@ function ReadingView({ data, edition, headings, ctx }: { data: Chapter; edition?
             {p.verses.map((v) => {
               const t = edition ? v.texts[edition] : undefined;
               if (!t) return null;
-              const m = v.marks ?? {};
               return (
                 <span
                   key={v.vkey}
@@ -295,10 +294,8 @@ function ReadingView({ data, edition, headings, ctx }: { data: Chapter; edition?
                   onClick={() => ctx.onSelect(v.osis)}
                 >
                   <sup className="vnum">
-                    {v.verse === 0 ? "" : v.verse}
-                    {m.major_variants ? <i className="mk mk-var">◆</i> : null}
-                    {m.pre_nicene ? <i className="mk mk-fat">✝</i> : null}
-                    {m.quotations ? <i className="mk mk-quo">↺</i> : null}
+                    <span className="n">{v.verse === 0 ? "" : v.verse}</span>
+                    <Marks marks={v.marks} />
                   </sup>
                   {t.text}{" "}
                 </span>
