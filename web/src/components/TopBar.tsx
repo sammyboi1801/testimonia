@@ -8,6 +8,8 @@ import { SettingsPane } from "./SettingsPane";
 const NEXT_THEME: Record<Theme, Theme> = { system: "light", light: "dark", dark: "system" };
 const THEME_ICON: Record<Theme, string> = { system: "◐", light: "☀", dark: "☾" };
 
+const narrow = typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches;
+
 export function TopBar() {
   const navigate = useNavigate();
   const { settings, update } = useSettings();
@@ -40,7 +42,7 @@ export function TopBar() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Go to a passage (jn 1:18, Isa 53) or search everything…"
+          placeholder={narrow ? "Passage or search…" : "Go to a passage (jn 1:18, Isa 53) or search everything…"}
           aria-label="Passage or search"
         />
       </form>

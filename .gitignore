@@ -29,3 +29,6 @@ Thumbs.db
 # Node (web front-end)
 node_modules/
 web/dist/
+
+# Claude Code local state (agent worktrees, settings)
+.claude/

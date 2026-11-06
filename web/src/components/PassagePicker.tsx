@@ -14,7 +14,10 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
   const [open, setOpen] = useState(() => new URLSearchParams(window.location.search).has("picker"));
   const [picked, setPicked] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
+  // phones show one step at a time: this book's chapters first (the usual move), or the book list
+  const [stage, setStage] = useState<"chapters" | "books">("chapters");
   const ref = useRef<HTMLDivElement>(null);
+  const pop = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const current = books.find((b) => b.osis === book);
   const chosen = books.find((b) => b.osis === (picked ?? book));
@@ -43,6 +46,11 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
     };
   }, [open]);
 
+  useEffect(() => {
+    // each phone step starts at the top of the sheet
+    pop.current?.scrollTo({ top: 0 });
+  }, [stage, picked]);
+
   function go(osis: string, ch: number) {
     setOpen(false);
     setPicked(null);
@@ -50,30 +58,55 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
     navigate(`/read/${osis}/${ch}`);
   }
 
+  function pick(osis: string) {
+    setPicked(osis);
+    setStage("chapters");
+  }
+
+  function toggle() {
+    setStage("chapters");
+    setOpen(!open);
+  }
+
   return (
     <div className="picker" ref={ref}>
-      <button className="picker-btn" onClick={() => setOpen(!open)} aria-expanded={open}>
+      <button className="picker-btn" onClick={toggle} aria-expanded={open}>
         <span className="picker-title">
           {current?.name ?? book} {chapter}
         </span>
         <span className="caret">▾</span>
       </button>
       {open && (
-        <div className="picker-pop" role="dialog" aria-label="Choose a passage">
+        <div ref={pop} className={`picker-pop stage-${stage}`} role="dialog" aria-label="Choose a passage">
+          <div className="picker-sheet-head">
+            {stage === "chapters" ? (
+              <button className="link-btn" onClick={() => setStage("books")}>
+                ‹ All books
+              </button>
+            ) : (
+              <span>Choose a book</span>
+            )}
+            <button className="icon-btn" onClick={() => setOpen(false)} aria-label="Close">
+              ✕
+            </button>
+          </div>
           <div className="picker-books">
             <input
               className="picker-filter"
-              autoFocus
+              autoFocus={window.matchMedia("(min-width: 761px)").matches}
               value={filter}
               placeholder="Type a book — e.g. 1 co, rom 8, psalm 23"
               aria-label="Filter books"
-              onChange={(e) => setFilter(e.target.value)}
+              onChange={(e) => {
+                setFilter(e.target.value);
+                setStage("books");
+              }}
               onKeyDown={(e) => {
                 if (e.key !== "Enter" || !shown.length) return;
                 const b = shown[0]!;
                 if (wantCh && wantCh <= b.chapters) go(b.osis, wantCh);
                 else if (b.chapters === 1) go(b.osis, 1);
-                else setPicked(b.osis);
+                else pick(b.osis);
               }}
             />
             {!shown.length && <p className="muted small">No book matches “{filter}”.</p>}
@@ -87,7 +120,7 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
                       <button
                         key={b.osis}
                         className={b.osis === chosen?.osis ? "on" : ""}
-                        onClick={() => (b.chapters === 1 ? go(b.osis, 1) : setPicked(b.osis))}
+                        onClick={() => (b.chapters === 1 ? go(b.osis, 1) : pick(b.osis))}
                         title={[b.hebrew_name, b.greek_name, b.latin_name].filter(Boolean).join(" · ")}
                       >
                         {b.name}

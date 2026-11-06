@@ -70,6 +70,8 @@ export function Reader({ data, books, editions, selected, onSelect, onWord }: Pr
           <PassagePicker books={books} book={data.book} chapter={data.chapter} />
           <NavArrow to={data.next} dir="›" />
         </div>
+        {/* one sideways-scrolling strip on phones; laid out inline on wider screens */}
+        <div className="reader-tools">
         <div className="modes" role="tablist" aria-label="Reading mode">
           {MODES.map((m) => (
             <button key={m.id} role="tab" aria-selected={mode === m.id} className={mode === m.id ? "on" : ""} title={m.hint} onClick={() => update({ mode: m.id })}>
@@ -85,6 +87,7 @@ export function Reader({ data, books, editions, selected, onSelect, onWord }: Pr
           next={data.next}
           onVerse={setSpeaking}
         />
+        </div>
       </div>
 
       {mode === "reading" ? (
