@@ -9,6 +9,7 @@ Results are plain text with app links, so any model can quote and cite them.
 from __future__ import annotations
 
 import html
+import json
 import re
 from collections.abc import Callable
 from types import SimpleNamespace
@@ -17,8 +18,9 @@ from typing import Any
 import httpx
 from fastapi import HTTPException
 
+from ..morphology import FEATURES
 from ..refs import parse_refs
-from . import api
+from . import api, study
 from .store import Store
 
 MAX_RESULT = 9000  # characters per tool result
@@ -175,6 +177,51 @@ TOOLS: list[dict[str, Any]] = [
             "type": "object",
             "properties": {"reference": {"type": "string"}, "before_year": {"type": "integer"}},
             "required": ["reference"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "passage_guide",
+        "description": (
+            "A whole passage (e.g. 'John 1:1-18', 'Isaiah 53', or one verse for its section): its text, where the "
+            "editions differ verse by verse, which early writers quote it (grouped, pre-Nicene first), the strongest "
+            "cross references, Old/New Testament quotations, translators' notes, topics and setting."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"reference": {"type": "string"}},
+            "required": ["reference"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "grammar_search",
+        "description": (
+            "Find Greek NT or Hebrew OT words by dictionary form and grammar, e.g. every aorist passive of λύω, or "
+            "θεός without the article in John. Give the word (Greek/Hebrew, transliteration, or Strong's like G2316) "
+            "and any filters. Greek: part, tense, voice, mood, case, person, number, gender. Hebrew: part, stem, form, "
+            "person, gender, number, state. Returns verses with the parsed word, counts by book, paged by 25."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "word": {"type": "string"},
+                "book": {"type": "string", "description": "optional book, e.g. 'John' or 'Gen'"},
+                "without_article": {"type": "integer", "description": "1 = only where no article precedes"},
+                "page": {"type": "integer"},
+                "part": {"type": "string"},
+                "tense": {"type": "string"},
+                "voice": {"type": "string"},
+                "mood": {"type": "string"},
+                "case": {"type": "string"},
+                "person": {"type": "string"},
+                "number": {"type": "string"},
+                "gender": {"type": "string"},
+                "stem": {"type": "string"},
+                "form": {"type": "string"},
+                "state": {"type": "string"},
+            },
+            "required": ["word"],
             "additionalProperties": False,
         },
     },
@@ -399,6 +446,94 @@ def _wiki_sections(text: str) -> list[tuple[str, str]]:
     return parts
 
 
+def passage_guide(store: Store, reference: str) -> str:
+    """Everything about a passage, condensed for the assistant."""
+    refs = parse_refs(reference)
+    if refs:
+        a, b = api._osis(refs[0].start), api._osis(refs[0].end)
+        ref = a if a == b else f"{a}-{b}"
+    else:
+        ref = reference
+    try:
+        g = study.passage(_req(store), ref, edition="bsb", limit=200)
+    except HTTPException as e:
+        return f"Could not open {reference!r}: {e.detail}"
+    r = g["range"]
+    out = [f"# {r['label']} — guide: /passage/{r['ref']}"]
+    out += [f"{v['osis'].split('.', 1)[1].replace('.', ':')} {v['text']}" for v in g["verses"][:60]]
+    if g["variants"]:
+        out.append("\n## Where the editions differ")
+        for v in g["variants"][:30]:
+            readings = "; ".join(f"{x.get('text') or '— omitted —'}" for x in v.get("readings", []))
+            out.append(f"- {_label(v['osis']) if v.get('osis') else ''} [{v.get('significance')}] {readings}")
+    for key, title in (("fathers", "Early Christian writers quoting it"), ("witnesses", "Jewish and Roman writers")):
+        if g[key]:
+            out.append(f"\n## {title}")
+            for w in g[key][:25]:
+                verses = ", ".join(_label(x) for x in (w.get("verses") or [])[:6])
+                out.append(f"- {w['name']} (c. {w.get('year') or '?'}), ×{w['n']}: {verses}")
+    if g["crossrefs"]:
+        out.append("\n## Strongest cross references")
+        out += [f"- {_label(c['osis'])} ({c.get('votes')} votes): {c.get('text') or ''}" for c in g["crossrefs"][:15]]
+    if g["quotations"]:
+        out.append("\n## Old/New Testament links")
+        out += [f"- {json.dumps(q, ensure_ascii=False)}" for q in g["quotations"][:10]]
+    if g["topics"]:
+        out.append("\nTopics: " + ", ".join(f"{t['name']} ({t['n']})" for t in g["topics"][:15]))
+    if g["footnotes"]:
+        out.append("\n## Translators' notes")
+        out += [f"- {n['osis']} {n.get('abbrev')}: {_plain(n['body'])}" for n in g["footnotes"][:20]]
+    when = g.get("chronology") or {}
+    if when.get("labels"):
+        out.append(
+            "\nSetting: " + ", ".join(when["labels"]) + "; " + ", ".join(p["name"] for p in g.get("periods") or [])
+        )
+    return "\n".join(out)
+
+
+def grammar_search(
+    store: Store, word: str, book: str | None = None, without_article: int = 0, page: int = 1, **features: str
+) -> str:
+    """Greek/Hebrew forms by grammar, via the same search the app's Grammar tab uses."""
+    for name, value in features.items():
+        allowed = sorted({v for lang in FEATURES.values() for v in lang.get(name, [])})
+        if value not in allowed:
+            return f"Unknown {name} {value!r}; use one of: {', '.join(allowed)}."
+    strong = word.upper() if re.fullmatch(r"[GHgh]\d{1,5}[A-Za-z]?", word.strip()) else None
+    book_osis = _book_osis(book) if book else None
+    if book and not book_osis:
+        return f"Unknown book {book!r}."
+    args: dict[str, Any] = {
+        name: features.get(name)
+        for name in ("part", "tense", "voice", "mood", "case", "person", "number", "gender", "stem", "form", "state")
+    }
+    try:
+        g = study.grammar(
+            _req(store),
+            lemma=None if strong else word,
+            strong=strong,
+            lang=None,
+            book=book_osis,
+            article="without" if without_article else None,
+            no_article=False,
+            edition="bsb",
+            page=max(1, page),
+            size=25,
+            **args,
+        )
+    except HTTPException as e:
+        return f"Grammar search failed: {e.detail}"
+    lemmas = ", ".join(f"{x['lemma']} ({x['id']}, {x.get('gloss') or ''})" for x in g["lemmas"])
+    out = [f"# {g['total']} matches in {g['verses']} verses for {lemmas or word} — page {g['page']}"]
+    out.append("By book: " + ", ".join(f"{b['name']} {b['n']}" for b in g["by_book"]))
+    for r in g["results"]:
+        hits = "; ".join(f"{w['surface']} = {w.get('parse')}" for w in r["words"] if w.get("hit"))
+        out.append(f"- {_label(r['osis'])} ({_verse_link(r['osis'])}): {hits} — {r.get('text') or ''}")
+    if g["page"] * g["size"] < g["verses"]:
+        out.append(f"More: call again with page={g['page'] + 1}.")
+    return "\n".join(out)
+
+
 def wikipedia(store: Store, query: str, section: str | None = None) -> str:
     """English Wikipedia, fetched live (nothing stored): the article's whole introduction and its list of sections,
     or one section in full when `section` is given, so any part of the article can be read."""
@@ -597,11 +732,20 @@ FUNCTIONS: dict[str, Callable[..., str]] = {
     "timeline": timeline,
     "compare_translations": compare_translations,
     "fathers_on": fathers_on,
+    "passage_guide": passage_guide,
+    "grammar_search": grammar_search,
     "wikipedia": wikipedia,
 }
 
 #: characters per result; Wikipedia sections are passed on whole so nothing in an article is out of reach
-LIMITS = {"wikipedia": 60_000, "fathers_on": 30_000, "compare_translations": 20_000, "book_overview": 20_000}
+LIMITS = {
+    "passage_guide": 30_000,
+    "grammar_search": 20_000,
+    "wikipedia": 60_000,
+    "fathers_on": 30_000,
+    "compare_translations": 20_000,
+    "book_overview": 20_000,
+}
 
 
 def validate(name: str, args: Any) -> str | None:

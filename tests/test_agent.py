@@ -303,8 +303,16 @@ def test_new_study_tools(store):
         ("timeline", {"from_year": 30, "to_year": 400}),
         ("compare_translations", {"reference": "John 1:1"}),
         ("fathers_on", {"reference": "John 1:1", "before_year": 325}),
+        ("passage_guide", {"reference": "John 1:1-3"}),
+        ("grammar_search", {"word": "G2316", "book": "John"}),
     ):
         text, is_error = agent_tools.run(store, name, args)
         assert not is_error, (name, text)
         assert text.strip(), name
     assert agent_tools.validate("timeline", {"from_year": "30", "to_year": 50}) is not None
+
+
+def test_grammar_search_rejects_unknown_features(store):
+    text, _ = agent_tools.run(store, "grammar_search", {"word": "λύω", "tense": "banana"})
+    assert "Unknown tense 'banana'" in text
+    assert "aorist" in text
