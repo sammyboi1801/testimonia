@@ -65,7 +65,7 @@ HOST = setting("HOST", "127.0.0.1") or "127.0.0.1"
 AGENT_ALLOW_PRIVATE = (setting("AGENT_ALLOW_PRIVATE", "") or "").lower() in ("1", "true", "yes")
 PORT = int(setting("PORT", "8765") or "8765")
 #: Sent with every HTTP request. Identifies the project; never contains personal data.
-USER_AGENT = setting("USER_AGENT", "Testimonia-build/0.1 (open-source Bible study data pipeline)") or ""
+USER_AGENT = setting("USER_AGENT", "Testimonia/0.1 (https://github.com/sammyboi1801/testimonia)") or ""
 
 
 def ensure_dirs() -> None:

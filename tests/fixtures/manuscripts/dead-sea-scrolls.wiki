@@ -1,0 +1,57 @@
+<!-- Excerpt of https://en.wikipedia.org/w/index.php?oldid=1373049163 (List of the Dead Sea Scrolls), CC BY-SA 4.0 -->
+===Qumran Cave 1===
+<onlyinclude>{|class="wikitable collapsible collapsed"
+|-
+! Fragment or scroll identifier
+! Fragment or scroll name
+! Alternative identifier
+! English Bible Association
+! Language
+! Date/script
+! Description
+! Reference
+|-
+! colspan="8" style="background:#b8c7d6;"|
+Qumran Cave 1
+|-
+| [[Isaiah Scroll|1QIsa{{sup|a}}]] || [[Isaiah Scroll|Great Isaiah Scroll]]
+||| [[Isaiah 1:1]]–31; [[Isaiah 2|2]]:1–22; 3:1–5:30; 6:1–13; 7:1–25; 8:1–23; 9:1–20; 10:1–34; 11:1–45:25; 46:1–66:24
+|| Hebrew
+|356–103 BCE/150–100 BCE||Contains all 66 chapters with occasional lacunae ||<ref>[http://dss.collections.imj.org.il/isaiah The Great Isaiah Scroll]</ref>{{sfn|Fitzmyer|2008|pp=14–15}}
+|-
+|[[Community Rule|1QS]]
+|[[Community Rule|Serekh ha-Yahad]] or "[[Community Rule]]"
+|||
+|Hebrew||
+| cf. 4QS{{sup|a-j}} = 4Q255–64, 5Q11
+|{{sfn|Fitzmyer|2008|p=18}}
+|}</onlyinclude>
+===Qumran Cave 4===
+<onlyinclude>{|class="wikitable collapsible collapsed"
+|-
+! Fragment or scroll identifier
+! Fragment or scroll name
+! Alternative identifier
+! English Bible Association
+! Language
+! Date/script
+! Description
+! Reference
+|-
+|4QGen{{sup|b}}
+|rowspan="2"|[[Book of Genesis|Genesis]]
+|4Q2
+|[[Genesis 1:1]]–27; 2:14–19; 4:2–4; 5:13
+|Hebrew
+|Roman
+|Fragment of Genesis
+|{{sfn|Fitzmyer|2008|p=29}}<ref>[https://www.deadseascrolls.org.il/explore-the-archive/manuscript/4Q2-1 4Q2 at the Leon Levy Dead Sea Scrolls Digital Library]</ref>
+|-
+|4QGen{{sup|b}}
+|4Q2a
+|Genesis 32:4–5, 30, 33–33:1; 34:30–35:1, 4–7
+|Hebrew
+|Hasmonean
+|Another fragment
+|
+|}</onlyinclude>

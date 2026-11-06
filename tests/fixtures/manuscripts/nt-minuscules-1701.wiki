@@ -1,0 +1,22 @@
+<!-- Excerpt of https://en.wikipedia.org/w/index.php?oldid=1370677260 (List of New Testament minuscules (1701–1800)), CC BY-SA 4.0 -->
+{| class="wikitable sortable" style="text-align:center"
+!#!!Date!!Contents!!Pages!!Institution and refs.!!City, State!!Country!!Images
+|-
+| '''[[Minuscule 1739|1739]]'''
+| 10th
+| [[Acts of the Apostles|Acts]], [[General epistles|General Epistles]], [[Pauline Epistles]]
+| 102
+| [[Great Lavra Monastery]], B' 184
+| [[Mount Athos]]
+| [[Greece]]
+| bgcolor="lightgray"|[http://ntvmr.uni-muenster.de/manuscript-workspace?docID=31739 INTF]
+|-
+| '''1740'''
+| 13th
+| Acts, General Epistles, Pauline Epistles, Revelation
+| 307
+| Great Lavra Monastery, B' 190
+| Mount Athos
+| Greece
+| INTF
+|}

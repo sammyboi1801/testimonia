@@ -148,8 +148,9 @@ def _parse_numbers(book: str, seg: str) -> list[Range]:
         b, c, d = (int(x) if x else None for x in m.group(2, 3, 4))
         if b is not None:  # a:b ...
             chapter = a
-            if c is not None and d is not None:  # a:b-c:d
+            if c is not None and d is not None:  # a:b-c:d (a following ', 29-30' continues chapter c)
                 res.append(Range(book, a, b, c, d))
+                chapter = c
             elif c is not None:  # a:b-c
                 res.append(Range(book, a, b, a, c))
             else:
@@ -158,6 +159,9 @@ def _parse_numbers(book: str, seg: str) -> list[Range]:
         elif single:  # Jude 3, Jude 3-5
             res.append(Range(book, 1, a, 1, c if c is not None else a))
             chapter, verse_ctx = 1, True
+        elif verse_ctx and chapter is not None and c is not None and d is not None:  # ", 30-35:1" crosses a chapter
+            res.append(Range(book, chapter, a, c, d))
+            chapter = c
         elif verse_ctx and chapter is not None:  # continuation verse after a:b  (", 14")
             res.append(Range(book, chapter, a, chapter, c if c is not None else a))
         elif c is not None and d is not None:  # 'Gen 1-3:5'

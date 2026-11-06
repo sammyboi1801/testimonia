@@ -1,0 +1,44 @@
+<!-- Excerpt of https://en.wikipedia.org/w/index.php?oldid=1366826565 (List of New Testament papyri), CC BY-SA 4.0 -->
+===Papyrus 1–50===
+{| class="wikitable sortable" style="text-align:center"
+|-
+!Name!!Date!!Content!!Pages!!Institution!!Ref #!!City, State!!Country!!Images
+|- style="background:beige"
+| {{Papyrus link|1}}
+| ~250
+| [[Gospel of Matthew|Matthew]] [[Matthew 1:1|1:1]]-[[Matthew 1:9|9]], [[Matthew 1:12|12]]-[[Matthew 1:13|13]], [[Matthew 1:14]]-[[Matthew 1:20|20]], [[Matthew 1:23|23]]
+| 2 Frg
+| [[University of Pennsylvania]]
+| [[Papyrus Oxyrhynchus 2|P. Oxy. 2]]; E 2746
+| [[Philadelphia, Pennsylvania|Philadelphia]]<br>[[Pennsylvania]]
+| [[United States]]
+| bgcolor="sandybrown"| [[University of Pennsylvania Museum of Archaeology and Anthropology|PM]],<ref>{{Cite web |url=https://www.penn.museum/collections/object/254486 |title=Saint Mathew Gospel}}</ref> [http://ntvmr.uni-muenster.de/manuscript-workspace?docID=10001 INTF]
+|-style="background:MistyRose"
+|rowspan=2| {{Papyrus link|46}}
+|rowspan=2| 175-225
+|| Romans 5:17–6:14, 8:15–11:35<br>Hebrews 9:26–end<br>Philippians<br>Colossians
+|| 56
+|| [[Chester Beatty Library]]
+|| [[Chester Beatty Papyri|BP]] II
+|| Dublin
+|| Ireland
+| bgcolor="sandybrown"| [http://ntvmr.uni-muenster.de/manuscript-workspace?docID=10046 INTF]
+|-style="background:MistyRose"
+||Romans 11:35–14:8, 16:25-end<br>Ephesians<br>Galatians 1:1–6:10
+||30
+||[[University of Michigan]]
+||Inv. 6238
+||[[Ann Arbor, Michigan]]
+|| United States
+| bgcolor="sandybrown"| [http://www.csntm.org/Manuscript/View/GA_P46 CSNTM]
+|-
+| {{Papyrus link|52}}
+| 110-140
+| [[John 18]]:31-33, 18:37-38
+| 1 Frg
+| [[John Rylands University Library]]
+| Gr. P. 457
+| [[Manchester]]
+| UK
+|bgcolor="sandybrown"| [http://www.csntm.org/Manuscript/View/GA_P52 CSNTM]
+|}

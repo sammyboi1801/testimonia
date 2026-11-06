@@ -194,6 +194,210 @@
       "size": 732065,
       "source": "ebible"
     },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1168530725&action=raw|wikipedia-manuscripts|nt-minuscules-2501.wiki": {
+      "fetched_at": "2026-11-06T07:56:32+00:00",
+      "sha256": "7b899241d24b9147d0465153dc6bef378cc89006a7fdca25caa07bef293d4ac6",
+      "size": 26413,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1183326065&action=raw|wikipedia-manuscripts|nt-minuscules-2301.wiki": {
+      "fetched_at": "2026-11-06T07:56:32+00:00",
+      "sha256": "95c6a4203665f1a9443e9eec4494e13f8d379d6e1339e2d361b35d0164166cb4",
+      "size": 30188,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1198873841&action=raw|wikipedia-manuscripts|nt-minuscules-1001.wiki": {
+      "fetched_at": "2026-11-06T07:56:30+00:00",
+      "sha256": "e0cca1a1c50f787064c6d120e786c8f69888e1bcdce990b28bbfd7047c2eaa39",
+      "size": 23121,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1198874292&action=raw|wikipedia-manuscripts|nt-minuscules-1601.wiki": {
+      "fetched_at": "2026-11-06T07:56:31+00:00",
+      "sha256": "378d49cd069cf901cd8f850f54968cd8150af5ab06880ccc7852d3a3b08d4966",
+      "size": 22144,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1198874528&action=raw|wikipedia-manuscripts|nt-minuscules-1801.wiki": {
+      "fetched_at": "2026-11-06T07:56:31+00:00",
+      "sha256": "8432bd98d863b76785be5d27c28b6591ae8d1c60f840e4f5c233878fafd3434e",
+      "size": 35392,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1207686793&action=raw|wikipedia-manuscripts|nt-minuscules-0101.wiki": {
+      "fetched_at": "2026-11-06T07:56:29+00:00",
+      "sha256": "a4bb7d4b72ba70bbb87e9c1a74f08a9639eaaf80b700086379cb1a231b503937",
+      "size": 42279,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1207687181&action=raw|wikipedia-manuscripts|nt-minuscules-0301.wiki": {
+      "fetched_at": "2026-11-06T07:56:29+00:00",
+      "sha256": "0bc399cd3cee5ed0d2cbcb27fd7c50f35ab9e3b781b89f54d02ba7aff1b4fc2f",
+      "size": 38537,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1207687387&action=raw|wikipedia-manuscripts|nt-minuscules-0401.wiki": {
+      "fetched_at": "2026-11-06T07:56:29+00:00",
+      "sha256": "bf6478fb24d4c0fc0a6d6d9c692410703cb22baf5b95434d9a7711c938434a21",
+      "size": 42077,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1207687517&action=raw|wikipedia-manuscripts|nt-minuscules-0501.wiki": {
+      "fetched_at": "2026-11-06T07:56:30+00:00",
+      "sha256": "1131f9338b444e28c878bba0057039abca0f9d10075779da8f28142fc2482d27",
+      "size": 31424,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1207687689&action=raw|wikipedia-manuscripts|nt-minuscules-0601.wiki": {
+      "fetched_at": "2026-11-06T07:56:30+00:00",
+      "sha256": "1400fa3bc3f153ad5c6b909a34212a5e2070655c6b271422c663aef6bd5e4d2d",
+      "size": 41378,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1207688436&action=raw|wikipedia-manuscripts|nt-minuscules-0701.wiki": {
+      "fetched_at": "2026-11-06T07:56:30+00:00",
+      "sha256": "21cc2777a5fba2a22af8b63d06b465e8e97e30eabe9bbabd912f586ea48ec50b",
+      "size": 39512,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1207689993&action=raw|wikipedia-manuscripts|nt-minuscules-0901.wiki": {
+      "fetched_at": "2026-11-06T07:56:30+00:00",
+      "sha256": "90e209623835d34d89e51e329511cfab7d039ae8cfd497725fba48565bb4d990",
+      "size": 28689,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1207695232&action=raw|wikipedia-manuscripts|nt-minuscules-1201.wiki": {
+      "fetched_at": "2026-11-06T07:56:30+00:00",
+      "sha256": "b49d5d1748a9b3cfef194230fb941adb3051aade7d5c2cb0546aa8e04e3a0d8f",
+      "size": 40628,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1248122718&action=raw|wikipedia-manuscripts|nt-minuscules-0001.wiki": {
+      "fetched_at": "2026-11-06T07:56:29+00:00",
+      "sha256": "86e31f6cc4a891b02f574fcf01b4d275115ac7f57b16fae65b11121eafd48fad",
+      "size": 44050,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1256783298&action=raw|wikipedia-manuscripts|nt-minuscules-1101.wiki": {
+      "fetched_at": "2026-11-06T07:56:30+00:00",
+      "sha256": "55c594332831785494ae7c68e03a57474731a6f6d8a812a761a6d50cbcddf750",
+      "size": 27514,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1279018786&action=raw|wikipedia-manuscripts|nt-minuscules-2201.wiki": {
+      "fetched_at": "2026-11-06T07:56:31+00:00",
+      "sha256": "cdc6ee41c707064de38ee094246b68bce4eb95738824a20845ac8b1474d165f3",
+      "size": 27038,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1294612704&action=raw|wikipedia-manuscripts|nt-minuscules-2401.wiki": {
+      "fetched_at": "2026-11-06T07:56:32+00:00",
+      "sha256": "f6e90723aca3c12798d60e452f9837ee6ff6a6f25f48b96340e886a8baae44cf",
+      "size": 34388,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1299410541&action=raw|wikipedia-manuscripts|nt-minuscules-1901.wiki": {
+      "fetched_at": "2026-11-06T07:56:31+00:00",
+      "sha256": "c5afcb02331f592a57ab25c8161a864f646135ef6e027906c733cf8e556e96a4",
+      "size": 34114,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1341975862&action=raw|wikipedia-manuscripts|nt-minuscules-2101.wiki": {
+      "fetched_at": "2026-11-06T07:56:31+00:00",
+      "sha256": "6d99a0ffca92335c6c6550af209bf59a8840a29a8b1e75e32d5cb21fc08ed4e0",
+      "size": 25581,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1348462251&action=raw|wikipedia-manuscripts|nt-minuscules-1301.wiki": {
+      "fetched_at": "2026-11-06T07:56:30+00:00",
+      "sha256": "b0bf1a39e13f4765bb83906a611a0ab2728d449aea46006d6510dc9c5ee26b80",
+      "size": 37260,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1348462263&action=raw|wikipedia-manuscripts|nt-minuscules-1501.wiki": {
+      "fetched_at": "2026-11-06T07:56:31+00:00",
+      "sha256": "138e30c401517b0f1b90f84ec21651ae29862a49ebfe39250b868090cf547fb4",
+      "size": 23655,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1348462271&action=raw|wikipedia-manuscripts|nt-minuscules-2601.wiki": {
+      "fetched_at": "2026-11-06T07:56:32+00:00",
+      "sha256": "6ea2b94e80f4db5dbca1ecdfd42348a11f08ed8c8fce29eea2bf67b379c8209b",
+      "size": 26489,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1348462295&action=raw|wikipedia-manuscripts|nt-minuscules-2701.wiki": {
+      "fetched_at": "2026-11-06T07:56:32+00:00",
+      "sha256": "5521a4550edc9215d44c2f7b39ff10cb70a73189cecf344c5de5a610aca1ab87",
+      "size": 25240,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1352279876&action=raw|wikipedia-manuscripts|nt-minuscules-0801.wiki": {
+      "fetched_at": "2026-11-06T07:56:30+00:00",
+      "sha256": "474b57fb5e88e0152fc6fe47d8e628393015833e1cd48ce8d6b8654e681c96da",
+      "size": 33213,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1354573610&action=raw|wikipedia-manuscripts|nt-uncials.wiki": {
+      "fetched_at": "2026-11-06T07:56:28+00:00",
+      "sha256": "f34d4d169f309fba214ac66b747bf432a9ff821bfa37b6b2ce68714cc708563b",
+      "size": 141982,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1366826565&action=raw|wikipedia-manuscripts|nt-papyri.wiki": {
+      "fetched_at": "2026-11-06T07:56:28+00:00",
+      "sha256": "c6cbd54aac1ee9ba3c4b0053962352989c3f7cb7f2a3d6fdf21c4b32c7d3c1f6",
+      "size": 105602,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1370677260&action=raw|wikipedia-manuscripts|nt-minuscules-1701.wiki": {
+      "fetched_at": "2026-11-06T07:56:31+00:00",
+      "sha256": "9913acf116162089c2fc34a449d0e830ffcc62c1c7a01cda05c561baf47b3a65",
+      "size": 26445,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1370845571&action=raw|wikipedia-manuscripts|nt-minuscules-0201.wiki": {
+      "fetched_at": "2026-11-06T07:56:29+00:00",
+      "sha256": "1bc11a3e13456bfa936402bbda67f9ebb203dad1fc1c5c64b2b664a52d06dcb0",
+      "size": 36977,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1371657827&action=raw|wikipedia-manuscripts|nt-minuscules-2901.wiki": {
+      "fetched_at": "2026-11-06T07:56:32+00:00",
+      "sha256": "0a8a5cbbddcc7a0733e6c48b6991a664941a5a1be1ace69497e7327408f57d88",
+      "size": 30157,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1373049163&action=raw|wikipedia-dss|dead-sea-scrolls.wiki": {
+      "fetched_at": "2026-11-06T07:56:32+00:00",
+      "sha256": "87d5386d13e44057d6b58ce5e45d6af1449172b3df5a6cabe2911f5c3f40609d",
+      "size": 142104,
+      "source": "wikipedia-dss"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1374149401&action=raw|wikipedia-manuscripts|nt-minuscules-1401.wiki": {
+      "fetched_at": "2026-11-06T07:56:31+00:00",
+      "sha256": "0b9fd54529d8446e850e51e53cac7f73333c36a2799a744f2518c25d6c17177e",
+      "size": 24433,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1374149406&action=raw|wikipedia-manuscripts|nt-minuscules-2801.wiki": {
+      "fetched_at": "2026-11-06T07:56:32+00:00",
+      "sha256": "aa238d2e91a745d6b5c6bad7dcb3227b9e4d78bc0ffef8045d7e687818f524c7",
+      "size": 28493,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1376410109&action=raw|wikipedia-manuscripts|nt-minuscules-2001.wiki": {
+      "fetched_at": "2026-11-06T07:56:31+00:00",
+      "sha256": "5d866bbff06271519d6fcd2edabee8d0c09ad5c2eadf7b00b740ea4da312302d",
+      "size": 34282,
+      "source": "wikipedia-manuscripts"
+    },
+    "http|https://en.wikipedia.org/w/index.php?oldid=1380625538&action=raw|wikipedia-manuscripts|lxx-manuscripts.wiki": {
+      "fetched_at": "2026-11-06T07:56:28+00:00",
+      "sha256": "144c8b540bacbb136bf3f3eb3e102a3eb0171bce5dcd9841309bc3aca76d0e2f",
+      "size": 272833,
+      "source": "wikipedia-manuscripts"
+    },
     "http|https://media.githubusercontent.com/media/Clear-Bible/macula-hebrew/47db250bd55d0d8577f2a94fba114ef16c35b23c/WLC/tsv/macula-hebrew.tsv|macula-hebrew|": {
       "fetched_at": "2026-11-06T07:55:45+00:00",
       "sha256": "965cb0599beed2fe31283b615bcc369178141c0e718a66d97518d94309cfc124",

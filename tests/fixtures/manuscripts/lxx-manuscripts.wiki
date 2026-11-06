@@ -1,0 +1,60 @@
+<!-- Excerpt of https://en.wikipedia.org/w/index.php?oldid=1380625538 (Septuagint manuscripts), CC BY-SA 4.0 -->
+===Part I: A–Z===
+{| class="wikitable mw-collapsible mw-collapsed sortable" style="text-align:center"
+|-
+! Symbol!!Name!!Date!!Content!!Institution!!City!!Country
+|-
+| '''B'''
+| [[Codex Vaticanus]]
+| 4th Century;
+
+| contains Gen 46:28 to Heb 9:14
+| [[Vatican Library|Vat. Lib.]], Gr. 1209
+| [[Vatican City]]
+|
+|-
+| '''W'''
+| [[Codex Washingtonianus|Washington Codex]]
+| 3rd century
+| Minor prophets with gaps
+| SIL Freer Gall., Ms. V
+| [[Washington, D.C.]]
+| [[United States]]
+|}
+==== 801–900 ====
+{| class="wikitable mw-collapsible mw-collapsed sortable" style="text-align:center"
+|-
+! Symbol!!Name!!Date!!Content!!Institution!!City!!Country
+|-
+| 801
+| [[4Q119]]<br />(4Q LXXLev{{sup|a}})
+| 1st century BCE
+| fragments of Leviticus 26:2–16
+| [[Rockefeller Museum]], Gr. 1004 [4Q119]
+| [[Jerusalem]]
+| [[Israel]]
+|-
+| 846
+|
+| 4th/5th century
+| Reg. I 24:11–17; 24:20–25:20
+| [[Yale University]], MS 544
+| [[New Haven, Connecticut|New Haven]]
+| [[United States]]
+|-
+| 13
+| Codex Bodleianus
+| c. 950
+| Cat. in. Ps.Od.
+| [[Bodleian Library]], Auct. D. 4. 1
+| [[Oxford]]
+| [[United Kingdom]]
+|-
+| [729]
+|
+|
+| Does not contain the biblical text
+| Bibl. Marc.
+| Venice
+| Italy
+|}
