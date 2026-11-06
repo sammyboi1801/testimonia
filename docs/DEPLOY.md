@@ -4,7 +4,42 @@ Testimonia is one Python server (FastAPI) plus one read-only SQLite database (~1
 Nothing is stored about visitors: notes live in their browsers, and the AI assistant uses each visitor's own
 API key for that one request.
 
-## Recommended: everything on a free Hugging Face Space
+## Option A: an Oracle Cloud Always Free VM (always on)
+
+Oracle's Always Free Ampere instances (up to 4 cores / 24 GB) run around the clock without sleeping. An
+instance you already use for something else works too, as long as ports 80 and 443 are free on it.
+
+1. **Open the ports.** In the console: instance → *Networking* → the subnet → its *Security list* → *Add
+   ingress rules*: source `0.0.0.0/0`, TCP, destination ports `80,443`. Ubuntu images also have their
+   own firewall:
+
+   ```bash
+   sudo iptables -I INPUT 6 -m state --state NEW -p tcp -m multiport --dports 80,443 -j ACCEPT
+   sudo netfilter-persistent save
+   ```
+
+2. **Install Docker:** `curl -fsSL https://get.docker.com | sudo sh && sudo usermod -aG docker $USER`, then
+   log out and back in.
+
+3. **Get the code and the database** (from your own computer for the database):
+
+   ```bash
+   git clone https://github.com/<you>/testimonia.git && mkdir -p testimonia/deploy/oracle/data
+   scp -i <key> ~/TestimoniaData/build/core-public.db ubuntu@<ip>:testimonia/deploy/oracle/data/core.db
+   ```
+
+4. **Start it:**
+
+   ```bash
+   cd testimonia/deploy/oracle
+   echo "SITE_ADDRESS=<ip with dashes>.sslip.io" > .env     # e.g. 158-101-122-1.sslip.io, or your domain
+   docker compose up -d --build
+   ```
+
+   Caddy obtains the HTTPS certificate on its own; the site is at `https://<ip with dashes>.sslip.io`. To
+   update later: `git pull && docker compose up -d --build`.
+
+## Option B: a free Hugging Face Space
 
 Free CPU Spaces need no card and are large enough (2 vCPU, 16 GB RAM). They sleep after 48 hours without
 visitors; the next visit wakes them in about a minute.

@@ -1,0 +1,33 @@
+# Testimonia on any Linux VM (e.g. an Oracle Cloud Always Free Ampere instance), with HTTPS by Caddy.
+#   1. put the database at ./data/core.db (or set TESTIMONIA_CORE_DB_URL in .env)
+#   2. set SITE_ADDRESS in .env, e.g.  SITE_ADDRESS=158-101-122-1.sslip.io  (or your own domain)
+#   3. docker compose up -d --build
+services:
+  app:
+    build: ../..
+    image: testimonia
+    restart: unless-stopped
+    environment:
+      TESTIMONIA_CORE_DB_URL: ${TESTIMONIA_CORE_DB_URL:-}
+    volumes:
+      - ./data:/data/build
+    expose:
+      - "7860"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [app]
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
