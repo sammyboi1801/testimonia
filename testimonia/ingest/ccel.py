@@ -365,14 +365,33 @@ def _plain_parts(el: Any) -> Iterator[str]:
             yield child.tail
 
 
-def _snippet(scrip_ref: Any) -> str:
-    """Context for a citation: the paragraph it belongs to (for a footnote, the paragraph carrying the note)."""
+_MARK = "⁣"  # invisible separator: marks where the reference sits while the paragraph is flattened
+
+
+def _snippet(scrip_ref: Any, before: int = 170, after: int = 130) -> str:
+    """Context for a citation: the words around the reference in its paragraph (for a footnote, around the note
+    marker in the paragraph carrying the note). Long paragraphs used to be cut at their start, far from the
+    quotation; the excerpt is now centred on the reference itself."""
     note = next((a for a in scrip_ref.iterancestors() if a.tag == "note"), None)
     anchor = note if note is not None else scrip_ref
     para = next((a for a in anchor.iterancestors() if a.tag == "p"), None)
     if para is None:
         return ""
-    return " ".join(" ".join(_plain_parts(para)).split())[:280]
+    idx = list(para.iter()).index(anchor)
+    copy = _copy(para)
+    target = list(copy.iter())[idx]
+    target.tail = _MARK + (target.tail or "")  # right after the quoted words / the note marker
+    text = " ".join(" ".join(_plain_parts(copy)).split())
+    at = text.find(_MARK)
+    text = text.replace(_MARK, "")
+    if at < 0 or len(text) <= before + after:
+        return text[: before + after]
+    lo, hi = max(0, at - before), min(len(text), at + after)
+    if lo > 0:  # start and end on whole words
+        lo = text.find(" ", lo) + 1 or lo
+    if hi < len(text):
+        hi = text.rfind(" ", lo, hi) if text.rfind(" ", lo, hi) > lo else hi
+    return ("… " if lo > 0 else "") + text[lo:hi].strip() + (" …" if hi < len(text) else "")
 
 
 def _to_html(src: Any) -> str:

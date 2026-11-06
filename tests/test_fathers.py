@@ -186,3 +186,23 @@ def test_footnote_paragraphs_do_not_nest_inside_spans():
     assert '<span class="note"' in html
     note = html[html.index('<span class="note"') :]
     assert "<p>" not in note.split("</span>")[0]  # no block element inside the inline note
+
+
+FILLER = "words that have nothing to do with the verse. " * 30
+
+
+@pytest.mark.parametrize(
+    "inner",
+    [
+        'the true Light, which lighteth every man <scripRef osisRef="John.1.9">John 1:9</scripRef> that cometh',
+        'the true Light, which lighteth every man<note>See <scripRef osisRef="John.1.9">John 1:9</scripRef></note> that cometh',
+    ],
+)
+def test_snippet_is_centred_on_the_reference(inner):
+    """Long paragraphs used to be cut at their start, far from the quotation they carry."""
+    p = etree.fromstring(f"<div><p>{FILLER}{inner} into the world. {FILLER}</p></div>")
+    snippet = ccel._snippet(next(p.iter("scripRef")))
+    assert "lighteth every man" in snippet
+    assert snippet.startswith("… ")
+    assert snippet.endswith(" …")
+    assert len(snippet) < 320
