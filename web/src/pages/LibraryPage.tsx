@@ -45,6 +45,9 @@ export function LibraryPage() {
         <Link to="/manuscripts" className="library-aside-link" title="Papyri, codices and Dead Sea Scrolls">
           Manuscripts →
         </Link>
+        <Link to="/rulers" className="library-aside-link" title="Kings of Israel and Judah, empires, Herods, emperors and governors on a time axis">
+          Kings &amp; rulers →
+        </Link>
       </div>
       {view === "timeline" ? <TimelineView /> : view === "story" ? <StoryView /> : <Bookshelf />}
     </div>

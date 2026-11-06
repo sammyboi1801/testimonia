@@ -1,0 +1,18 @@
+# Rulers in curated/rulers.csv → their Wikidata item and "position held" (P39) statements with start/end
+# qualifiers (P580/P582) and the precision of each date. Items are found through their English Wikipedia
+# article, so the titles in rulers.csv are the join key. tools/wikidata_rulers.py fills in the VALUES list
+# (one query per group of realms, to keep each GET URL short) and prints the fetch lines for sources.yaml.
+#
+# Years in SPARQL results are astronomical (XSD 1.1: 0000 = 1 BC), the same convention as core.db.
+SELECT ?title ?item ?pos ?posLabel ?start ?startPrec ?end ?endPrec WHERE {
+  VALUES ?title { {titles} }
+  ?article schema:about ?item ; schema:isPartOf <https://en.wikipedia.org/> ; schema:name ?title .
+  OPTIONAL {
+    ?item p:P39 ?st . ?st ps:P39 ?pos ; wikibase:rank ?rank .
+    FILTER(?rank != wikibase:DeprecatedRank)
+    OPTIONAL { ?st pqv:P580 [ wikibase:timeValue ?start ; wikibase:timePrecision ?startPrec ] }
+    OPTIONAL { ?st pqv:P582 [ wikibase:timeValue ?end ; wikibase:timePrecision ?endPrec ] }
+  }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
+}
+ORDER BY ?title ?start

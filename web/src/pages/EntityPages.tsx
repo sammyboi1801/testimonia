@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { useMeta } from "../api";
 import { Html } from "../components/Html";
 import type { MapPoint } from "../components/MiniMap";
+import { PersonReigns } from "../components/PersonReigns";
 import { WikiCard } from "../components/Wiki";
 import {
   confidenceBand,
@@ -173,6 +174,7 @@ function SourceNote({ source }: { source: string | null }) {
   const credit: Record<string, string> = {
     "openbible-geo": "Place data from OpenBible.info (CC BY 4.0)",
     theographic: "From Theographic Bible Metadata (CC BY-SA 4.0); dictionary text from Easton's Bible Dictionary (1897, public domain)",
+    "testimonia-curated": "From Testimonia's curated tables of rulers (CC BY-SA 4.0; each reign cites its source) and Wikidata (CC0)",
   };
   return <p className="muted small ent-credit">{(source && credit[source]) ?? "From the Testimonia database"} · see Credits for every source.</p>;
 }
@@ -323,14 +325,14 @@ export function PersonPage() {
   const books = useMeta().data?.books ?? [];
   if (!data) return <Loading what="person" error={error} isLoading={isLoading} />;
   const p = data.person;
-  if (p.kind !== "biblical") return <Navigate to={`/library?view=timeline&sel=a:${encodeURIComponent(p.id)}`} replace />;
+  if (p.kind !== "biblical" && p.kind !== "ruler") return <Navigate to={`/library?view=timeline&sel=a:${encodeURIComponent(p.id)}`} replace />;
   const life = [p.born !== null && `born ${formatYear(p.born)}`, p.died !== null && `died ${formatYear(p.died)}`].filter(Boolean).join(" · ");
   const points = located(data.places);
   return (
     <div className="page book-page entity-page">
       <header className="book-hero ent-hero">
         <div>
-          <div className="about-label">Person in the Bible</div>
+          <div className="about-label">{p.kind === "ruler" ? "Ruler" : "Person in the Bible"}</div>
           <h1>{p.name}</h1>
           <div className="ctx-meta">
             {p.summary && <span>{p.summary}</span>}
@@ -369,6 +371,7 @@ export function PersonPage() {
           <VerseList verses={data.verses} books={books} what="Named" />
         </section>
         <aside className="book-col side">
+          <PersonReigns id={p.id} />
           {data.events.length > 0 && (
             <Block title="Events" note={data.events.length}>
               <EventList events={data.events} />

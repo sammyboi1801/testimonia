@@ -351,6 +351,7 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Licence:** CC0-1.0
 - **Credit:** Wikidata (CC0)
 - **Used for:** `external_id`, `person`, `dating`, `event`, `manuscript`, `place`
+- **Pinned version:** fetched 2026-11-06
 
 ### Wikipedia "List of the Dead Sea Scrolls" (+ per-cave lists, Murabba'at, Nahal Hever, Masada)
 

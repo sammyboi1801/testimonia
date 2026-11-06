@@ -35,6 +35,7 @@ import "./reading.css";
 import "./words.css";
 import "./manuscripts.css";
 import "./geo.css";
+import "./rulers.css";
 import "./mobile.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -60,6 +61,7 @@ import { TopicsPage } from "./pages/TopicsPage";
 import { TopicPage } from "./pages/TopicPage";
 import { PlanPage, PlansPage } from "./pages/PlansPage";
 import { ParallelPage, ParallelsPage } from "./pages/ParallelsPage";
+import { RulersPage } from "./pages/RulersPage";
 import { NotesProvider } from "./notes";
 import { SettingsProvider } from "./settings";
 
@@ -88,6 +90,7 @@ function App() {
           <Route path="/domains/:id" element={<DomainPage />} />
           <Route path="/manuscripts" element={<ManuscriptsPage />} />
           <Route path="/manuscript/:id" element={<ManuscriptPage />} />
+          <Route path="/rulers" element={<RulersPage />} />
           <Route path="/ask" element={<AskPage />} />
           <Route path="/notes" element={<NotesPage />} />
           <Route path="/search" element={<SearchPage />} />
