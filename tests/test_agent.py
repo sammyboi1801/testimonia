@@ -305,6 +305,8 @@ def test_new_study_tools(store):
         ("fathers_on", {"reference": "John 1:1", "before_year": 325}),
         ("passage_guide", {"reference": "John 1:1-3"}),
         ("grammar_search", {"word": "G2316", "book": "John"}),
+        ("topic", {"subject": "a"}),
+        ("gospel_parallels", {"query": "John 1:1"}),
     ):
         text, is_error = agent_tools.run(store, name, args)
         assert not is_error, (name, text)

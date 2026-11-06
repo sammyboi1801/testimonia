@@ -20,7 +20,7 @@ from fastapi import HTTPException
 
 from ..morphology import FEATURES
 from ..refs import parse_refs
-from . import api, study
+from . import api, reading, study
 from .store import Store
 
 MAX_RESULT = 9000  # characters per tool result
@@ -222,6 +222,33 @@ TOOLS: list[dict[str, Any]] = [
                 "state": {"type": "string"},
             },
             "required": ["word"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "topic",
+        "description": (
+            "The topical concordance (5,300 topics): the verses on a subject, grouped by book, related topics, the "
+            "early writers who quote those verses most, and the strongest links between them. Input: a subject, e.g. "
+            "'faith', 'resurrection', 'baptism'. Optionally limit to one book."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"subject": {"type": "string"}, "book": {"type": "string"}},
+            "required": ["subject"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "gospel_parallels",
+        "description": (
+            "The Gospel synopsis: for a Gospel verse or a section title, the parallel accounts in Matthew, Mark, Luke "
+            "and John side by side, to compare what each Gospel includes. Input: e.g. 'Mark 1:9' or 'baptism of Jesus'."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"query": {"type": "string"}},
+            "required": ["query"],
             "additionalProperties": False,
         },
     },
@@ -534,6 +561,59 @@ def grammar_search(
     return "\n".join(out)
 
 
+def topic(store: Store, subject: str, book: str | None = None) -> str:
+    """A subject in the topical concordance."""
+    found = reading.topics(_req(store), q=subject)["topics"]
+    if not found:
+        return f"No topic matches {subject!r}. Try a broader word, or search_texts."
+    exact = next((t for t in found if t["name"].lower() == subject.strip().lower()), None)
+    pick = exact or max(found, key=lambda t: t["verses"])
+    book_osis = _book_osis(book) if book else None
+    try:
+        g = reading.topic(_req(store), pick["id"], edition="bsb", book=book_osis)
+    except HTTPException as e:
+        return f"Could not open topic {pick['name']!r}: {e.detail}"
+    out = [f"# Topic: {g['topic']['name']} — {g['total']} verses — link: /topic/{pick['id']}"]
+    out.append("By book: " + ", ".join(f"{b['name']} {b['verses']}" for b in g["books"]))
+    out += [f"- {_label(v['osis'])}: {v['text']}" for v in g["verses"][:120]]
+    if g.get("truncated"):
+        out.append("(more verses: call again with book=… for one book)")
+    if g["related"]:
+        out.append("\nRelated topics: " + ", ".join(r["name"] for r in g["related"][:20]))
+    if g["fathers"]:
+        out.append(
+            "\nEarly writers quoting these verses most: "
+            + ", ".join(f"{f['name']} (c. {f['year']}, ×{f['n']})" for f in g["fathers"][:12])
+        )
+    others = [t["name"] for t in found if t["id"] != pick["id"]][:10]
+    if others:
+        out.append("Other matching topics: " + ", ".join(others))
+    return "\n".join(out)
+
+
+def gospel_parallels(store: Store, query: str) -> str:
+    """Parallel Gospel accounts for a verse or a section title."""
+    refs = parse_refs(query)
+    if refs:
+        sections = reading.parallels(_req(store), verse=api._osis(refs[0].start))["sections"]
+    else:
+        q = query.strip().lower()
+        sections = [x for x in reading.parallels(_req(store), verse=None)["sections"] if q in x["title"].lower()]
+    if not sections:
+        return f"No Gospel parallels found for {query!r}."
+    out = []
+    for sec in sections[:3]:
+        g = reading.parallel(_req(store), sec["id"], edition="bsb")
+        out.append(f"# {g['title']} — synopsis: /parallels/{sec['id']}")
+        for col in g["columns"]:
+            for p in col["passages"]:
+                text = " ".join(f"{v['verse']} {v['text']}" for v in p.get("verses", []))
+                out.append(f"## {p['label']}\n{text}")
+    if len(sections) > 3:
+        out.append("Other sections: " + "; ".join(x["title"] for x in sections[3:12]))
+    return "\n".join(out)
+
+
 def wikipedia(store: Store, query: str, section: str | None = None) -> str:
     """English Wikipedia, fetched live (nothing stored): the article's whole introduction and its list of sections,
     or one section in full when `section` is given, so any part of the article can be read."""
@@ -734,11 +814,15 @@ FUNCTIONS: dict[str, Callable[..., str]] = {
     "fathers_on": fathers_on,
     "passage_guide": passage_guide,
     "grammar_search": grammar_search,
+    "topic": topic,
+    "gospel_parallels": gospel_parallels,
     "wikipedia": wikipedia,
 }
 
 #: characters per result; Wikipedia sections are passed on whole so nothing in an article is out of reach
 LIMITS = {
+    "topic": 30_000,
+    "gospel_parallels": 30_000,
     "passage_guide": 30_000,
     "grammar_search": 20_000,
     "wikipedia": 60_000,
