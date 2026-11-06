@@ -151,6 +151,7 @@ export function TimelineView() {
   // which layers are on (events, rulers, fathers, outside, anonymous); presets set them, the Layers menu adjusts
   const [layers, setLayers] = useState<Set<string>>(new Set(PRESETS[DEFAULT_PRESET]!.layers));
   const [allRealms, setAllRealms] = useState(false);
+  const [moment, setMoment] = useState<number | null>(null); // a pinned year: "what was going on then"
   // two ways to draw the same timeline; the choice is remembered in this browser
   const [mode, setModeState] = useState<"classic" | "lanes">(() => {
     try {
@@ -167,7 +168,7 @@ export function TimelineView() {
       /* storage unavailable */
     }
   };
-  const rulers = useRulers(layers.has("rulers"));
+  const rulers = useRulers(layers.has("rulers") || moment !== null);
   const showEvents = layers.has("events");
   const toggleLayer = (id: string) =>
     setLayers((h) => {
@@ -347,7 +348,14 @@ export function TimelineView() {
       if (body.current) body.current.scrollTop = d.top - dy;
     }
   }
-  function endDrag() {
+  function endDrag(e: RPointerEvent) {
+    const d = drag.current;
+    // a plain click on empty space pins that year: the side panel then lists everything going on at that moment
+    if (d && !d.moved && !(e.target as HTMLElement).closest("button, a, input") && box.current) {
+      const rect = box.current.getBoundingClientRect();
+      setMoment(Math.round(yearAt(e.clientX - rect.left)));
+      choose(null);
+    }
     window.setTimeout(() => (drag.current = null), 0);
   }
   const click = (item: Item) => {
@@ -389,7 +397,7 @@ export function TimelineView() {
   const hotId = hover?.item.id ?? null;
 
   return (
-    <div className={`tl-wrap${selected ? " with-detail" : ""}`}>
+    <div className={`tl-wrap${selected || moment !== null ? " with-detail" : ""}`}>
       <div className="tl-main">
         <div className="tl-toolbar">
           <div className="seg">
@@ -543,6 +551,7 @@ export function TimelineView() {
                   style={{ left: x(item.start), width: Math.max(x(item.end) - x(item.start), 0) }}
                 />
               ))}
+              {moment !== null && <span className="tl-moment-line" style={{ left: x(moment + 0.5) }} />}
               <span className="tl-cursor" ref={cursor} style={{ display: "none" }}>
                 <span />
               </span>
@@ -602,6 +611,17 @@ export function TimelineView() {
         </p>
       </div>
       {selected && <Detail item={selected} onClose={() => choose(null)} />}
+      {!selected && moment !== null && data && (
+        <MomentPanel
+          year={moment}
+          rulers={rulersGroups(rulers.data, true).flatMap((g) => g.items)}
+          writers={groups(data).flatMap((g) => g.items)}
+          events={data.events}
+          onPick={(i) => choose(i)}
+          onClose={() => setMoment(null)}
+          onMove={setMoment}
+        />
+      )}
       {hover && !drag.current?.moved && <HoverCard item={hover.item} x={hover.x} y={hover.y} />}
     </div>
   );
@@ -852,6 +872,94 @@ function Detail({ item, onClose }: { item: Item; onClose: () => void }) {
       {item.kind === "work" && <WorkDetail w={item.w} />}
       {item.kind === "event" && <EventDetail e={item.e} />}
       {item.kind === "ruler" && <TimelineRulerDetail r={item.r} realm={item.realm} d={item.d} />}
+    </aside>
+  );
+}
+
+/** "What was going on in AD 30": everything in the library true at one moment, grouped. */
+function MomentPanel({
+  year,
+  rulers,
+  writers,
+  events,
+  onPick,
+  onClose,
+  onMove,
+}: {
+  year: number;
+  rulers: Item[];
+  writers: Item[];
+  events: TimelineEvent[];
+  onPick: (item: Item) => void;
+  onClose: () => void;
+  onMove: (y: number) => void;
+}) {
+  const at = (i: { start: number; end: number }) => i.start <= year && year <= i.end;
+  const ruling = rulers.filter(at);
+  const byRealm = new Map<string, Item[]>();
+  for (const r of ruling) if (r.kind === "ruler") byRealm.set(r.realm.name, [...(byRealm.get(r.realm.name) ?? []), r]);
+  const happening = events.filter((e) => e.start <= year && year <= (e.end ?? e.start)).map(asItem);
+  const near = events
+    .filter((e) => !happening.some((h) => h.id === `e:${e.id}`) && Math.abs(e.start - year) <= 15)
+    .sort((a, b) => Math.abs(a.start - year) - Math.abs(b.start - year))
+    .slice(0, 4)
+    .map(asItem);
+  const living = writers.filter((w) => w.kind === "author" && at(w));
+  const written = writers.filter((w) => w.kind === "work" && at(w));
+  const line = (i: Item, note?: string) => (
+    <li key={i.id}>
+      <button className="link-btn" onClick={() => onPick(i)}>
+        {i.label}
+      </button>
+      {note && <span className="muted small"> {note}</span>}
+    </li>
+  );
+  return (
+    <aside className="tl-detail tl-moment" aria-label={`What was going on in ${formatYear(year)}`}>
+      <button className="icon-btn tl-close" onClick={onClose} aria-label="Close">
+        ✕
+      </button>
+      <p className="kicker">What was going on</p>
+      <h2>
+        <button className="icon-btn" onClick={() => onMove(year - 1)} aria-label="A year earlier">
+          ‹
+        </button>{" "}
+        {year === 0 ? "1 BC" : formatYear(year)}{" "}
+        <button className="icon-btn" onClick={() => onMove(year + 1)} aria-label="A year later">
+          ›
+        </button>
+      </h2>
+      {byRealm.size > 0 && (
+        <section>
+          <h3>Ruling</h3>
+          <ul>{[...byRealm].map(([realm, rs]) => rs.map((r) => line(r, `· ${realm}`)))}</ul>
+        </section>
+      )}
+      {happening.length > 0 && (
+        <section>
+          <h3>Happening</h3>
+          <ul>{happening.map((e) => line(e))}</ul>
+        </section>
+      )}
+      {living.length > 0 && (
+        <section>
+          <h3>Writers alive</h3>
+          <ul>{living.map((w) => line(w))}</ul>
+        </section>
+      )}
+      {written.length > 0 && (
+        <section>
+          <h3>Being written</h3>
+          <ul>{written.map((w) => line(w))}</ul>
+        </section>
+      )}
+      {near.length > 0 && (
+        <section>
+          <h3>Around then</h3>
+          <ul>{near.map((e) => line(e, `· ${formatYear(e.start)}`))}</ul>
+        </section>
+      )}
+      <p className="muted small">Click anywhere on the timeline to choose another moment.</p>
     </aside>
   );
 }
