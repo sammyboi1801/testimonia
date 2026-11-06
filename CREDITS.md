@@ -385,8 +385,9 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 
 - **Source:** <https://github.com/ubsicap/ubs-open-license>
 - **Licence:** CC-BY-SA-4.0 *(ShareAlike)*
-- **Credit:** United Bible Societies, CC BY-SA 4.0
+- **Credit:** United Bible Societies, CC BY-SA 4.0 (UBS Parallel Passage Database © 2023 United Bible Societies)
 - **Used for:** `lexicon`, `lexicon_entry`, `semantic_domain`, `lemma_sense`, `parallel_group`, `parallel_member`, `quotation`, `variant_unit`, `variant_reading`, `geo_feature`
+- **Pinned version:** git a15a96cfaa
 
 ## Phase 4: Context — people, places, events, maps, commentaries
 

@@ -654,13 +654,19 @@ sources:
     name: UBS open-licensed resources (dictionaries, parallels, HOTTP, routes, realia)
     url: https://github.com/ubsicap/ubs-open-license
     download: git clone
+    fetch:
+      - git: https://github.com/ubsicap/ubs-open-license
+        sparse: ["parallel passages"]   # commit pinned in sources.lock.json (a15a96c, 2026-10-21)
     license: CC-BY-SA-4.0
-    attribution: "United Bible Societies, CC BY-SA 4.0"
+    attribution: "United Bible Societies, CC BY-SA 4.0 (UBS Parallel Passage Database © 2023 United Bible Societies)"
     share_alike: true
     feeds: [lexicon, lexicon_entry, semantic_domain, lemma_sense, parallel_group, parallel_member,
             quotation, variant_unit, variant_reading, geo_feature]
     phase: 3
-    notes: HOTTP = OT text-critical decisions with A–D ratings (OT variant layer).
+    notes: >-
+      HOTTP = OT text-critical decisions with A–D ratings (OT variant layer).
+      Parallel Passage Database (parallel passages/ParallelPassages.xml): verse-level parallels with
+      word-match codes over the UBS5 Greek / BHS Hebrew words; used for the Gospel synopsis.
 
   - id: macula-greek
     name: Clear Bible MACULA Greek (SBLGNT & Nestle1904 syntax, glosses, domains, referents)
