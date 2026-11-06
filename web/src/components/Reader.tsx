@@ -3,7 +3,10 @@ import { Link } from "react-router-dom";
 import { isRtl, langClass, nativeLabel } from "../lib";
 import { MODES, useSettings } from "../settings";
 import type { Book, Chapter, ChapterVerse, Edition, VerseMarks, Word } from "../types";
-import { TextWithNotes } from "./Footnotes";
+import { useQuery } from "@tanstack/react-query";
+import { getJson } from "../api";
+import { TextWithNotes, type TextMark } from "./Footnotes";
+import { placeMarks, type PlaceInText } from "./PlaceName";
 import { Marks } from "./Marks";
 import { useNotes, type Note } from "../notes";
 import { ReadAloud } from "./ReadAloud";
@@ -60,7 +63,13 @@ export function Reader({ data, books, editions, selected, onSelect, onWord }: Pr
   }, [selected, data.book, data.chapter]);
 
   const { notes } = useNotes();
-  const ctx: RowCtx = { byId, wordEd, isNT, onSelect, onWord, selected, footnotes: settings.display.footnotes, speaking, notes };
+  const placesQuery = useQuery({
+    queryKey: ["chapter-places", data.book, data.chapter],
+    queryFn: () => getJson<{ verses: Record<number, PlaceInText[]> }>(`/api/chapter/${data.book}/${data.chapter}/places`),
+    staleTime: Infinity,
+  });
+  const places = placesQuery.data?.verses ?? {};
+  const ctx: RowCtx = { byId, wordEd, isNT, onSelect, onWord, selected, footnotes: settings.display.footnotes, speaking, notes, places };
 
   return (
     <div className="reader" ref={container}>
@@ -126,6 +135,13 @@ interface RowCtx {
   footnotes: boolean;
   speaking: string | null;
   notes: Record<string, Note>;
+  places: Record<number, PlaceInText[]>;
+}
+
+/** Highlights for one verse in one edition, plus the place names it mentions (English texts). */
+function verseMarks(ctx: RowCtx, v: ChapterVerse, ed: string, text: string): TextMark[] {
+  const marks: TextMark[] = ctx.notes[v.osis]?.marks?.filter((m) => m.ed === ed) ?? [];
+  return ctx.byId.get(ed)?.language === "eng" ? [...marks, ...placeMarks(text, ctx.places[v.vkey])] : marks;
 }
 
 function NavArrow({ to, dir }: { to: Chapter["prev"]; dir: string }) {
@@ -222,7 +238,7 @@ function TextCell({ v, id, ctx }: { v: ChapterVerse; id: string; ctx: RowCtx }) 
       {t ? (
         <>
           <span className="vtext" data-osis={v.osis} data-ed={id} data-text={t.text}>
-            <TextWithNotes text={t.text} notes={ctx.footnotes ? t.notes : undefined} marks={ctx.notes[v.osis]?.marks?.filter((m) => m.ed === id)} />
+            <TextWithNotes text={t.text} notes={ctx.footnotes ? t.notes : undefined} marks={verseMarks(ctx, v, id, t.text)} />
           </span>
           {t.native && (
             <span className="native" title={`Numbered ${nativeLabel(t.native, v.osis)} in ${ed?.abbrev ?? id}`}>
@@ -350,7 +366,7 @@ function ReadingView({ data, edition, headings, ctx }: { data: Chapter; edition?
                     <Marks marks={v.marks} />
                   </sup>
                   <span className="vtext" data-osis={v.osis} data-ed={edition} data-text={t.text}>
-                    <TextWithNotes text={t.text} notes={ctx.footnotes ? t.notes : undefined} marks={ctx.notes[v.osis]?.marks?.filter((m) => m.ed === edition)} />
+                    <TextWithNotes text={t.text} notes={ctx.footnotes ? t.notes : undefined} marks={edition ? verseMarks(ctx, v, edition, t.text) : undefined} />
                   </span>{" "}
                 </span>
               );

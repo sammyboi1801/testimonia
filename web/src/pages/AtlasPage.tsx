@@ -43,6 +43,7 @@ export default function AtlasPage() {
   const book = params.get("book") ?? "";
   const paul = params.get("paul") === "1";
   const hideUncertain = params.get("certain") === "1";
+  const satellite = params.get("sat") === "1";
   const [q, setQ] = useState("");
   const atlas = useAtlas();
   const meta = useMeta();
@@ -115,6 +116,22 @@ export default function AtlasPage() {
     };
   }, []);
 
+  // optional satellite imagery: the only part of the atlas that contacts another server, so it is opt-in
+  useEffect(() => {
+    const m = map.current;
+    if (!m || !ready || !satellite) return;
+    const tiles = L.tileLayer("https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/g/{z}/{y}/{x}.jpg", {
+      maxZoom: 13,
+      attribution:
+        '<a href="https://s2maps.eu" target="_blank" rel="noreferrer">Sentinel-2 cloudless 2016</a> by EOX IT Services (CC BY 4.0), contains modified Copernicus Sentinel data 2016',
+    }).addTo(m);
+    m.getContainer().classList.add("satellite");
+    return () => {
+      tiles.remove();
+      m.getContainer().classList.remove("satellite");
+    };
+  }, [ready, satellite]);
+
   // markers for the places that pass the filters
   useEffect(() => {
     const m = map.current;
@@ -129,7 +146,13 @@ export default function AtlasPage() {
         className: placeClass(p.kind, p.confidence, `${sel ? "sel" : ""}${highlight.has(p.id) ? " hl" : ""}`),
         bubblingMouseEvents: false,
       });
-      marker.bindTooltip(escapeHtml(p.name), { direction: "top", offset: [0, -4], className: "pm-tip" });
+      const certainty =
+        p.confidence == null ? "" : p.confidence >= 0.8 ? "location certain" : p.confidence >= 0.4 ? "location probable" : "location uncertain";
+      const meta = [p.kind ?? "", p.modern_name ? `today ${p.modern_name}` : "", certainty].filter(Boolean).map(escapeHtml).join(" · ");
+      marker.bindTooltip(
+        `<strong>${escapeHtml(p.name)}</strong>${meta ? `<span class="pm-tip-meta">${meta}</span>` : ""}<span class="pm-tip-n">named in ${p.verses} verse${p.verses === 1 ? "" : "s"} · click for details</span>`,
+        { direction: "top", offset: [0, -4], className: "pm-tip pm-tip-card" },
+      );
       marker.on("click", () => set({ place: p.id }));
       marker.addTo(ls.markers);
     }
@@ -262,6 +285,10 @@ export default function AtlasPage() {
           </label>
           <label>
             <input type="checkbox" checked={hideUncertain} onChange={(e) => set({ certain: e.target.checked ? "1" : null })} /> Hide uncertain sites
+          </label>
+          <label title="Sentinel-2 cloudless 2016 by EOX (CC BY 4.0). Turning this on loads imagery from EOX's servers.">
+            <input type="checkbox" checked={satellite} onChange={(e) => set({ sat: e.target.checked ? "1" : null })} /> Satellite
+            <span className="atlas-toggle-note"> (loads from EOX)</span>
           </label>
         </div>
         {selected ? (

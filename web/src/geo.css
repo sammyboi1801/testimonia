@@ -9,9 +9,10 @@
 /* parchment land on a darker, engraved sea; in dark mode the land is the lighter of the two */
 :root { --map-land: var(--panel); --map-sea: var(--panel-2); }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --map-land: var(--panel-2); --map-sea: var(--bg); }
+  :root:not([data-theme="light"]) { --map-land: color-mix(in srgb, var(--panel-2), var(--ink) 7%); --map-sea: var(--bg); }
 }
-:root[data-theme="dark"] { --map-land: var(--panel-2); --map-sea: var(--bg); }
+:root[data-theme="dark"] { --map-land: color-mix(in srgb, var(--panel-2), var(--ink) 7%); --map-sea: var(--bg); }
+:root[data-theme="light"], :root:not([data-theme]) { --map-sea: color-mix(in srgb, var(--panel-2), var(--accent) 10%); }
 /* selectors are compound so they win over leaflet.css, which loads later with the map */
 .atlas-map, .mini-map, .atlas-map.leaflet-container, .mini-map.leaflet-container {
   font-family: var(--font-ui);
@@ -68,6 +69,38 @@
 }
 .leaflet-tooltip.pm-tip span { color: var(--muted); font-family: var(--font-ui); font-size: 11.5px; }
 .leaflet-tooltip-top.pm-tip::before { border-top-color: var(--rule); }
+.atlas-toggle-note { color: var(--muted); font-size: 11.5px; }
+/* place names in the Bible text: a quiet dotted underline, a card on hover or tap */
+.place-name { text-decoration: underline dotted color-mix(in srgb, var(--accent) 55%, transparent); text-underline-offset: 3px; cursor: pointer; }
+.place-name:hover { text-decoration-color: var(--accent); }
+.place-card {
+  position: fixed; z-index: 120; width: 250px; padding: 9px 12px; display: flex; flex-direction: column; gap: 2px;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); box-shadow: var(--shadow);
+  font-family: var(--font-ui); font-size: 12.5px; color: var(--ink); line-height: 1.4; text-align: left;
+}
+.place-card.up { transform: translateY(-100%); }
+.place-card strong { font-family: var(--font-display); font-weight: var(--display-weight); font-size: 17px; }
+.place-card-meta { color: var(--muted); }
+.place-card-links { display: flex; gap: 14px; margin-top: 4px; }
+.place-card-links a { color: var(--link); font-weight: 600; }
+/* library header: the extra links share one row (sideways-scrolling on phones) */
+.library-head .library-links { display: flex; align-items: baseline; gap: 18px; margin-left: auto; white-space: nowrap; }
+.library-head .library-links .rd-links { margin: 0; width: auto; flex-wrap: nowrap; gap: 18px; }
+.library-head .library-links .library-aside-link { margin: 0; font-size: 13.5px; color: var(--link); }
+@media (max-width: 760px) {
+  .library-head .library-links {
+    width: 100%; margin: 2px 0 8px; gap: 16px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
+  }
+  .library-head .library-links::-webkit-scrollbar { display: none; }
+}
+.leaflet-tooltip.pm-tip-card { padding: 7px 10px; max-width: 240px; white-space: normal; line-height: 1.35; }
+.leaflet-tooltip.pm-tip-card strong { display: block; font-family: var(--font-display); font-weight: var(--display-weight); font-size: 16px; }
+.leaflet-tooltip.pm-tip-card span { display: block; margin-top: 2px; }
+.leaflet-tooltip.pm-tip-card .pm-tip-n { color: var(--link); }
+/* satellite imagery (opt-in): markers stay readable on photos */
+.atlas-map.satellite .bm-land, .atlas-map.satellite .bm-lake { fill-opacity: 0; }
+.atlas-map.satellite .bm-sea span { color: #f2e8d8; text-shadow: 0 0 3px #000; }
+.atlas-map.satellite .pm-label span { color: #fff; text-shadow: 0 0 3px #000, 0 0 6px #000; }
 
 /* Paul's journeys: one ink, four dash patterns */
 .route { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-opacity: 0.85; stroke-linecap: round; }

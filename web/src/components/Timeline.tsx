@@ -138,7 +138,18 @@ export function TimelineView() {
   const drag = useRef<{ x: number; y: number; range: Range; top: number; moved: boolean } | null>(null);
   const anim = useRef<number | undefined>(undefined);
   const rangeRef = useRef(range);
-  rangeRef.current = range;
+  const frame = useRef<number | null>(null);
+  // a render only catches up with the latest range when no wheel/drag update is waiting for its frame
+  if (frame.current === null) rangeRef.current = range;
+  /** Move the view now (for the next event's maths) and draw it once per animation frame, not once per event. */
+  const queueRange = useCallback((r: Range) => {
+    rangeRef.current = clamp(r);
+    if (frame.current !== null) return;
+    frame.current = window.requestAnimationFrame(() => {
+      frame.current = null;
+      setRange(rangeRef.current);
+    });
+  }, []);
 
   useEffect(() => {
     const el = box.current;
@@ -227,7 +238,7 @@ export function TimelineView() {
         if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey) {
           e.preventDefault();
           const d = ((e.shiftKey ? e.deltaY : e.deltaX) / w) * (r[1] - r[0]);
-          setRange(clamp([r[0] + d, r[1] + d]));
+          queueRange([r[0] + d, r[1] + d]);
         }
         return;
       }
@@ -235,7 +246,7 @@ export function TimelineView() {
       window.cancelAnimationFrame(anim.current ?? 0);
       const at = r[0] + ((e.clientX - rect.left) / w) * (r[1] - r[0]);
       const f = Math.exp(Math.max(-0.5, Math.min(0.5, e.deltaY * 0.0015)));
-      setRange(clamp([at - (at - r[0]) * f, at + (r[1] - at) * f]));
+      queueRange([at - (at - r[0]) * f, at + (r[1] - at) * f]);
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
@@ -281,7 +292,7 @@ export function TimelineView() {
     }
     if (d.moved) {
       const dyears = (dx / width) * (d.range[1] - d.range[0]);
-      setRange(clamp([d.range[0] - dyears, d.range[1] - dyears]));
+      queueRange([d.range[0] - dyears, d.range[1] - dyears]);
       if (body.current) body.current.scrollTop = d.top - dy;
     }
   }

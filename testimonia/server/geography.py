@@ -368,6 +368,24 @@ def event(request: Request, event_id: str, preview: str = "bsb") -> dict[str, An
 # ----------------------------------------------------------------------------- per verse
 
 
+@router.get("/chapter/{book}/{chapter}/places")
+def chapter_places(request: Request, book: str, chapter: int) -> dict[str, Any]:
+    """The places named in each verse of a chapter (for marking place names in the reader), with their names."""
+    s = store(request)
+    lo = _verse_key(f"{book}.{chapter}.1") - 1  # verse 0 holds Psalm titles
+    rows = s.all(
+        "SELECT r.vkey, p.id, p.name, p.alt_names, p.kind, p.modern_name, p.lat, p.lon, "
+        "(SELECT count(*) FROM place_ref x WHERE x.place_id = p.id) AS verses "
+        "FROM place_ref r JOIN place p ON p.id = r.place_id WHERE r.vkey BETWEEN ? AND ? AND p.kind <> 'region'",
+        (lo, lo + 999),
+    )
+    by_verse: dict[int, list[dict[str, Any]]] = {}
+    for r in rows:
+        k = r.pop("vkey")
+        by_verse.setdefault(k, []).append(r)
+    return {"verses": by_verse}
+
+
 @router.get("/verse/{osis}/entities")
 def verse_entities(request: Request, osis: str, limit: int = Query(40, ge=1, le=200)) -> dict[str, Any]:
     """People and places a verse names, and the events whose narrative includes it."""

@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from "react";
 import DOMPurify from "dompurify";
 import { createPortal } from "react-dom";
 import type { Footnote } from "../types";
+import { PlaceName, type PlaceInText } from "./PlaceName";
 
 export const NOTE_KIND: Record<string, string> = {
   textual: "manuscripts differ",
@@ -60,8 +61,10 @@ export function TextWithNotes({ text, notes, marks }: { text: string; notes?: Fo
     const next = points[j + 1];
     if (next === undefined || next <= at) continue;
     const piece = text.slice(at, next);
-    const mark = (marks ?? []).find((m) => m.start <= at && m.end >= next);
-    out.push(mark ? <mark key={`m${k++}`} className={`phrase hl-${mark.color}`}>{piece}</mark> : piece);
+    const mark = (marks ?? []).find((m) => !m.place && m.start <= at && m.end >= next);
+    const place = (marks ?? []).find((m) => m.place && m.start <= at && m.end >= next)?.place;
+    const body: ReactNode = mark ? <mark key={`m${k++}`} className={`phrase hl-${mark.color}`}>{piece}</mark> : piece;
+    out.push(place ? <PlaceName key={`p${k++}`} place={place}>{body}</PlaceName> : body);
   }
   return <>{out}</>;
 }
@@ -71,6 +74,7 @@ export interface TextMark {
   start: number;
   end: number;
   color: string;
+  place?: PlaceInText; // a place name: shown with a hover card instead of a highlight
 }
 
 function NoteMark({ note, label }: { note: Footnote; label: string }) {
