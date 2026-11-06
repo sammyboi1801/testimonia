@@ -13,7 +13,7 @@
 }
 
 /* library header + view switch */
-.page-wide { max-width: none; width: 100%; margin: 0; overflow-x: hidden; } /* grid items with auto margins shrink to fit */
+.page-wide { padding-inline: 24px; overflow-x: hidden; }
 .library-head { display: flex; align-items: baseline; gap: 18px; }
 .library-head h1 { margin-bottom: 8px; }
 .view-switch { margin: 0; }
@@ -189,7 +189,7 @@ b.cn { font-family: var(--font-ui); font-size: 0.7em; color: var(--numeral); mar
 }
 
 /* ------------------------------------------------------------------ bookshelf */
-.page-shelf { max-width: 1240px; }
+.page-shelf { padding-inline: max(24px, calc((100% - 1240px) / 2)); }
 .shelf-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 4px 0 8px; }
 .shelf-filters .seg { margin: 0; }
 .shelf-search {
