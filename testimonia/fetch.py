@@ -63,7 +63,9 @@ def load_lock(path: Path = config.LOCK_FILE) -> dict[str, Any]:
 
 def save_lock(lock: dict[str, Any], path: Path = config.LOCK_FILE) -> None:
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(lock, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+    # LF on every OS: the lock file is shared through git
+    text = json.dumps(lock, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+    tmp.write_text(text, encoding="utf-8", newline="\n")
     tmp.replace(path)
 
 
