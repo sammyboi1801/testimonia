@@ -141,3 +141,11 @@
   .ask-fab-label { display: none; }
   .ask-fab-star { font-size: 20px; line-height: 1; }
 }
+
+/* desktop: the search box sits in the middle of the bar, brand left and navigation right */
+@media (min-width: 761px) {
+  .topbar { display: grid; grid-template-columns: minmax(max-content, 1fr) minmax(220px, 640px) minmax(max-content, 1fr); }
+  .topbar .brand { justify-self: start; }
+  .topbar .omnibox { width: 100%; max-width: none; }
+  .topbar .topbar-menu { justify-self: end; margin-left: 0; }
+}
