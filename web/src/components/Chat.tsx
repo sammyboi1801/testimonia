@@ -23,12 +23,85 @@ const SUGGESTIONS = [
   "Explain the Greek word μονογενής and how it is translated.",
 ];
 
-function loadChat(): Message[] {
+// Past conversations, kept in this browser like the notes: newest first, the open one remembered.
+interface Conversation {
+  id: string;
+  title: string;
+  updated: string; // ISO
+  messages: Message[];
+}
+const CHATS_KEY = "testimonia.ai.chats.v1";
+const CURRENT_KEY = "testimonia.ai.current";
+const MAX_CHATS = 100;
+
+function loadChats(): Conversation[] {
   try {
-    return JSON.parse(localStorage.getItem(CHAT_KEY) ?? "[]") as Message[];
+    const list = JSON.parse(localStorage.getItem(CHATS_KEY) ?? "null") as Conversation[] | null;
+    if (Array.isArray(list)) return list;
+    // the single chat kept before history existed becomes the first conversation
+    const old = JSON.parse(localStorage.getItem(CHAT_KEY) ?? "[]") as Message[];
+    return old.length ? [{ id: newId(), title: titleOf(old), updated: new Date().toISOString(), messages: old }] : [];
   } catch {
     return [];
   }
+}
+function saveChats(list: Conversation[]) {
+  try {
+    localStorage.setItem(CHATS_KEY, JSON.stringify(list.slice(0, MAX_CHATS)));
+  } catch {
+    /* storage full or unavailable */
+  }
+}
+function newId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+function titleOf(messages: Message[]): string {
+  const q = messages.find((m) => m.role === "user")?.content ?? "New conversation";
+  return q.replace(/\s+/g, " ").slice(0, 80);
+}
+function when(iso: string): string {
+  const d = new Date(iso);
+  const days = Math.floor((Date.now() - d.getTime()) / 86_400_000);
+  if (days < 1) return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  if (days < 7) return d.toLocaleDateString([], { weekday: "short" });
+  return d.toLocaleDateString([], { day: "numeric", month: "short" });
+}
+
+/** The list of past conversations: open one, start a new one, or delete. */
+function History({ chats, current, onOpen, onNew, onDelete, onClose }: { chats: Conversation[]; current: string; onOpen: (id: string) => void; onNew: () => void; onDelete: (id: string) => void; onClose: () => void }) {
+  const [find, setFind] = useState("");
+  const q = find.trim().toLowerCase();
+  const shown = q ? chats.filter((c) => c.title.toLowerCase().includes(q) || c.messages.some((m) => m.content.toLowerCase().includes(q))) : chats;
+  return (
+    <section className="ask-history">
+      <div className="ah-head">
+        <strong>Conversations</strong>
+        <button className="btn primary" onClick={onNew}>
+          + New
+        </button>
+        <button className="icon-btn" onClick={onClose} aria-label="Close history">
+          ✕
+        </button>
+      </div>
+      {chats.length > 6 && <input className="ah-find" placeholder="Search conversations…" value={find} onChange={(e) => setFind(e.target.value)} />}
+      {shown.length === 0 && <p className="muted small">{chats.length ? "No conversation matches." : "No conversations yet."}</p>}
+      <ul className="ah-list">
+        {shown.map((c) => (
+          <li key={c.id} className={c.id === current ? "on" : ""}>
+            <button className="ah-open" onClick={() => onOpen(c.id)}>
+              <span className="ah-title">{c.title}</span>
+              <span className="ah-meta">
+                {when(c.updated)} · {c.messages.filter((m) => m.role === "user").length} questions
+              </span>
+            </button>
+            <button className="ah-del" onClick={() => onDelete(c.id)} aria-label={`Delete “${c.title}”`} title="Delete">
+              🗑
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 function markdown(text: string): string {
@@ -109,7 +182,32 @@ export function Chat({ context, initial, compact = false }: { context: string | 
   const [config, setConfig] = useState<AiConfig>(loadConfig);
   const [key, setKey] = useState(loadKey);
   const [setup, setSetup] = useState(() => !loadKey() && !PRESETS.find((p) => p.id === loadConfig().preset)?.local);
-  const [messages, setMessages] = useState<Message[]>(loadChat);
+  const [chats, setChats] = useState<Conversation[]>(loadChats);
+  const [chatId, setChatId] = useState<string>(() => {
+    const saved = localStorage.getItem(CURRENT_KEY);
+    const list = loadChats();
+    return saved && list.some((c) => c.id === saved) ? saved : (list[0]?.id ?? newId());
+  });
+  const [messages, setMessages] = useState<Message[]>(() => loadChats().find((c) => c.id === chatId)?.messages ?? []);
+  const [showHistory, setShowHistory] = useState(false);
+  function openChat(id: string) {
+    if (busy) return;
+    setChatId(id);
+    setMessages(chats.find((c) => c.id === id)?.messages ?? []);
+    setShowHistory(false);
+  }
+  function newChat() {
+    if (busy) return;
+    setChatId(newId());
+    setMessages([]);
+    setShowHistory(false);
+  }
+  function deleteChat(id: string) {
+    const next = chats.filter((c) => c.id !== id);
+    setChats(next);
+    saveChats(next);
+    if (id === chatId) newChat();
+  }
   const [input, setInput] = useState(initial ?? (context ? `What should I know about ${context}?` : ""));
   const [busy, setBusy] = useState(false);
   const abort = useRef<AbortController | null>(null);
@@ -120,11 +218,21 @@ export function Chat({ context, initial, compact = false }: { context: string | 
   useEffect(() => {
     if (busy) return; // saved once the answer is complete, not on every streamed word
     try {
-      localStorage.setItem(CHAT_KEY, JSON.stringify(messages.slice(-40)));
+      localStorage.setItem(CURRENT_KEY, chatId);
     } catch {
       /* storage unavailable */
     }
-  }, [messages, busy]);
+    if (!messages.length) return; // an empty new chat is not kept until something is asked
+    setChats((all) => {
+      const rest = all.filter((c) => c.id !== chatId);
+      const prev = all.find((c) => c.id === chatId);
+      const unchanged = prev && prev.messages.length === messages.length && prev.messages.at(-1)?.content === messages.at(-1)?.content;
+      if (unchanged) return all;
+      const next = [{ id: chatId, title: titleOf(messages), updated: new Date().toISOString(), messages: messages.slice(-80) }, ...rest];
+      saveChats(next);
+      return next;
+    });
+  }, [messages, busy, chatId]);
   // Follow the answer while it streams, but only while the reader is at the bottom, and only by scrolling the
   // chat's own scroller: scrollIntoView would also scroll the page, which made the screen jump on phones.
   const follow = useRef(true);
@@ -250,12 +358,18 @@ export function Chat({ context, initial, compact = false }: { context: string | 
           <span className="muted small">Model</span> {preset.label}
           {config.model && <span className="muted"> · {config.model}</span>} ▾
         </button>
-        {messages.length > 0 && (
-          <button className="link-btn" onClick={() => setMessages([])} disabled={busy}>
-            New conversation
+        <span className="ah-actions">
+          <button className="chip" onClick={() => setShowHistory(!showHistory)} aria-expanded={showHistory} title="Past conversations">
+            ☰ History{chats.length ? ` · ${chats.length}` : ""}
           </button>
-        )}
+          {messages.length > 0 && (
+            <button className="chip" onClick={newChat} disabled={busy} title="Start a new conversation">
+              + New
+            </button>
+          )}
+        </span>
       </header>
+      {showHistory && <History chats={chats} current={chatId} onOpen={openChat} onNew={newChat} onDelete={deleteChat} onClose={() => setShowHistory(false)} />}
 
       {setup && (
         <section className="ask-setup">

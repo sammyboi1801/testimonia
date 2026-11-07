@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMeta, useSection, useTimeline, useToc } from "../api";
 import { Html } from "../components/Html";
@@ -18,6 +18,15 @@ function volumeLabel(edition: string): string {
   return "";
 }
 
+/** The source text often opens with the section's own title, already shown above it: drop that repeat. */
+function withoutRepeatedTitle(html: string, title: string | null | undefined): string {
+  if (!title) return html;
+  const flat = (s: string) => s.replace(/<[^>]+>/g, "").replace(/&[a-z#0-9]+;/gi, " ").replace(/[\s.]+/g, " ").trim().toLowerCase();
+  const m = /^\s*(?:<div[^>]*>\s*)?<(h[1-6]|p)\b[^>]*>([\s\S]*?)<\/\1>/i.exec(html);
+  if (m && flat(m[2]!) === flat(title)) return html.replace(m[0].replace(/^\s*(?:<div[^>]*>\s*)?/, ""), "");
+  return html;
+}
+
 export function WorkPage() {
   const { edition = "", ord = "1" } = useParams();
   const navigate = useNavigate();
@@ -29,9 +38,14 @@ export function WorkPage() {
   const layout = settings.layout;
   const text = useRef<HTMLDivElement>(null);
   const activeLink = useRef<HTMLAnchorElement>(null);
+  const [sheet, setSheet] = useState<"toc" | "about" | null>(null);
+  const [find, setFind] = useState("");
+  const swipe = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     text.current?.scrollTo({ top: 0 });
+    window.scrollTo({ top: 0 });
+    setFind("");
     activeLink.current?.scrollIntoView({ block: "nearest" });
   }, [edition, n]);
 
@@ -64,27 +78,35 @@ export function WorkPage() {
       </nav>
 
       <Splitter label="Contents width" side="left" value={layout.toc} min={180} max={520} reset={260} onChange={(toc) => update({ layout: { ...layout, toc } })} />
-      <article className="work-text" ref={text}>
+      <article
+        className="work-text"
+        ref={text}
+        onTouchStart={(ev) => {
+          const t = ev.touches[0]!;
+          swipe.current = { x: t.clientX, y: t.clientY };
+        }}
+        onTouchEnd={(ev) => {
+          const from = swipe.current;
+          swipe.current = null;
+          if (!from || !sec.data || window.innerWidth > 760 || window.getSelection()?.isCollapsed === false) return;
+          const t = ev.changedTouches[0]!;
+          const dx = t.clientX - from.x;
+          if (Math.abs(dx) < 80 || Math.abs(dx) < 2 * Math.abs(t.clientY - from.y)) return; // a deliberate sideways swipe
+          const to = dx < 0 ? sec.data.next : sec.data.prev;
+          if (to) navigate(`${base}/${to}`);
+        }}
+      >
         <div className="work-inner">
           {sec.isLoading && <div className="loading">Loading…</div>}
           {sec.error && <div className="error">{String(sec.error)}</div>}
           {sec.data && (
             <>
-              {toc.data && toc.data.sections.length > 1 && (
-                <select className="work-mobile-nav" value={n} onChange={(e) => navigate(`${base}/${e.target.value}`)} aria-label="Contents">
-                  {toc.data.sections.map((s) => (
-                    <option key={s.ord} value={s.ord}>
-                      {s.title || s.cite}
-                    </option>
-                  ))}
-                </select>
-              )}
               <div className="work-crumb">
                 {e?.title} {sec.data.section.cite !== "1" && sec.data.section.cite}
                 {volumeLabel(edition) && ` · ${volumeLabel(edition)}`}
               </div>
               <h2 className="work-section-title">{sec.data.section.title}</h2>
-              <Html html={sec.data.section.html} footnotes idPrefix={`s${n}`} />
+              <Html html={withoutRepeatedTitle(sec.data.section.html, sec.data.section.title)} footnotes idPrefix={`s${n}`} />
               <div className="pager">
                 <button className="chip" disabled={!sec.data.prev} onClick={() => sec.data.prev && navigate(`${base}/${sec.data.prev}`)}>
                   ‹ Previous
@@ -110,6 +132,70 @@ export function WorkPage() {
       <aside className="work-context" aria-label="About this work">
         {toc.data && <Context toc={toc.data} section={sec.data} books={meta.data?.books ?? []} base={base} />}
       </aside>
+
+      {/* phones: a bar under the thumb (previous, contents, about, next) and sheets that rise from it */}
+      <nav className="wm-bar" aria-label="Book navigation">
+        <button className="wm-step" disabled={!sec.data?.prev} onClick={() => sec.data?.prev && navigate(`${base}/${sec.data.prev}`)} aria-label="Previous section">
+          ‹
+        </button>
+        <button className="wm-where" onClick={() => setSheet("toc")}>
+          <span className="wm-title">{e?.title ?? "Contents"}</span>
+          <span className="wm-sub">
+            {sec.data?.section.title || sec.data?.section.cite}
+            {toc.data && ` · ${toc.data.sections.findIndex((s) => s.ord === n) + 1}/${toc.data.sections.length}`}
+          </span>
+        </button>
+        <button className="wm-icon" onClick={() => setSheet("about")} aria-label="About this work">
+          ⓘ
+        </button>
+        <button className="wm-step" disabled={!sec.data?.next} onClick={() => sec.data?.next && navigate(`${base}/${sec.data.next}`)} aria-label="Next section">
+          ›
+        </button>
+      </nav>
+      {sheet && (
+        <div className="wm-layer" onClick={(ev) => ev.target === ev.currentTarget && setSheet(null)}>
+          <div className="wm-sheet" role="dialog" aria-label={sheet === "toc" ? "Contents" : "About this work"}>
+            <div className="wm-grip" aria-hidden />
+            <div className="wm-head">
+              <strong>{sheet === "toc" ? "Contents" : "About"}</strong>
+              <Link to="/library" className="wm-lib">
+                ← Library
+              </Link>
+              <button className="icon-btn" onClick={() => setSheet(null)} aria-label="Close">
+                ✕
+              </button>
+            </div>
+            {sheet === "toc" && toc.data && (
+              <>
+                {toc.data.sections.length > 12 && (
+                  <input className="wm-find" placeholder="Find a chapter…" value={find} onChange={(ev) => setFind(ev.target.value)} />
+                )}
+                <div className="wm-toc">
+                  {toc.data.sections
+                    .filter((s) => !find || `${s.title} ${s.cite}`.toLowerCase().includes(find.toLowerCase()))
+                    .map((s) => (
+                      <Link
+                        key={s.ord}
+                        to={`${base}/${s.ord}`}
+                        className={s.ord === n ? "active" : ""}
+                        ref={s.ord === n ? (el) => el?.scrollIntoView({ block: "center" }) : undefined}
+                        style={{ paddingLeft: 18 + (s.level - 1) * 14 }}
+                        onClick={() => setSheet(null)}
+                      >
+                        {s.title || s.cite}
+                      </Link>
+                    ))}
+                </div>
+              </>
+            )}
+            {sheet === "about" && toc.data && (
+              <div className="wm-about" onClick={(ev) => (ev.target as HTMLElement).closest("a") && setSheet(null)}>
+                <Context toc={toc.data} section={sec.data} books={meta.data?.books ?? []} base={base} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
