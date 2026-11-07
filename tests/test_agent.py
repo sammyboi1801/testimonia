@@ -322,3 +322,45 @@ def test_grammar_search_rejects_unknown_features(store):
     text, _ = agent_tools.run(store, "grammar_search", {"word": "λύω", "tense": "banana"})
     assert "Unknown tense 'banana'" in text
     assert "aorist" in text
+
+
+def test_show_in_app_accepts_only_app_pages(store):
+    assert "Opened" in agent_tools.show_in_app(store, "/atlas?place=jerusalem")
+    for bad in ("https://evil.example", "//evil.example", "/admin", '/read/John/1"><script>'):
+        with pytest.raises(ValueError, match="not a Testimonia page"):
+            agent_tools.show_in_app(store, bad)
+
+
+def test_notes_tool_lists_and_validates_changes():
+    notes = [
+        agent.NoteIn(osis="John.1.9", text="the true light", highlight="gold"),
+        agent.NoteIn(osis="Rom.8.28", text="all things", highlight=None),
+    ]
+    text, err = agent_tools.notes_tool(notes, {"action": "list"})
+    assert not err
+    assert "John 1:9" in text
+    assert "Rom" in text
+    text, _ = agent_tools.notes_tool(notes, {"action": "list", "query": "light"})
+    assert "John 1:9" in text
+    assert "all things" not in text
+    text, _ = agent_tools.notes_tool(notes, {"action": "list", "verse": "Romans"})
+    assert "all things" in text
+    assert "light" not in text
+    assert agent_tools.notes_tool([], {"action": "list"})[0].startswith("The reader has no notes")
+    assert agent_tools.notes_tool(notes, {"action": "add", "verse": "John 3:16", "text": "x"}) == (
+        "Added to the reader's note on John 3:16 (it updates in their browser).",
+        False,
+    )
+    assert agent_tools.notes_tool(notes, {"action": "add", "verse": "nonsense", "text": "x"})[1]
+    assert agent_tools.notes_tool(notes, {"action": "add", "verse": "John 3:16", "text": " "})[1]
+    assert agent_tools.notes_tool(notes, {"action": "highlight", "verse": "John 3:16", "color": "plaid"})[1]
+    assert agent_tools.note_osis("Jn 3:16") == "John.3.16"
+
+
+def test_notes_over_http_returns_the_verse(client):
+    r = client.post(
+        "/api/agent/tool",
+        json={"name": "notes", "input": {"action": "remove", "verse": "John 1:1"}, "notes": []},
+    ).json()
+    assert r["osis"] == "John.1.1"
+    assert not r["is_error"]

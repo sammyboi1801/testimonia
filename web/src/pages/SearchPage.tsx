@@ -126,6 +126,18 @@ export function SearchPage() {
           <span aria-hidden>→</span>
         </Link>
       )}
+      {!!data?.suggestions?.length && (
+        <p className="search-alts muted small">
+          or did you mean{" "}
+          {data.suggestions.map((r, i) => (
+            <span key={r.osis}>
+              {i > 0 && ", "}
+              <Link to={verseUrl(r.osis)}>{r.label}</Link>
+            </span>
+          ))}
+          ?
+        </p>
+      )}
 
       {none && <div className="empty-state">Nothing found for “{q}”. Try fewer words, or another spelling.</div>}
 

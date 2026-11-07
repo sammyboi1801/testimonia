@@ -296,6 +296,7 @@ export interface RefResult {
 export interface SearchResults {
   query: string;
   reference?: RefResult;
+  suggestions?: RefResult[];
   bible?: { vkey: number; edition_id: string; abbrev: string | null; snippet: string; osis: string }[];
   works?: { edition_id: string; ord: number; cite: string | null; section_title: string | null; work_title: string; author: string | null; snippet: string }[];
   lexicon?: { id: string; lemma: string; translit: string | null; gloss: string | null }[];

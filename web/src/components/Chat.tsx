@@ -4,6 +4,8 @@ import { memo, useEffect, useMemo, useRef, useState, type FormEvent, type MouseE
 import { useNavigate } from "react-router-dom";
 import { PRESETS, loadConfig, loadKey, runsInBrowser, saveConfig, saveKey, type AiConfig } from "../agent/providers";
 import { runInBrowser, runOnServer, type AgentEvent, type Turn } from "../agent/run";
+import { HIGHLIGHTS, useNotes, type Highlight } from "../notes";
+import { screenContext } from "./AskDrawer";
 
 interface Message {
   role: "user" | "assistant";
@@ -52,6 +54,7 @@ function scroller(el: HTMLElement | null): HTMLElement | null {
  *  Used full-page (/ask) and in the drawer that opens from anywhere (`compact`). */
 export function Chat({ context, initial, compact = false }: { context: string | null; initial?: string; compact?: boolean }) {
   const navigate = useNavigate();
+  const notesApi = useNotes();
   const [config, setConfig] = useState<AiConfig>(loadConfig);
   const [key, setKey] = useState(loadKey);
   const [setup, setSetup] = useState(() => !loadKey() && !PRESETS.find((p) => p.id === loadConfig().preset)?.local);
@@ -124,19 +127,47 @@ export function Chat({ context, initial, compact = false }: { context: string | 
     setBusy(true);
     const ctrl = new AbortController();
     abort.current = ctrl;
-    const on = (e: AgentEvent) =>
+    const on = (e: AgentEvent) => {
+      // the assistant can open pages (the atlas at a place, a verse, a chapter of a work); the chat stays open
+      if (e.type === "navigate" && e.link.startsWith("/")) {
+        navigate(e.link);
+        e = { type: "tool", name: "show_in_app", summary: `opened ${e.link}` };
+      }
+      // changes to the reader's notes, asked for in the chat, applied here (notes live in this browser)
+      if (e.type === "note") {
+        if (!e.osis) return;
+        const label = e.osis.replace(/^([^.]+)\.(\d+)\.(\d+)$/, "$1 $2:$3");
+        const cur = notesApi.get(e.osis);
+        if (e.action === "remove") notesApi.remove(e.osis);
+        else if (e.action === "highlight") {
+          const want = e.highlight;
+          notesApi.set(e.osis, { highlight: (HIGHLIGHTS.find((h) => h.id === want)?.id ?? null) as Highlight | null });
+        }
+        else if (e.action === "replace") notesApi.set(e.osis, { text: e.text });
+        else notesApi.set(e.osis, { text: cur?.text ? `${cur.text}\n\n${e.text}` : e.text });
+        const verb = { add: "noted", replace: "rewrote note on", remove: "removed note on", highlight: "highlighted" }[e.action];
+        e = { type: "tool", name: "notes", summary: `${verb} ${label}` };
+      }
+      const ev = e;
       setMessages((all) => {
         const copy = [...all];
         const last = { ...copy[copy.length - 1]! };
-        if (e.type === "text") last.content += e.text;
-        else if (e.type === "tool") last.steps = [...(last.steps ?? []), e.summary];
-        else if (e.type === "notice") last.notice = e.message;
-        else if (e.type === "error") last.error = e.message;
+        if (ev.type === "text") last.content += ev.text;
+        else if (ev.type === "tool") last.steps = [...(last.steps ?? []), ev.summary];
+        else if (ev.type === "notice") last.notice = ev.message;
+        else if (ev.type === "error") last.error = ev.message;
         copy[copy.length - 1] = last;
         return copy;
       });
+    };
+    // what is on screen now (it follows the reader around the site), plus what the chat was opened about
+    const where = [context ? `asked about ${context}` : "", screenContext()].filter(Boolean).join("; ");
     try {
-      await (inBrowser ? runInBrowser : runOnServer)(config, key, turns, context, on, ctrl.signal);
+      const brief = Object.values(notesApi.notes)
+        .filter((n) => n.text || n.highlight)
+        .map((n) => ({ osis: n.osis, text: n.text.slice(0, 2000), highlight: n.highlight }))
+        .slice(0, 5000);
+      await (inBrowser ? runInBrowser : runOnServer)(config, key, turns, where, on, ctrl.signal, brief);
     } catch (e) {
       if (!ctrl.signal.aborted) on({ type: "error", message: String(e) });
     } finally {

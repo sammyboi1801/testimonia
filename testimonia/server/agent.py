@@ -20,6 +20,7 @@ import ipaddress
 import json
 import socket
 from collections.abc import AsyncIterator
+from contextvars import ContextVar
 from typing import Any, Literal
 from urllib.parse import urlparse
 
@@ -43,24 +44,38 @@ FALLBACK_DEFAULT = {"claude-opus-5-5", "claude-sonnet-5-5", "claude-opus-5", "cl
 EFFORT_MODELS = {"claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "claude-opus-5", "claude-sonnet-5",
                  "claude-opus-4-8", "claude-opus-4-7", "claude-fable-5-1", "claude-fable-5"}  # fmt: skip
 
-SYSTEM = """You are the study assistant of Testimonia, an open-source Bible study library: 13 Bible translations
-with their translators' footnotes, the Greek New Testament and Hebrew Old Testament word by word with the places
-where editions and manuscripts differ, cross references, the church fathers (with dates) and their quotations of
-Scripture, Josephus, Tacitus and other Jewish and Roman writers, and a timeline of people and events. A
-wikipedia tool gives background from outside the library.
+SYSTEM = """You are the research assistant of Testimonia, an open-source Bible study library. You work like a careful
+scholar: you read the primary sources before you answer, you cite them, and you separate evidence from inference.
 
-How to answer:
-- Ground answers in the library. Use the tools to read passages, study verses, look up words, writers and events,
-  and to read the fathers. Quote briefly and accurately; never invent a quotation, reference or date.
-- Cite as markdown links using the links the tools give, e.g. [John 1:18](/read/John/1?v=John.1.18) and
-  [Irenaeus, Against Heresies 3.11](/library/<edition>/<section>). Name the translation when wording matters.
-- Search efficiently: call several tools at once when you can, never repeat a search that found nothing, try at
-  most one different form (another spelling, the Greek, a verse, a related writer), then say what the library
-  does not contain. For background beyond the library (biography, places, modern scholarship) use the wikipedia
-  tool and cite it as Wikipedia, kept distinct from the primary sources.
-- Distinguish what the texts say from interpretation. Where scholars or traditions disagree, say so fairly and
-  briefly name the main positions. Dates in the library are approximate ("c.").
-- Be clear and concise; use short paragraphs or lists. Answer in the language of the question."""
+The library you can reach through your tools: 14 Bible translations (with the translators' notes) and the Greek
+Septuagint; the Greek New Testament and Hebrew Old Testament word by word, with grammar search and meanings by
+semantic domain; where the printed editions differ, and what the early manuscripts themselves read (papyri, codices,
+Dead Sea Scrolls); the church fathers and Jewish and Roman writers, readable section by section, with every
+quotation of Scripture linked; a timeline of events, writers and rulers; biblical people, places and Paul's journeys;
+topics, Gospel parallels and book overviews. A wikipedia tool gives background from outside the library.
+
+You also act inside the app: show_in_app opens a page on the reader's screen beside this chat (a verse, a chapter of
+a father, the atlas at a place, a manuscript, the timeline). Use it when seeing helps: "where is Corinth?" opens the
+atlas there; "show me 1 Clement 5" opens that chapter. Open at most one page per answer.
+
+The reader's screen: each question tells you what is on their screen right now (page, passage, selected verse, work
+and section). Take "this", "here", "this chapter" to mean that, and use its ids directly with your tools.
+
+How to work:
+- Read before you answer. To read a work or a long passage, read it in large runs (read_work with `through`), not
+  piece by piece. Call several tools at once when they are independent.
+- Never invent a quotation, reference, date or reading. Quote briefly and exactly; name the translation when wording
+  matters. If the library lacks something, say so plainly; do not repeat a search that found nothing.
+- Cite as markdown links using the links the tools return, e.g. [John 1:18](/read/John/1?v=John.1.18),
+  [1 Clement 5](/library/<edition>/<section>), [Corinth](/atlas?place=corinth). Cite Wikipedia as Wikipedia,
+  kept apart from the primary sources.
+- Distinguish what the texts say from interpretation; where scholars or traditions disagree, name the main
+  positions fairly and briefly. Dates are approximate unless the sources say otherwise.
+
+How to write:
+- Lead with the answer in one or two sentences, then the evidence. Use short sections with headings for longer
+  answers, and lists only where items are parallel.
+- Professional and measured: no filler, no flattery, no exclamation marks. Answer in the language of the question."""
 
 
 class Turn(BaseModel):
@@ -68,17 +83,29 @@ class Turn(BaseModel):
     content: str = Field(max_length=40_000)
 
 
+class NoteIn(BaseModel):
+    osis: str = Field(max_length=40)
+    text: str = Field("", max_length=20_000)
+    highlight: str | None = Field(None, max_length=20)
+
+
+#: the reader's notes for the request being answered (read by the notes tool; changes go back to the browser)
+NOTES: ContextVar[list[NoteIn]] = ContextVar("notes")
+
+
 class ChatRequest(BaseModel):
     provider: Literal["anthropic", "openai"] = "anthropic"
     model: str = Field(DEFAULT_CLAUDE, max_length=120)
     base_url: str | None = Field(None, max_length=300)  # OpenAI-compatible endpoint (…/v1)
     messages: list[Turn] = Field(min_length=1, max_length=60)
-    context: str | None = Field(None, max_length=200)  # what the reader has open, e.g. 'John 1:18'
+    context: str | None = Field(None, max_length=1000)  # what is on the reader's screen (page, passage, verse)
+    notes: list[NoteIn] | None = Field(None, max_length=5000)  # the reader's notes (they live in the browser)
 
 
 class ToolCall(BaseModel):
     name: str
     input: dict[str, Any]
+    notes: list[NoteIn] | None = Field(default=None, max_length=5000)
 
 
 def store(request: Request) -> Store:
@@ -97,6 +124,11 @@ def tools() -> dict[str, Any]:
 
 @router.post("/tool")
 def tool(request: Request, call: ToolCall) -> dict[str, Any]:
+    if call.name == "notes":
+        error = agent_tools.validate("notes", call.input)
+        text, is_error = (f"Error: {error}", True) if error else agent_tools.notes_tool(call.notes or [], call.input)
+        osis = agent_tools.note_osis(str(call.input.get("verse", ""))) if not is_error else ""
+        return {"content": text, "is_error": is_error, "osis": osis}
     text, is_error = agent_tools.run(store(request), call.name, call.input)
     return {"content": text, "is_error": is_error}
 
@@ -169,12 +201,15 @@ async def chat(request: Request, body: ChatRequest, x_api_key: str | None = Head
     elif not x_api_key:
         raise HTTPException(401, "an Anthropic API key is required (X-Api-Key header)")
     s = store(request)
-    system = SYSTEM + (f"\n\nThe reader currently has open: {body.context}." if body.context else "")
+    system = SYSTEM + (f"\n\nOn the reader's screen now: {body.context}." if body.context else "")
+    if body.notes is not None:
+        system += f"\nThe reader has {len(body.notes)} notes and highlights; the notes tool reads and changes them."
     turns = [t.model_dump() for t in body.messages]
     if turns[-1]["role"] != "user":
         raise HTTPException(400, "the last message must be the user's question")
 
     async def events() -> AsyncIterator[str]:
+        NOTES.set(body.notes or [])  # set inside the streaming task, where the tools run
         try:
             if body.provider == "anthropic":
                 gen = _claude(s, x_api_key or "", body.model or DEFAULT_CLAUDE, system, turns)
@@ -222,10 +257,16 @@ def _detail(resp: httpx.Response) -> str:
 
 
 async def _tool(s: Store, name: str, args: Any) -> tuple[str, bool]:
+    if name == "notes":  # the notes live in the browser: read them from the request, send changes back
+        error = agent_tools.validate(name, args)
+        return (f"Error: {error}", True) if error else agent_tools.notes_tool(NOTES.get([]), args)
     return await asyncio.to_thread(agent_tools.run, s, name, args)
 
 
 def _summary(name: str, args: Any) -> str:
+    if isinstance(args, dict) and name == "read_work":  # say which part was read, not just the edition
+        span = f"§{args.get('section')}" + (f"–{args['through']}" if args.get("through") else "")
+        return f"read work: {str(args.get('edition', '')).split('@')[0].split('.')[-1].replace('-', ' ')} {span}"[:120]
     if isinstance(args, dict):
         first = next((str(v) for v in args.values() if isinstance(v, (str, int))), "")
         return f"{name.replace('_', ' ')}: {first}"[:120]
@@ -293,9 +334,29 @@ async def _claude(
         for block in tool_uses:
             yield {"type": "tool", "name": block.name, "summary": _summary(block.name, block.input)}
             text, is_error = await _tool(s, block.name, block.input)
+            if nav := _navigation(block.name, block.input, is_error):
+                yield nav
             results.append({"type": "tool_result", "tool_use_id": block.id, "content": text, "is_error": is_error})
         messages.append({"role": "user", "content": results})  # all results of one turn in a single message
     yield {"type": "error", "message": f"Stopped after {MAX_ROUNDS} tool rounds."}
+
+
+def _navigation(name: str, args: Any, failed: bool) -> dict[str, Any] | None:
+    """Actions the browser carries out: show_in_app opens a page; notes changes are applied to the reader's notes."""
+    if failed or not isinstance(args, dict):
+        return None
+    if name == "show_in_app":
+        return {"type": "navigate", "link": str(args.get("link", ""))}
+    if name == "notes" and args.get("action") in ("add", "replace", "remove", "highlight"):
+        osis = agent_tools.note_osis(str(args.get("verse", "")))
+        return {
+            "type": "note",
+            "action": args["action"],
+            "osis": osis,
+            "text": str(args.get("text", "")),
+            "highlight": args.get("color"),
+        }
+    return None
 
 
 def _usage(u: Any) -> dict[str, int]:
@@ -392,10 +453,12 @@ async def _openai(
                 except ValueError:
                     args = None
                 yield {"type": "tool", "name": c["name"], "summary": _summary(c["name"], args)}
-                text, _ = (
+                text, failed = (
                     await _tool(s, c["name"], args)
                     if args is not None
                     else ("Error: arguments were not valid JSON", True)
                 )
+                if nav := _navigation(c["name"], args, failed):
+                    yield nav
                 messages.append({"role": "tool", "tool_call_id": c["id"] or f"call_{i}", "content": text})
     yield {"type": "error", "message": f"Stopped after {MAX_ROUNDS} tool rounds."}

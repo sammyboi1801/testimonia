@@ -12,7 +12,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
-from ..books import BOOKS, BY_OSIS
+from ..books import BOOKS, BY_OSIS, fuzzy_books, norm_alias, resolve_book
 from ..ingest.stepbible import normalize
 from ..refs import id_to_key, key_to_parts, parse_osis, parse_refs, vkey
 from .store import Store
@@ -661,9 +661,11 @@ def search(
     s = store(request)
     match = fts_query(q)
     out: dict[str, Any] = {"query": q}
-    ref = resolve_ref(q)
+    ref, alts = pick_ref(s, q)
     if ref:
         out["reference"] = ref
+    if alts:
+        out["suggestions"] = alts  # "did you mean": other books the typed name could be
     if ORIGINAL_SCRIPT.search(q):
         out.update(original_language_search(s, q, limit))
         if scope in ("all", "bible"):
@@ -818,12 +820,64 @@ def resolve_ref(text: str) -> dict[str, Any] | None:
     return {"book": r.book, "chapter": r.c1, "verse": r.v1 or None, "label": r.label(), "osis": r.start_id}
 
 
+_LOOSE_REF = re.compile(
+    r"^\s*((?:[1-4]|i{1,3}|iv)?\s*[a-z][a-z ]*?)\.?\s*(\d+)(?:\s*[:.,\s]\s*(\d+))?"  # book, chapter, verse
+    r"(?:\s*[-–—]\s*\d+(?:\s*[:.]\s*\d+)?)?\s*$",  # an optional range: opens at its first verse
+    re.I,
+)
+
+
+def _verse_exists(s: Store, ref: dict[str, Any]) -> bool:
+    k = vkey(ref["book"], ref["chapter"], ref["verse"] or 1)
+    return s.one("SELECT 1 AS x FROM verse WHERE vkey = ?", (k,)) is not None
+
+
+def ref_suggestions(s: Store, q: str) -> list[dict[str, Any]]:
+    """Forgiving references: 'jon 3:16', 'jhon 3 16', 'revelations 21' → the existing verses they could mean."""
+    m = _LOOSE_REF.match(q)
+    if not m:
+        return []
+    chapter, verse = int(m.group(2)), int(m.group(3)) if m.group(3) else None
+    word = norm_alias(m.group(1))
+    exact = resolve_book(m.group(1))
+    # a full name ('john', 'romans') means that book; short or misspelt names ('jon', 'jhon') stay open
+    books = [exact] if exact and len(word.lstrip("1234")) >= 4 else fuzzy_books(m.group(1))
+    out = []
+    for book in books:
+        b = BY_OSIS[book]
+        c, v = (1, chapter) if b.chapters == 1 and verse is None and chapter > 1 else (chapter, verse)
+        if not 0 < c <= b.chapters:
+            continue
+        ref = {"book": book, "chapter": c, "verse": v, "osis": f"{book}.{c}.{v or 1}"}
+        ref["label"] = f"{b.name} {c}" + (f":{v}" if v else "")
+        if _verse_exists(s, ref):
+            out.append(ref)
+    return out[:4]
+
+
+def pick_ref(s: Store, q: str) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+    """The reference a query most likely means, and the other existing verses it could mean.
+    Loose input ('jon 3:16', '1 jon 1:9', 'jhon 1:2-4') is ranked by the forgiving matcher; anything it
+    does not cover ('Rom 8:28; 12:1', 'John.3.16') by the strict parser. Verses that do not exist never win."""
+    alts = ref_suggestions(s, q)
+    strict = resolve_ref(q)
+    if strict and not _verse_exists(s, strict):  # 'jon 3:16' parses as Jonah 3:16, which does not exist
+        strict = None
+    if not alts:
+        return strict, []
+    same = strict and all(strict[k] == alts[0][k] for k in ("book", "chapter", "verse"))
+    first = strict if strict and same else alts[0]  # keeps a range's label
+    return first, alts[1:]
+
+
 @router.get("/resolve")
-def resolve(q: str = Query(..., max_length=100)) -> dict[str, Any]:
-    ref = resolve_ref(q)
-    if ref is None:
-        raise HTTPException(404, "not a Bible reference")
-    return ref
+def resolve(request: Request, q: str = Query(..., max_length=100)) -> dict[str, Any]:
+    """A reference to jump to: exact when it exists; a misspelt book only when there is one sensible reading
+    ('revelations 21'). Ambiguous ('jon 3:5' — John or Jonah?) → 404, and the search page offers the choices."""
+    ref, alts = pick_ref(store(request), q)
+    if ref and not alts:
+        return ref
+    raise HTTPException(404, "not a single Bible reference")
 
 
 __all__ = ["BOOKS", "router"]

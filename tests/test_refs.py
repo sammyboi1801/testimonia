@@ -100,3 +100,16 @@ def test_range_keys():
     whole = parse_refs("Ps 23")[0]
     assert whole.start == vkey("Ps", 23, 1)
     assert whole.end == vkey("Ps", 23, 999)
+
+
+def test_fuzzy_books_forgive_typos():
+    from testimonia.books import fuzzy_books
+
+    assert set(fuzzy_books("jon")[:2]) == {"John", "Jonah"}
+    assert "John" in fuzzy_books("jhon")
+    assert fuzzy_books("revelations")[0] == "Rev"
+    assert fuzzy_books("phillipians")[0] == "Phil"
+    assert fuzzy_books("gensis")[0] == "Gen"
+    assert fuzzy_books("1 jon")[0] == "1John"
+    assert "John" not in fuzzy_books("1 jon")
+    assert fuzzy_books("x") == []

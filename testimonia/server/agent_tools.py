@@ -111,14 +111,17 @@ TOOLS: list[dict[str, Any]] = [
     {
         "name": "read_work",
         "description": (
-            "Read a section of an early Christian, Jewish or Roman work (church fathers, Josephus, Tacitus…). Use the "
-            "edition id and section number from search_texts or study_verse results."
+            "Read an early Christian, Jewish or Roman work (church fathers, Josephus, Tacitus…): one section, or many "
+            "consecutive sections in one call with `through` (e.g. section 1 through 65 reads a whole epistle; long "
+            "runs stop with a note saying where to continue). Use the edition id and section number from "
+            "search_texts or study_verse results. To read a whole work, read it in large runs, not section by section."
         ),
         "parameters": {
             "type": "object",
             "properties": {
                 "edition": {"type": "string", "description": "Edition id, e.g. 'irenaeus.against-heresies@anf01'"},
-                "section": {"type": "integer", "description": "Section number (ord)"},
+                "section": {"type": "integer", "description": "First section number (ord)"},
+                "through": {"type": "integer", "description": "Optional last section number, to read a run at once"},
             },
             "required": ["edition", "section"],
             "additionalProperties": False,
@@ -342,6 +345,47 @@ TOOLS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "notes",
+        "description": (
+            "The reader's own notes and highlights (kept in their browser). action 'list' shows them (optionally for "
+            "a book, a verse, or matching a word in `query`); 'add' appends text to a verse's note (creating it); "
+            "'replace' overwrites a verse's note; 'remove' deletes a verse's note and highlight; 'highlight' colours "
+            "a verse (gold, green, blue, rose, violet; empty to clear). Only change notes when the reader asks."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "enum": ["list", "add", "replace", "remove", "highlight"]},
+                "verse": {
+                    "type": "string",
+                    "description": "A verse, e.g. 'John 1:9' (or a book/chapter to filter a list)",
+                },
+                "text": {"type": "string", "description": "Note text (markdown) for add/replace"},
+                "color": {"type": "string", "description": "For highlight: gold, green, blue, rose, violet, or ''"},
+                "query": {"type": "string", "description": "For list: only notes containing this word"},
+            },
+            "required": ["action"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "show_in_app",
+        "description": (
+            "Open a page of Testimonia in the reader's browser (the chat stays open beside it), to show rather than "
+            "only tell: a passage or verse (/read/John/1?v=John.1.9), a work's section (/library/<edition>/<section>), "
+            "the atlas at a place (/atlas?place=corinth), a place/person/event page (/place/corinth), a manuscript "
+            "(/manuscript/GA:P66), the timeline (/library?view=timeline), a passage guide (/passage/John.1.1-John.1.18), "
+            "a topic, Gospel parallels, kings and rulers (/rulers), a book page (/book/John). Use the links other "
+            "tools return. Open at most one page per answer, the most useful one."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"link": {"type": "string", "description": "An app path beginning with '/'"}},
+            "required": ["link"],
+            "additionalProperties": False,
+        },
+    },
+    {
         "name": "wikipedia",
         "description": (
             "Background from English Wikipedia, a secondary source outside the library: people, places, manuscripts, "
@@ -511,18 +555,42 @@ def word_study(store: Store, word: str) -> str:
     return "\n".join(out)
 
 
-def read_work(store: Store, edition: str, section: int) -> str:
+READ_WORK_BUDGET = 60_000  # characters per call: a whole short work (e.g. 1 Clement) fits in a few calls
+
+
+def read_work(store: Store, edition: str, section: int, through: int | None = None) -> str:
+    """One section, or a run of sections (section … through) in a single call, so a whole work can be read
+    without one round trip per chapter."""
     try:
         toc = api.toc(_req(store), edition_id=edition)
-        sec = api.section(_req(store), edition_id=edition, ord_=int(section))
     except HTTPException:
-        return f"No section {section} in edition {edition!r}."
+        return f"No edition {edition!r}."
     e = toc["edition"]
-    s = sec["section"]
-    head = f"# {e.get('author') or 'Anonymous'}, {e['title']} — {s.get('title') or s.get('cite')} (link: /library/{edition}/{section})"
-    cites = ", ".join(f"[{_label(c['osis'])}]({_verse_link(c['osis'])})" for c in sec["citations"][:20])
-    body = s.get("text") or _plain(s.get("html"))
-    return f"{head}\n{body[:7000]}" + (f"\n\nScripture cited here: {cites}" if cites else "")
+    last = max(int(section), min(int(through or section), int(section) + 80))
+    parts: list[str] = [f"# {e.get('author') or 'Anonymous'}, {e['title']}"]
+    used = 0
+    for ord_ in range(int(section), last + 1):
+        try:
+            sec = api.section(_req(store), edition_id=edition, ord_=ord_)
+        except HTTPException:
+            if ord_ == int(section):
+                return f"No section {section} in edition {edition!r}."
+            parts.append(f"\n(The work ends at section {ord_ - 1}.)")
+            break
+        s = sec["section"]
+        body = s.get("text") or _plain(s.get("html"))
+        if used and used + len(body) > READ_WORK_BUDGET:
+            parts.append(
+                f"\n(Stopped before section {ord_} to keep this reply readable: call again with section={ord_}.)"
+            )
+            break
+        used += len(body)
+        cites = ", ".join(f"[{_label(c['osis'])}]({_verse_link(c['osis'])})" for c in sec["citations"][:20])
+        parts.append(
+            f"\n## Section {ord_}: {s.get('title') or s.get('cite')} (link: /library/{edition}/{ord_})\n{body[:READ_WORK_BUDGET]}"
+            + (f"\nScripture cited here: {cites}" if cites else "")
+        )
+    return "\n".join(parts)
 
 
 def lookup_history(store: Store, name: str) -> str:
@@ -1057,6 +1125,64 @@ def rulers(store: Store, name: str | None = None, year: int | None = None, realm
     return "\n".join(out)
 
 
+HIGHLIGHTS = ("gold", "green", "blue", "rose", "violet")
+
+
+def note_osis(verse: str) -> str:
+    """'John 1:9' → 'John.1.9' (the key notes are stored under); '' when it is not a verse."""
+    refs = parse_refs(verse)
+    return api._osis(refs[0].start) if refs else ""
+
+
+def notes_tool(notes: list[Any], args: dict[str, Any]) -> tuple[str, bool]:
+    """Read the notes sent with the request, or validate a change the browser will apply."""
+    action = args["action"]
+    if action == "list":
+        rows = list(notes)
+        if args.get("verse"):
+            refs = parse_refs(str(args["verse"]))
+            if refs:
+                lo, hi = refs[0].start, refs[0].end
+                rows = [n for n in rows if (k := api._verse_key(n.osis)) and lo <= k <= hi]
+            else:  # a book name: 'John', 'Romans'
+                osis = _book_osis(str(args["verse"]))
+                rows = [n for n in rows if osis and n.osis.split(".")[0] == osis]
+        if args.get("query"):
+            q = str(args["query"]).lower()
+            rows = [n for n in rows if q in n.text.lower()]
+        if not rows:
+            return ("The reader has no notes that match." if notes else "The reader has no notes yet."), False
+        lines = [
+            f"- {_label(n.osis)}" + (f" [{n.highlight}]" if n.highlight else "") + (f": {n.text}" if n.text else "")
+            for n in rows[:300]
+        ]
+        more = f"\n…and {len(rows) - 300} more" if len(rows) > 300 else ""
+        return f"# {len(rows)} of the reader's notes\n" + "\n".join(lines) + more, False
+    osis = note_osis(str(args.get("verse", "")))
+    if not osis:
+        return "Error: give the verse, e.g. 'John 1:9'.", True
+    if action in ("add", "replace") and not str(args.get("text", "")).strip():
+        return "Error: give the note's text.", True
+    if action == "highlight" and args.get("color") not in (*HIGHLIGHTS, "", None):
+        return f"Error: color must be one of {', '.join(HIGHLIGHTS)} (or empty to clear).", True
+    done = {"add": "Added to", "replace": "Replaced", "remove": "Removed", "highlight": "Highlighted"}[action]
+    return f"{done} the reader's note on {_label(osis)} (it updates in their browser).", False
+
+
+APP_PAGES = re.compile(
+    r"^/(read|library|atlas|place|person|event|manuscript|manuscripts|book|passage|topic|topics|parallels|plans|rulers|"
+    r"domains|search|notes)(/|\?|$)"
+)
+
+
+def show_in_app(store: Store, link: str) -> str:
+    """Validate an in-app link; the server stream then tells the browser to open it."""
+    link = link.strip()
+    if not APP_PAGES.match(link) or "//" in link or any(c in link for c in "<>\"'\\"):
+        raise ValueError(f"not a Testimonia page: {link!r} (use a path such as /read/John/1?v=John.1.9)")
+    return f"Opened {link} for the reader (the page is now on their screen beside this chat)."
+
+
 def wikipedia(store: Store, query: str, section: str | None = None) -> str:
     """English Wikipedia, fetched live (nothing stored): the article's whole introduction and its list of sections,
     or one section in full when `section` is given, so any part of the article can be read."""
@@ -1262,6 +1388,8 @@ FUNCTIONS: dict[str, Callable[..., str]] = {
     "gospel_parallels": gospel_parallels,
     "word_meanings": word_meanings,
     "manuscripts": manuscripts,
+    "show_in_app": show_in_app,
+    "notes": lambda store, **args: notes_tool([], args)[0],  # run by the chat with the reader's notes (agent.py)
     "manuscript_text": manuscript_text,
     "bible_people_places": bible_people_places,
     "rulers": rulers,
@@ -1270,6 +1398,7 @@ FUNCTIONS: dict[str, Callable[..., str]] = {
 
 #: characters per result; Wikipedia sections are passed on whole so nothing in an article is out of reach
 LIMITS = {
+    "read_work": READ_WORK_BUDGET + 20_000,
     "topic": 30_000,
     "gospel_parallels": 30_000,
     "passage_guide": 30_000,

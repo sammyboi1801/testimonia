@@ -8,6 +8,8 @@ export type AgentEvent =
   | { type: "text"; text: string }
   | { type: "tool"; name: string; summary: string }
   | { type: "notice"; message: string }
+  | { type: "navigate"; link: string }
+  | { type: "note"; action: "add" | "replace" | "remove" | "highlight"; osis: string; text: string; highlight: string | null }
   | { type: "error"; message: string }
   | { type: "done"; model?: string; usage?: Record<string, number> };
 
@@ -17,6 +19,13 @@ export interface Turn {
 }
 
 const MAX_ROUNDS = 10;
+
+/** The reader's notes as the assistant sees them (they live in this browser, so they travel with each question). */
+export interface NoteBrief {
+  osis: string;
+  text: string;
+  highlight: string | null;
+}
 
 /** Parse a fetch() body of server-sent events, calling onData for each `data:` payload. */
 async function readSSE(res: Response, onData: (data: string) => void, signal: AbortSignal): Promise<void> {
@@ -46,11 +55,11 @@ async function errorText(res: Response): Promise<string> {
 }
 
 /** Cloud providers: the Testimonia server runs the loop with the library tools; the key is used for this call only. */
-export async function runOnServer(c: AiConfig, key: string, turns: Turn[], context: string | null, on: (e: AgentEvent) => void, signal: AbortSignal) {
+export async function runOnServer(c: AiConfig, key: string, turns: Turn[], context: string | null, on: (e: AgentEvent) => void, signal: AbortSignal, notes: NoteBrief[] = []) {
   const res = await fetch(apiUrl("/api/agent/chat"), {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(key ? { "X-Api-Key": key } : {}) },
-    body: JSON.stringify({ provider: c.protocol, model: c.model, base_url: c.protocol === "openai" ? c.baseUrl : null, messages: turns, context }),
+    body: JSON.stringify({ provider: c.protocol, model: c.model, base_url: c.protocol === "openai" ? c.baseUrl : null, messages: turns, context, notes }),
     signal,
   });
   if (!res.ok) {
@@ -78,7 +87,7 @@ interface ToolSpec {
 }
 
 /** Local models: the browser calls the model directly and the Testimonia server only runs the study tools. */
-export async function runInBrowser(c: AiConfig, key: string, turns: Turn[], context: string | null, on: (e: AgentEvent) => void, signal: AbortSignal) {
+export async function runInBrowser(c: AiConfig, key: string, turns: Turn[], context: string | null, on: (e: AgentEvent) => void, signal: AbortSignal, notes: NoteBrief[] = []) {
   const spec = (await (await fetch(apiUrl("/api/agent/tools"), { signal })).json()) as { system: string; tools: ToolSpec[] };
   const tools = spec.tools.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.parameters } }));
   const system = spec.system + (context ? `\n\nThe reader currently has open: ${context}.` : "");
@@ -159,8 +168,22 @@ export async function runInBrowser(c: AiConfig, key: string, turns: Turn[], cont
       on({ type: "tool", name: p.name, summary: `${p.name.replaceAll("_", " ")}: ${first ?? ""}` });
       let content = "Error: arguments were not valid JSON";
       if (args !== null) {
-        const r = await fetch(apiUrl("/api/agent/tool"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: p.name, input: args }), signal });
-        content = r.ok ? ((await r.json()) as { content: string }).content : `Error: ${await errorText(r)}`;
+        const r = await fetch(apiUrl("/api/agent/tool"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: p.name, input: args, ...(p.name === "notes" ? { notes } : {}) }),
+          signal,
+        });
+        const out = r.ok ? ((await r.json()) as { content: string; osis?: string }) : null;
+        content = out ? out.content : `Error: ${await errorText(r)}`;
+        if (out && !content.startsWith("Error") && p.name === "show_in_app") {
+          const link = (args as { link?: unknown }).link;
+          if (typeof link === "string") on({ type: "navigate", link });
+        }
+        const a = args as { action?: string; text?: string; color?: string };
+        if (out?.osis && !content.startsWith("Error") && p.name === "notes" && a.action && a.action !== "list") {
+          on({ type: "note", action: a.action as "add", osis: out.osis, text: a.text ?? "", highlight: a.color ?? null });
+        }
       }
       messages.push({ role: "tool", tool_call_id: p.id || `call_${i}`, content });
     }

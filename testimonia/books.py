@@ -179,6 +179,37 @@ def resolve_book(name: str) -> str | None:
     return _ALIAS.get(norm_alias(name))
 
 
+def fuzzy_books(name: str, n: int = 4) -> list[str]:
+    """Books a loosely typed name could mean, best first: 'jon' → John, Jonah; 'jhon' → John;
+    'revelations' → Revelation; 'phillipians' → Philippians. Exact aliases come first."""
+    import difflib
+
+    key = norm_alias(name)
+    if not key or len(key) < 2:
+        return []
+    out: list[str] = []
+    exact = _ALIAS.get(key)
+    if exact:
+        out.append(exact)
+    scored: dict[str, float] = {}
+    for alias, osis in _ALIAS.items():
+        if alias[:1].isdigit() != key[:1].isdigit():  # '1 john' never means 'john'
+            continue
+        r = difflib.SequenceMatcher(None, key, alias).ratio()
+        if len(key) > 3 and sorted(key) == sorted(alias):  # swapped letters: 'jhon' → john
+            r = max(r, 0.95)
+        if alias.startswith(key):  # typed the start of a name: 'phil' → Philippians, Philemon
+            r = max(r, 0.75 + 0.2 * len(key) / len(alias))
+        if r > scored.get(osis, 0):
+            scored[osis] = r
+    for osis, r in sorted(scored.items(), key=lambda kv: (-kv[1], book_order(kv[0]))):
+        if r < 0.7 or len(out) >= n:
+            break
+        if osis not in out:
+            out.append(osis)
+    return out
+
+
 def book_order(osis: str) -> int:
     b = BY_OSIS.get(osis)
     return b.order if b else 999
