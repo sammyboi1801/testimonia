@@ -114,6 +114,15 @@ function App() {
   );
 }
 
+// installable as an app (Chrome, Edge, Android, iOS "Add to Home Screen"); not in development, where it would cache stale code
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      /* the site works without it */
+    });
+  });
+}
+
 const root = document.getElementById("root");
 if (!root) throw new Error("#root missing from index.html");
 createRoot(root).render(

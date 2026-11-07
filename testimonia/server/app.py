@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import mimetypes
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -23,6 +24,9 @@ from .study import router as study_router
 from .words import router as words_router
 
 DIST = config.WEB_DIR / "dist"
+# the installable-app files: browsers check these types (and Windows' registry can map .js to text/plain)
+mimetypes.add_type("application/manifest+json", ".webmanifest")
+mimetypes.add_type("text/javascript", ".js")
 
 #: Responses streamed as server-sent events. Starlette's gzip holds compressed output back until its buffer
 #: fills, which turned the assistant's live answer into one burst at the very end; these are sent uncompressed.
