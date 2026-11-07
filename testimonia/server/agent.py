@@ -36,7 +36,7 @@ from .store import Store
 
 router = APIRouter(prefix="/api/agent")
 
-MAX_ROUNDS = 12  # tool round-trips per question (several tools can run in one round)
+MAX_ROUNDS = 30  # tool round-trips per question (several tools can run in one round)
 DEFAULT_CLAUDE = "claude-opus-5-5"
 #: Claude models that accept server-side refusal fallbacks in the "default" form (the API picks the fallback).
 FALLBACK_DEFAULT = {"claude-opus-5-5", "claude-sonnet-5-5", "claude-opus-5", "claude-fable-5-1"}

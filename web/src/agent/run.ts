@@ -18,7 +18,7 @@ export interface Turn {
   content: string;
 }
 
-const MAX_ROUNDS = 10;
+const MAX_ROUNDS = 30;
 
 /** The reader's notes as the assistant sees them (they live in this browser, so they travel with each question). */
 export interface NoteBrief {
