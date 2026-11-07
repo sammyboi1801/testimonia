@@ -149,6 +149,7 @@ a {
 .panel-head .sub { margin: 2px 0 10px; color: var(--muted); font-size: 13.5px; }
 .ph-row { display: flex; align-items: center; gap: 8px; }
 .ph-close { margin-left: auto; }
+@media (min-width: 761px) { .ph-close { margin-right: 30px; } } /* clear of the › that hides the panel */
 .about-tab { display: grid; gap: 12px; padding-top: 4px; }
 .about-tab .glance { margin: 0; }
 .about-when { display: flex; flex-wrap: wrap; gap: 4px 0; font-size: 13.5px; color: var(--ink-soft); }
