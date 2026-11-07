@@ -138,6 +138,8 @@ h1, h2, h3 { font-weight: 600; }
 .verse-row { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 0 32px; padding: 6px 12px; border-radius: var(--radius); cursor: pointer; }
 .verse-row:hover { background: color-mix(in srgb, var(--select) 45%, transparent); }
 .verse-row.selected { background: var(--select); box-shadow: inset 2px 0 0 var(--accent); }
+.verse-row.in-range, .rv.in-range { background: color-mix(in srgb, var(--select) 70%, transparent); box-shadow: inset 2px 0 0 var(--accent); }
+.rv.in-range { box-shadow: none; border-radius: 3px; }
 .column-heads { cursor: default; position: sticky; top: 64px; background: var(--bg); z-index: 1; }
 .column-heads:hover { background: var(--bg); }
 .col-head { font-size: 12px; text-transform: var(--label-transform); font-variant: var(--label-variant); letter-spacing: var(--label-tracking); color: var(--muted); font-weight: 600; }

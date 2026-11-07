@@ -26,7 +26,7 @@ export function TopBar() {
     if (!text) return;
     try {
       const ref = await resolveRef(text);
-      navigate(ref.verse ? verseUrl(ref.osis) : `/read/${ref.book}/${ref.chapter}`);
+      navigate(ref.verse ? verseUrl(ref.osis, undefined, ref.to) : `/read/${ref.book}/${ref.chapter}`);
     } catch {
       navigate(`/search?q=${encodeURIComponent(text)}`);
     }

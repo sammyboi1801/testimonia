@@ -25,6 +25,7 @@ export function ReadPage() {
   const editions = needsWords ? [...settings.editions, "tagnt", "tahot"] : settings.editions;
   const data = useChapter(book, ch, editions);
   const selected = params.get("v");
+  const through = Number(params.get("to")) || null; // a range from the selected verse, shaded in the text
   const word = params.get("w");
   const tabParam = params.get("t") as Tab | null;
   const tab: Tab = tabParam && TABS.includes(tabParam) ? tabParam : settings.panel.tab;
@@ -49,7 +50,7 @@ export function ReadPage() {
   // choosing a verse brings the study panel back if it was hidden
   const select = useCallback(
     (osis: string) => {
-      setParam({ v: osis, w: null }, true);
+      setParam({ v: osis, w: null, to: null }, true); // picking a verse ends a marked range
       if (!open) setOpen(true);
     },
     [setParam, open, setOpen],
@@ -77,7 +78,7 @@ export function ReadPage() {
         {data.isLoading && <div className="loading">Loading…</div>}
         {data.error && <div className="error">Could not load {book} {chapter}: {String(data.error)}</div>}
         {data.data && meta.data && (
-          <Reader data={data.data} books={books} editions={meta.data.editions} selected={selected} onSelect={select} onWord={openWord} />
+          <Reader data={data.data} books={books} editions={meta.data.editions} selected={selected} through={through} onSelect={select} onWord={openWord} />
         )}
       </main>
       <Splitter

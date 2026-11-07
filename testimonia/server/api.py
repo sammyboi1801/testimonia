@@ -817,12 +817,21 @@ def resolve_ref(text: str) -> dict[str, Any] | None:
         r = found[0] if found else None
     if r is None:
         return None
-    return {"book": r.book, "chapter": r.c1, "verse": r.v1 or None, "label": r.label(), "osis": r.start_id}
+    out: dict[str, Any] = {
+        "book": r.book,
+        "chapter": r.c1,
+        "verse": r.v1 or None,
+        "label": r.label(),
+        "osis": r.start_id,
+    }
+    if r.v1 and (r.c2 > r.c1 or r.v2 > r.v1):  # a range: the reader marks it to here (this chapter's end at most)
+        out["to"] = r.v2 if r.c2 == r.c1 else 999
+    return out
 
 
 _LOOSE_REF = re.compile(
     r"^\s*((?:[1-4]|i{1,3}|iv)?\s*[a-z][a-z ]*?)\.?\s*(\d+)(?:\s*[:.,\s]\s*(\d+))?"  # book, chapter, verse
-    r"(?:\s*[-–—]\s*\d+(?:\s*[:.]\s*\d+)?)?\s*$",  # an optional range: opens at its first verse
+    r"(?:\s*[-–—]\s*(\d+)(?:\s*[:.]\s*(\d+))?)?\s*$",  # an optional range, marked in the reader
     re.I,
 )
 
@@ -848,8 +857,13 @@ def ref_suggestions(s: Store, q: str) -> list[dict[str, Any]]:
         c, v = (1, chapter) if b.chapters == 1 and verse is None and chapter > 1 else (chapter, verse)
         if not 0 < c <= b.chapters:
             continue
-        ref = {"book": book, "chapter": c, "verse": v, "osis": f"{book}.{c}.{v or 1}"}
+        ref: dict[str, Any] = {"book": book, "chapter": c, "verse": v, "osis": f"{book}.{c}.{v or 1}"}
         ref["label"] = f"{b.name} {c}" + (f":{v}" if v else "")
+        if v and m.group(4):  # 'jhon 1:2-4' marks 2–4; '1:2-2:5' marks to the chapter's end
+            to = 999 if m.group(5) else int(m.group(4))
+            if to > v:
+                ref["to"] = to
+                ref["label"] += f"–{m.group(4)}:{m.group(5)}" if m.group(5) else f"–{to}"
         if _verse_exists(s, ref):
             out.append(ref)
     return out[:4]

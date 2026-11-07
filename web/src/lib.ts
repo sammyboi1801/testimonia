@@ -48,11 +48,13 @@ export function osisLabel(osis: string, books?: Book[]): string {
 }
 
 /** URL of the reader positioned on a verse (and optionally showing a word study). */
-export function verseUrl(osis: string, word?: string): string {
+/** A verse in its chapter; `to` marks a range through that verse (the whole chapter stays readable). */
+export function verseUrl(osis: string, word?: string, to?: number): string {
   const p = parseOsis(osis);
   if (!p) return "/";
   const q = new URLSearchParams({ v: osis });
   if (word) q.set("w", word);
+  if (to && to > p.verse) q.set("to", String(to));
   return `/read/${p.book}/${p.chapter}?${q.toString()}#v${p.verse}`;
 }
 

@@ -291,6 +291,7 @@ export interface RefResult {
   verse: number | null;
   label: string;
   osis: string;
+  to?: number; // a range ends at this verse (999: the chapter's end)
 }
 
 export interface SearchResults {

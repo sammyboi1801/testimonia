@@ -23,11 +23,14 @@ interface Props {
   books: Book[];
   editions: Edition[];
   selected: string | null;
+  through?: number | null;
   onSelect: (osis: string) => void;
   onWord: (strong: string) => void;
 }
 
-export function Reader({ data, books, editions, selected, onSelect, onWord }: Props) {
+export function Reader({ data, books, editions, selected, through, onSelect, onWord }: Props) {
+  const first = selected ? Number(selected.split(".")[2]) : 0;
+  const span: [number, number] | null = first && through && through > first ? [first, through] : null;
   const { settings, update } = useSettings();
   const byId = useMemo(() => new Map(editions.map((e) => [e.id, e])), [editions]);
   const isNT = data.verses.some((v) => v.words.tagnt?.length);
@@ -69,7 +72,7 @@ export function Reader({ data, books, editions, selected, onSelect, onWord }: Pr
     staleTime: Infinity,
   });
   const places = placesQuery.data?.verses ?? {};
-  const ctx: RowCtx = { byId, wordEd, isNT, onSelect, onWord, selected, footnotes: settings.display.footnotes, speaking, notes, places };
+  const ctx: RowCtx = { byId, wordEd, isNT, onSelect, onWord, selected, span, footnotes: settings.display.footnotes, speaking, notes, places };
 
   return (
     <div className="reader" ref={container}>
@@ -130,6 +133,7 @@ interface RowCtx {
   wordEd: string;
   isNT: boolean;
   selected: string | null;
+  span: [number, number] | null; // verses of a range opened from a reference (in this chapter)
   onSelect: (osis: string) => void;
   onWord: (strong: string) => void;
   footnotes: boolean;
@@ -169,13 +173,15 @@ function ColumnHeads({ mode, textEds, primary, ctx }: { mode: string; textEds: s
   );
 }
 
+const inSpan = (ctx: RowCtx, n: number) => !!ctx.span && n >= ctx.span[0] && n <= ctx.span[1];
+
 function VerseRow({ v, mode, textEds, primary, ctx }: { v: ChapterVerse; mode: string; textEds: string[]; primary?: string; ctx: RowCtx }) {
   const words = v.words[ctx.wordEd] ?? [];
   const isSel = v.osis === ctx.selected;
   const cols = mode === "parallel" ? textEds.length : mode === "original" ? 2 : 1;
   return (
     <div
-      className={`verse-row mode-${mode}${isSel ? " selected" : ""}${v.osis === ctx.speaking ? " speaking" : ""}${ctx.notes[v.osis]?.highlight ? ` hl-${ctx.notes[v.osis]!.highlight}` : ""}`}
+      className={`verse-row mode-${mode}${isSel ? " selected" : ""}${inSpan(ctx, v.verse) ? " in-range" : ""}${v.osis === ctx.speaking ? " speaking" : ""}${ctx.notes[v.osis]?.highlight ? ` hl-${ctx.notes[v.osis]!.highlight}` : ""}`}
       data-osis={v.osis}
       id={`v${v.verse}`}
       style={{ ["--cols" as string]: String(Math.max(cols, 1)) }}
@@ -357,7 +363,7 @@ function ReadingView({ data, edition, headings, ctx }: { data: Chapter; edition?
               return (
                 <span
                   key={v.vkey}
-                  className={`rv${v.osis === ctx.selected ? " selected" : ""}${v.osis === ctx.speaking ? " speaking" : ""}${v.red_letter && ed?.language === "eng" ? " red" : ""}${ctx.notes[v.osis]?.highlight ? ` hl-${ctx.notes[v.osis]!.highlight}` : ""}`}
+                  className={`rv${v.osis === ctx.selected ? " selected" : ""}${inSpan(ctx, v.verse) ? " in-range" : ""}${v.osis === ctx.speaking ? " speaking" : ""}${v.red_letter && ed?.language === "eng" ? " red" : ""}${ctx.notes[v.osis]?.highlight ? ` hl-${ctx.notes[v.osis]!.highlight}` : ""}`}
                   data-osis={v.osis}
                   onClick={() => window.getSelection()?.isCollapsed !== false && ctx.onSelect(v.osis)}
                 >

@@ -120,7 +120,7 @@ export function SearchPage() {
       )}
 
       {data?.reference && (
-        <Link className="search-ref" to={verseUrl(data.reference.osis)}>
+        <Link className="search-ref" to={verseUrl(data.reference.osis, undefined, data.reference.to)}>
           <span className="muted small">Go to the passage</span>
           <strong>{data.reference.label}</strong>
           <span aria-hidden>→</span>
@@ -132,7 +132,7 @@ export function SearchPage() {
           {data.suggestions.map((r, i) => (
             <span key={r.osis}>
               {i > 0 && ", "}
-              <Link to={verseUrl(r.osis)}>{r.label}</Link>
+              <Link to={verseUrl(r.osis, undefined, r.to)}>{r.label}</Link>
             </span>
           ))}
           ?
