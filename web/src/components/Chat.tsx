@@ -50,6 +50,57 @@ function scroller(el: HTMLElement | null): HTMLElement | null {
   return (document.scrollingElement as HTMLElement | null) ?? null;
 }
 
+/** "read work: x §3" → { verb: "Reading", what: "x" }: steps grouped by what they did, for a calm summary. */
+function stepParts(s: string): { verb: string; what: string } {
+  const [head, ...rest] = s.split(": ");
+  const what = rest.join(": ").replace(/\s*§.*$/, "");
+  const verb = (head ?? s).replace(/^\w/, (c) => c.toUpperCase());
+  return { verb, what };
+}
+
+/** What the assistant is doing: one animated line while it works (the current step and a count), folding into
+ *  "Used N sources ▸" afterwards, which opens to the steps grouped (repeats counted, not listed). */
+function Activity({ steps, live }: { steps: string[]; live: boolean }) {
+  const [open, setOpen] = useState(false);
+  const groups: { label: string; n: number }[] = [];
+  for (const s of steps) {
+    const { verb, what } = stepParts(s);
+    const label = what ? `${verb}: ${what}` : verb;
+    const g = groups.find((x) => x.label === label);
+    if (g) g.n++;
+    else groups.push({ label, n: 1 });
+  }
+  const current = steps.length ? stepParts(steps[steps.length - 1]!) : null;
+  return (
+    <div className={`ask-activity${live ? " live" : ""}`}>
+      <button className="act-line" onClick={() => setOpen(!open)} disabled={!steps.length} aria-expanded={open}>
+        <span className="act-orb" aria-hidden />
+        {live ? (
+          <span className="act-now" key={steps.length}>
+            {current ? `${current.verb}${current.what ? ` · ${current.what}` : ""}` : "Thinking"}
+            <span className="act-dots" aria-hidden />
+          </span>
+        ) : (
+          <span>
+            Used {steps.length} {steps.length === 1 ? "step" : "steps"}
+          </span>
+        )}
+        {steps.length > 0 && <span className="act-count">{live ? steps.length : open ? "▾" : "▸"}</span>}
+      </button>
+      {open && (
+        <ol className="act-list">
+          {groups.map((g) => (
+            <li key={g.label}>
+              {g.label}
+              {g.n > 1 && <span className="act-n">×{g.n}</span>}
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
 /** The study assistant: bring your own key, any provider; answers grounded in the library, with links.
  *  Used full-page (/ask) and in the drawer that opens from anywhere (`compact`). */
 export function Chat({ context, initial, compact = false }: { context: string | null; initial?: string; compact?: boolean }) {
@@ -298,21 +349,11 @@ export function Chat({ context, initial, compact = false }: { context: string | 
             </div>
           ) : (
             <div key={i} className="ask-a">
-              {(m.steps?.length ?? 0) > 0 && (
-                <div className="ask-steps">
-                  {m.steps!.map((s, j) => (
-                    <span key={j} className="tag">
-                      {s}
-                    </span>
-                  ))}
-                </div>
+              {((m.steps?.length ?? 0) > 0 || (busy && i === messages.length - 1)) && (
+                <Activity steps={m.steps ?? []} live={busy && i === messages.length - 1} />
               )}
               {m.notice && <p className="muted small">{m.notice}</p>}
-              {m.content ? (
-                <Answer text={m.content} />
-              ) : (
-                !m.error && busy && i === messages.length - 1 && <p className="muted">Reading the library…</p>
-              )}
+              {m.content && <Answer text={m.content} />}
               {m.error && <p className="error">{m.error}</p>}
             </div>
           ),
