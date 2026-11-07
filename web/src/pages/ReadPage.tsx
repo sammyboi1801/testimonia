@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { useChapter, useMeta } from "../api";
 import { rememberReading } from "../lib";
@@ -10,7 +10,7 @@ import type { Book } from "../types";
 import { StudyPanel, type Tab } from "../components/StudyPanel";
 import { useSettings } from "../settings";
 
-const TABS: Tab[] = ["text", "fathers", "links", "words"];
+const TABS: Tab[] = ["about", "text", "fathers", "links", "words"];
 
 export function ReadPage() {
   const { book = "John", chapter = "1" } = useParams();
@@ -25,6 +25,7 @@ export function ReadPage() {
   const editions = needsWords ? [...settings.editions, "tagnt", "tahot"] : settings.editions;
   const data = useChapter(book, ch, editions);
   const selected = params.get("v");
+  const drag = useRef<number | null>(null); // pull-down-to-close on phones
   const through = Number(params.get("to")) || null; // a range from the selected verse, shaded in the text
   const word = params.get("w");
   const tabParam = params.get("t") as Tab | null;
@@ -50,10 +51,11 @@ export function ReadPage() {
   // choosing a verse brings the study panel back if it was hidden
   const select = useCallback(
     (osis: string) => {
+      if (osis === selected) return setParam({ v: null, w: null, t: null, to: null }, true); // tap again: deselect
       setParam({ v: osis, w: null, to: null }, true); // picking a verse ends a marked range
       if (!open) setOpen(true);
     },
-    [setParam, open, setOpen],
+    [setParam, open, setOpen, selected],
   );
   // "]" shows or hides the study panel (ignored while typing)
   useEffect(() => {
@@ -95,12 +97,33 @@ export function ReadPage() {
           <span>‹ Study panel</span>
         </button>
       )}
-      <aside className="guide" aria-label="Study panel" hidden={!open}>
+      <aside
+        className="guide"
+        aria-label="Study panel"
+        hidden={!open}
+        // phones: pull the sheet down from its top to close the verse
+        onTouchStart={(e) => {
+          const el = e.currentTarget;
+          drag.current = el.scrollTop <= 0 && window.innerWidth <= 760 ? e.touches[0]!.clientY : null;
+        }}
+        onTouchMove={(e) => {
+          if (drag.current === null) return;
+          const dy = e.touches[0]!.clientY - drag.current;
+          e.currentTarget.style.transform = dy > 0 ? `translateY(${dy}px)` : "";
+        }}
+        onTouchEnd={(e) => {
+          const el = e.currentTarget;
+          const dy = drag.current === null ? 0 : e.changedTouches[0]!.clientY - drag.current;
+          drag.current = null;
+          el.style.transform = "";
+          if (dy > 90 && selected) setParam({ v: null, w: null, t: null, to: null }, true);
+        }}
+      >
         <button className="panel-hide icon-btn" onClick={() => setOpen(false)} title="Hide the study panel ( ] )" aria-label="Hide the study panel">
           ›
         </button>
         {selected ? (
-          <StudyPanel osis={selected} books={books} tab={tab} word={word} onTab={setTab} onWord={openWord} onCloseWord={closeWord} />
+          <StudyPanel osis={selected} books={books} tab={tab} word={word} onTab={setTab} onWord={openWord} onCloseWord={closeWord} onClose={() => setParam({ v: null, w: null, t: null, to: null }, true)} />
         ) : (
           <div className="guide-empty">
             <BookIntro book={books.find((b) => b.osis === (data.data?.book ?? book))} />

@@ -46,8 +46,8 @@ export function TopBar() {
           aria-label="Passage or search"
         />
       </form>
-      <button className="icon-btn menu-btn" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
-        {menu ? "✕" : "☰"}
+      <button className="icon-btn menu-btn" aria-label="Display and settings" title="Display and settings" aria-expanded={menu} onClick={() => setMenu(!menu)}>
+        {menu ? "✕" : "⋯"}
       </button>
       <div className="topbar-menu" onClick={(e) => (e.target as HTMLElement).closest("a") && close()}>
       <nav className="topnav">

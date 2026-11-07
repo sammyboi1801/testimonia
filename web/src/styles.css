@@ -136,7 +136,7 @@ h1, h2, h3 { font-weight: 600; }
 
 .verses { padding-top: 8px; }
 .verse-row { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 0 32px; padding: 6px 12px; border-radius: var(--radius); cursor: pointer; }
-.verse-row:hover { background: color-mix(in srgb, var(--select) 45%, transparent); }
+@media (hover: hover) { .verse-row:hover { background: color-mix(in srgb, var(--select) 45%, transparent); } }
 .verse-row.selected { background: var(--select); box-shadow: inset 2px 0 0 var(--accent); }
 .verse-row.in-range, .rv.in-range { background: color-mix(in srgb, var(--select) 70%, transparent); box-shadow: inset 2px 0 0 var(--accent); }
 .rv.in-range { box-shadow: none; border-radius: 3px; }

@@ -21,6 +21,7 @@ import { WordStudy } from "./WordStudy";
 
 export type Tab = PanelTab;
 const TABS: { id: Tab; label: string }[] = [
+  { id: "about", label: "Overview" },
   { id: "text", label: "Text" },
   { id: "fathers", label: "Fathers" },
   { id: "links", label: "Links" },
@@ -46,6 +47,7 @@ interface Props {
   onTab: (t: Tab) => void;
   onWord: (strong: string) => void;
   onCloseWord: () => void;
+  onClose?: () => void;
 }
 
 export function StudyPanel(props: Props) {
@@ -55,7 +57,7 @@ export function StudyPanel(props: Props) {
   return <Panel g={data} {...props} />;
 }
 
-function Panel({ g, books, tab, word, onTab, onWord, onCloseWord }: Props & { g: VerseGuide }) {
+function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Props & { g: VerseGuide }) {
   const { settings } = useSettings();
   const scope = settings.fathers;
   const fathers = useMemo(() => g.fathers.filter((f) => inScope(f.year, f.era, scope)), [g.fathers, scope]);
@@ -73,42 +75,17 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord }: Props & { g:
   return (
     <div className="guide-inner">
       <header className="panel-head">
-        <h2>{osisLabel(g.verse.osis, books)}</h2>
-        <div className="sub">
-          {g.heading?.title}
-          {g.chronology?.label && <span> · {g.chronology.label}</span>}
-          {era && <span> · {era}</span>}
-          {period && <span className="muted"> — {period}</span>}
+        <div className="ph-row">
+          <h2>{osisLabel(g.verse.osis, books)}</h2>
+          {onClose && (
+            <button className="icon-btn ph-close" onClick={onClose} aria-label="Close this verse" title="Close (or tap the verse again)">
+              ✕
+            </button>
+          )}
         </div>
-        <UnderRulers osis={g.verse.osis} />
-        <PassageLink osis={g.verse.osis} title={g.heading?.title} />
+        {g.heading?.title && <div className="sub">{g.heading.title}</div>}
       </header>
       <VerseNote osis={g.verse.osis} label={osisLabel(g.verse.osis, books)} />
-
-      {settings.panel.glance && (
-      <div className="glance">
-        <GlanceRow kind="var" on={major.length > 0} onClick={() => onTab("text")}>
-          {major.length ? (
-            <>
-              {major.length} significant variant{major.length > 1 ? "s" : ""}:{" "}
-              <span className="greek">{major[0]!.label}</span>
-            </>
-          ) : g.variants.length ? (
-            `${g.variants.length} minor edition difference${g.variants.length > 1 ? "s" : ""}`
-          ) : (
-            "The printed editions agree here"
-          )}
-        </GlanceRow>
-        <GlanceRow kind="fat" on={preNicene > 0} onClick={() => onTab("fathers")}>
-          {preNicene} pre-Nicene citation{preNicene === 1 ? "" : "s"} · {g.fathers.length} in all ·{" "}
-          {g.commentary.length} comments
-        </GlanceRow>
-        <GlanceRow kind="quo" on={quotes.length > 0} onClick={() => onTab("links")}>
-          {quotes.length ? `${quotes.length} Old ↔ New Testament link${quotes.length > 1 ? "s" : ""}` : "No OT ↔ NT quotation"} ·{" "}
-          {g.crossrefs.length} cross references
-        </GlanceRow>
-      </div>
-      )}
 
       <nav className="tabs panel-tabs" role="tablist">
         {TABS.map((t) => (
@@ -119,6 +96,41 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord }: Props & { g:
         ))}
       </nav>
 
+      {active === "about" && (
+        <div className="about-tab">
+          <div className="about-when">
+            {g.chronology?.label && <span>{g.chronology.label}</span>}
+            {era && <span>{era}</span>}
+            {period && <span className="muted">{period}</span>}
+          </div>
+          <UnderRulers osis={g.verse.osis} />
+          {(
+          <div className="glance">
+            <GlanceRow kind="var" on={major.length > 0} onClick={() => onTab("text")}>
+              {major.length ? (
+                <>
+                  {major.length} significant variant{major.length > 1 ? "s" : ""}:{" "}
+                  <span className="greek">{major[0]!.label}</span>
+                </>
+              ) : g.variants.length ? (
+                `${g.variants.length} minor edition difference${g.variants.length > 1 ? "s" : ""}`
+              ) : (
+                "The printed editions agree here"
+              )}
+            </GlanceRow>
+            <GlanceRow kind="fat" on={preNicene > 0} onClick={() => onTab("fathers")}>
+              {preNicene} pre-Nicene citation{preNicene === 1 ? "" : "s"} · {g.fathers.length} in all ·{" "}
+              {g.commentary.length} comments
+            </GlanceRow>
+            <GlanceRow kind="quo" on={quotes.length > 0} onClick={() => onTab("links")}>
+              {quotes.length ? `${quotes.length} Old ↔ New Testament link${quotes.length > 1 ? "s" : ""}` : "No OT ↔ NT quotation"} ·{" "}
+              {g.crossrefs.length} cross references
+            </GlanceRow>
+          </div>
+          )}
+          <PassageLink osis={g.verse.osis} title={g.heading?.title} />
+        </div>
+      )}
       {active === "text" && <TextTab g={g} />}
       {active === "fathers" && <FathersTab fathers={fathers} broad={(g.fathers_broad ?? []).filter((f) => inScope(f.year, f.era, scope))} commentary={commentary} onWord={onWord} />}
       {active === "links" && <LinksTab g={g} books={books} onWord={onWord} />}
@@ -129,6 +141,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord }: Props & { g:
 }
 
 function tabCount(t: Tab, g: VerseGuide, fathers: number): string {
+  if (t === "about") return "";
   if (t === "text") return String(g.variants.length);
   if (t === "fathers") return String(fathers);
   if (t === "links") return String(g.quotations.length + g.crossrefs.length + (g.witnesses?.length ?? 0));

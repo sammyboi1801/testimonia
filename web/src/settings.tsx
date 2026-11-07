@@ -4,7 +4,7 @@ export type Theme = "system" | "light" | "dark";
 export type FathersScope = "pre-nicene" | "to-451" | "all";
 export type Design = "vellum" | "folio" | "atelier" | "archive";
 export type ReadingMode = "parallel" | "interlinear" | "original" | "reading";
-export type PanelTab = "text" | "fathers" | "links" | "words";
+export type PanelTab = "about" | "text" | "fathers" | "links" | "words";
 export type MarkKind = "var" | "fat" | "quo";
 
 export const MODES: { id: ReadingMode; label: string; hint: string }[] = [
@@ -146,7 +146,7 @@ export const DEFAULTS: Settings = {
   display: { verseNumbers: true, headings: true, redLetter: true, underline: true, glosses: true, footnotes: true },
   hover: { cards: true, delay: 260 },
   speech: { enabled: true, rate: 0.8, grc: null, hbo: null, read: null, readRate: 1 },
-  panel: { tab: "text", glance: true, open: true },
+  panel: { tab: "about", glance: true, open: true },
   layout: { study: 440, toc: 260, context: 360 },
 };
 const KEY = "testimonia.settings.v1";

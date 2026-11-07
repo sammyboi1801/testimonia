@@ -32,6 +32,7 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
   const first = selected ? Number(selected.split(".")[2]) : 0;
   const span: [number, number] | null = first && through && through > first ? [first, through] : null;
   const { settings, update } = useSettings();
+  const [viewOpen, setViewOpen] = useState(false); // phones: the View sheet
   const byId = useMemo(() => new Map(editions.map((e) => [e.id, e])), [editions]);
   const isNT = data.verses.some((v) => v.words.tagnt?.length);
   const wordEd = isNT ? "tagnt" : "tahot";
@@ -82,9 +83,20 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
           <NavArrow to={data.prev} dir="‹" />
           <PassagePicker books={books} book={data.book} chapter={data.chapter} />
           <NavArrow to={data.next} dir="›" />
+          <button className="view-btn" onClick={() => setViewOpen(true)} aria-label="Reading view and translations">
+            <span aria-hidden>Aa</span> {MODES.find((m) => m.id === mode)?.label}
+          </button>
         </div>
-        {/* one sideways-scrolling strip on phones; laid out inline on wider screens */}
-        <div className="reader-tools">
+        {/* inline on wider screens; on phones a sheet opened from the "Aa" button */}
+        {viewOpen && <div className="view-scrim" onClick={() => setViewOpen(false)} />}
+        <div className={`reader-tools${viewOpen ? " open" : ""}`}>
+        <div className="view-head">
+          <strong>View</strong>
+          <button className="icon-btn" onClick={() => setViewOpen(false)} aria-label="Close">
+            ✕
+          </button>
+        </div>
+        <div className="view-label">Reading mode</div>
         <div className="modes" role="tablist" aria-label="Reading mode">
           {MODES.map((m) => (
             <button key={m.id} role="tab" aria-selected={mode === m.id} className={mode === m.id ? "on" : ""} title={m.hint} onClick={() => update({ mode: m.id })}>
@@ -92,6 +104,7 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
             </button>
           ))}
         </div>
+        <div className="view-label">{mode === "parallel" ? "Translations side by side" : "Translation"}</div>
         <EditionPicker editions={editions} chosen={settings.editions} onChange={(eds) => update({ editions: eds })} single={mode !== "parallel"} />
         <ReadAloud
           verses={listenVerses}

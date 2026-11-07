@@ -56,7 +56,8 @@
   .workspace.has-verse .guide::before {
     content: ""; display: block; width: 40px; height: 4px; margin: 8px auto 0; border-radius: 2px; background: var(--rule);
   }
-  .panel-hide { font-size: 22px; top: 6px; right: 8px; }
+  .panel-hide { display: none; }
+  .workspace.has-verse .guide .guide-inner { padding-top: 6px; }
   .audio-bar, .reader-head .audio-bar { left: 8px; right: 8px; bottom: 8px; transform: none; width: auto; border-radius: 16px; }
   .audio-where { white-space: normal; }
   .audio-voice { display: none; }
@@ -175,20 +176,35 @@
   body:has(.picker-pop) .ask-fab { display: none; }
 }
 
-/* reader toolbar: inline on wide screens, one sideways-scrolling strip on phones */
+/* reader toolbar: inline on wide screens; on phones a "View" sheet behind the Aa button */
 .reader-tools { display: contents; }
+.view-btn, .view-head, .view-label, .view-scrim { display: none; }
 @media (max-width: 760px) {
-  .reader-head .chapter-title { flex-basis: 100%; }
-  .reader-tools {
-    display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; width: 100%; overflow-x: auto;
-    scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px;
+  .reader-head { position: sticky; top: 0; z-index: 20; background: var(--bg); }
+  .reader-head .chapter-title { flex-basis: 100%; display: flex; align-items: center; }
+  .view-btn {
+    display: inline-flex; align-items: center; gap: 6px; margin-left: auto; padding: 7px 12px; border: 1px solid var(--rule);
+    border-radius: 999px; background: var(--panel); color: var(--ink-soft); font-size: 13px; white-space: nowrap;
   }
-  .reader-tools::-webkit-scrollbar { display: none; }
-  /* fade at the right edge: there is more to scroll to */
-  .reader-tools { -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); padding-right: 32px; }
-  .reader-tools > * { flex: none; }
-  .reader-tools .modes { margin: 0; white-space: nowrap; }
-  .reader-tools .menu { position: fixed; left: 12px; right: 12px; top: 112px; min-width: 0; max-height: 62vh; z-index: 90; }
+  .view-btn span { font-family: var(--font-display); font-size: 16px; color: var(--accent); }
+  .reader-tools { display: none; }
+  .view-scrim { display: block; position: fixed; inset: 0; z-index: 96; background: color-mix(in srgb, var(--ink) 22%, transparent); animation: fade-in 0.15s ease-out; }
+  .reader-tools.open {
+    display: flex; flex-direction: column; align-items: stretch; gap: 10px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 97;
+    max-height: 80dvh; overflow-y: auto; padding: 8px 16px calc(20px + env(safe-area-inset-bottom)); background: var(--bg);
+    border-radius: 20px 20px 0 0; box-shadow: 0 -8px 30px rgb(0 0 0 / 0.25); animation: sheet-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .reader-tools.open .view-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 0 6px; border-bottom: 1px solid var(--rule); }
+  .reader-tools.open .view-head strong { font-family: var(--font-display); font-size: 20px; }
+  .reader-tools.open .view-label { display: block; margin-top: 6px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .reader-tools.open .modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 0; border: 0; }
+  .reader-tools.open .modes button { padding: 12px; border: 1px solid var(--rule); border-radius: 12px; background: var(--panel); font-size: 15px; }
+  .reader-tools.open .modes button.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .reader-tools.open .edition-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+  .reader-tools.open .edition-picker .chip { font-size: 14px; padding: 6px 12px; }
+  .reader-tools.open .add-wrap { flex-basis: 100%; }
+  .reader-tools.open .menu { position: static; max-height: 38vh; overflow-y: auto; margin-top: 6px; box-shadow: none; border: 1px solid var(--rule); border-radius: 12px; }
+  .reader-tools.open .menu button { padding: 10px 12px; }
   /* the assistant button shrinks to an icon so it does not sit on the text */
   .ask-fab { width: 48px; height: 48px; padding: 0; border-radius: 50%; justify-content: center; gap: 0; }
   .ask-fab-label { display: none; }
@@ -201,4 +217,32 @@
   .topbar .brand { justify-self: start; }
   .topbar .omnibox { width: 100%; max-width: none; }
   .topbar .topbar-menu { justify-self: end; margin-left: 0; }
+}
+
+/* phones: a native-style tab bar; sections leave the ☰ menu and the floating ✦ becomes the Ask tab */
+.tabbar { display: none; }
+@media (max-width: 760px) {
+  :root { --tabbar-h: calc(58px + env(safe-area-inset-bottom)); }
+  body { padding-bottom: var(--tabbar-h); }
+  .tabbar {
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); position: fixed; left: 0; right: 0; bottom: 0; z-index: 65;
+    height: var(--tabbar-h); padding-bottom: env(safe-area-inset-bottom);
+    background: color-mix(in srgb, var(--panel) 92%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--rule);
+  }
+  .tabbar a, .tabbar button {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 0; background: none;
+    color: var(--muted); font: inherit; font-size: 10.5px; font-weight: 500; letter-spacing: 0.01em; text-decoration: none; background-image: none;
+    -webkit-tap-highlight-color: transparent; transition: color 0.15s ease;
+  }
+  .tabbar a.on, .tabbar button.on { color: var(--accent); }
+  .tabbar a.on svg { stroke-width: 2.1; }
+  .tabbar a:active svg, .tabbar button:active svg { transform: scale(0.9); }
+  .tabbar svg { transition: transform 0.12s ease; }
+  /* what the bar replaces */
+  .ask-fab, .topbar.menu-open .topnav { display: none !important; }
+  /* everything that sat on the bottom edge now sits on the bar */
+  .wm-bar { bottom: calc(var(--tabbar-h) + 8px); }
+  .audio-bar, .reader-head .audio-bar { bottom: calc(var(--tabbar-h) + 8px); }
+  .work-text { padding-bottom: 120px; }
 }

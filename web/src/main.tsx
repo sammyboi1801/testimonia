@@ -46,6 +46,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { lastReadingPath } from "./lib";
 import { AskDrawer } from "./components/AskDrawer";
 import { TopBar } from "./components/TopBar";
+import { TabBar } from "./components/TabBar";
 import { AskPage } from "./pages/AskPage";
 import { BookPage } from "./pages/BookPage";
 import { DomainPage } from "./pages/DomainPage";
@@ -110,6 +111,7 @@ function App() {
       <ErrorBoundary resetKey={location.pathname}>
         <AskDrawer />
       </ErrorBoundary>
+      <TabBar />
     </div>
   );
 }
