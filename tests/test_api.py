@@ -140,6 +140,25 @@ def test_search_and_resolve(client):
     assert client.get("/api/search", params={"q": "John 1:18"}).json()["reference"]["osis"] == "John.1.18"
 
 
+@pytest.mark.parametrize(
+    ("q", "osis"),
+    [
+        ("jhon 1:18", "John.1.18"),
+        ("john 1:18", "John.1.18"),
+        ("2 john", "2John.1.1"),
+        ("1 cor", "1Cor.1.1"),
+        ("romans", "Rom.1.1"),
+    ],
+)
+def test_forgiving_references(client, q, osis):
+    assert client.get("/api/search", params={"q": q}).json()["reference"]["osis"] == osis
+
+
+@pytest.mark.parametrize("q", ["love", "grace", "begotten"])
+def test_ordinary_words_stay_searches(client, q):
+    assert "reference" not in client.get("/api/search", params={"q": q}).json()
+
+
 def test_spa_fallback_without_frontend(client):
     assert client.get("/").status_code == 503
     assert client.get("/api/does-not-exist").status_code == 404

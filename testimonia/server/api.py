@@ -841,8 +841,23 @@ def _verse_exists(s: Store, ref: dict[str, Any]) -> bool:
     return s.one("SELECT 1 AS x FROM verse WHERE vkey = ?", (k,)) is not None
 
 
+_BARE_BOOK = re.compile(r"^\s*((?:[1-4]|i{1,3}|iv)\s*[a-z]{2,}|[a-z]{4,}(?: of [a-z]+)?)\.?\s*$", re.I)
+
+
 def ref_suggestions(s: Store, q: str) -> list[dict[str, Any]]:
     """Forgiving references: 'jon 3:16', 'jhon 3 16', 'revelations 21' → the existing verses they could mean."""
+    bare = _BARE_BOOK.match(q)
+    if bare:  # just a book: '2 john', '1 cor', 'romans' → its first chapter (ordinary words stay searches)
+        word = norm_alias(bare.group(1))
+        numbered = word[:1].isdigit()
+        exact = resolve_book(bare.group(1))
+        if exact and (numbered or len(word) >= 4):
+            found = [exact]
+        elif numbered and len(word) >= 3:
+            found = fuzzy_books(bare.group(1))[:2]
+        else:
+            found = []
+        return [{"book": b, "chapter": 1, "verse": None, "osis": f"{b}.1.1", "label": BY_OSIS[b].name} for b in found]
     m = _LOOSE_REF.match(q)
     if not m:
         return []
