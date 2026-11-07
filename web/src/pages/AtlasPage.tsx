@@ -321,8 +321,11 @@ function drawRoute(r: RouteFeature, group: L.LayerGroup, onPlace: (id: string) =
 
 function Legend({ paul, routes }: { paul: boolean; routes?: RouteFeature[] }) {
   return (
-    <div className="atlas-legend">
-      <h3>Reading the map</h3>
+    // open beside the map on wide screens; on phones a tap-to-open "Map key", so the map keeps the room
+    <details className="atlas-legend" open={window.matchMedia("(min-width: 761px)").matches}>
+      <summary>
+        <h3>Reading the map</h3>
+      </summary>
       <ul>
         <li>
           <i className="lg-dot certain" /> location certain
@@ -350,7 +353,7 @@ function Legend({ paul, routes }: { paul: boolean; routes?: RouteFeature[] }) {
       <p className="muted small">
         Click a place to see the verses that name it. Sites follow OpenBible.info's identifications, scored by how widely scholars accept them.
       </p>
-    </div>
+    </details>
   );
 }
 

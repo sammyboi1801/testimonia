@@ -89,7 +89,7 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Licence:** per-translation (PD or CC-BY-SA; filtered at build from translations.csv)
 - **Credit:** Texts from eBible.org — see per-edition credits
 - **Used for:** `edition`, `edition_verse`
-- **Pinned version:** fetched 2026-11-05, fetched 2026-11-06
+- **Pinned version:** fetched 2026-11-05, fetched 2026-11-06, fetched 2026-11-07
 - **Editions:**
   - `eng-kjv` — 1769 Blayney text incl. 14 Apocrypha books (PD)
   - `eng-web` (PD)
@@ -104,6 +104,11 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
   - `engDRA` (PD)
   - `eng-Brenton` (PD)
   - `latVUC` (PD)
+  - `grctr` — the Greek behind the KJV, as reconstructed by Scrivener (PD)
+  - `grcmt` (PD)
+  - `grcbyz` — the official text of the Greek Orthodox Church (PD)
+  - `grc-tisch` — the critical text of the discoverer of Codex Sinaiticus (PD)
+  - `grctcgnt` (PD)
 
 ### Open Scriptures Hebrew Bible (WLC + morphology)
 

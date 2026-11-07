@@ -145,6 +145,21 @@ sources:
       - http: https://ebible.org/Scriptures/latVUC_vpl.zip
         target: ebible
         extract: true
+      - http: https://ebible.org/Scriptures/grctr_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/grcmt_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/grcbyz_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/grc-tisch_vpl.zip
+        target: ebible
+        extract: true
+      - http: https://ebible.org/Scriptures/grctcgnt_vpl.zip
+        target: ebible
+        extract: true
       - http: https://ebible.org/Scriptures/eng-kjv_usfm.zip
         target: ebible
         extract: true
@@ -202,6 +217,12 @@ sources:
       engDRA:      { id: dra,      abbrev: DRA,     title: "Douay-Rheims (Challoner revision)", year: 1752, base: Vulgate, versification: vul, license: PD }
       eng-Brenton: { id: brenton,  abbrev: LXX-E,   title: "Brenton's English Septuagint", year: 1851, base: LXX, versification: lxx, license: PD }
       latVUC:      { id: vulgate,  abbrev: VUL,     title: "Clementine Vulgate", year: 1592, base: Vulgate, versification: vul, license: PD, language: lat }
+      # the Greek New Testament in its main printed forms, to read side by side
+      grctr:       { id: gnt-tr,   abbrev: TR,      title: "Textus Receptus (Scrivener 1894)", year: 1894, base: TR, versification: eng, license: PD, language: grc, notes: "the Greek behind the KJV, as reconstructed by Scrivener" }
+      grcmt:       { id: gnt-rp,   abbrev: RP,      title: "Byzantine Majority Text (Robinson–Pierpont 2018)", year: 2018, base: Byzantine, versification: eng, license: PD, language: grc }
+      grcbyz:      { id: gnt-byz,  abbrev: PT,      title: "Patriarchal Text (Antoniades 1904)", year: 1904, base: Byzantine, versification: eng, license: PD, language: grc, notes: "the official text of the Greek Orthodox Church" }
+      grc-tisch:   { id: gnt-tisch, abbrev: TISCH,  title: "Tischendorf 8th edition", year: 1872, base: critical, versification: eng, license: PD, language: grc, notes: "the critical text of the discoverer of Codex Sinaiticus" }
+      grctcgnt:    { id: gnt-tc,   abbrev: TCGNT,   title: "Text-Critical Greek New Testament (Boyd 2022)", year: 2022, base: critical, versification: eng, license: PD, language: grc }
 
   - id: crosswire-pd
     name: CrossWire SWORD modules (public-domain texts only)

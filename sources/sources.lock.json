@@ -186,6 +186,36 @@
       "size": 4318747,
       "source": "ebible"
     },
+    "http|https://ebible.org/Scriptures/grc-tisch_vpl.zip|ebible|": {
+      "fetched_at": "2026-11-07T22:51:57+00:00",
+      "sha256": "9a61af1d84bf56e0e0435ced88ebd3566b0edeae448a50894ce60ee2534a509f",
+      "size": 1381932,
+      "source": "ebible"
+    },
+    "http|https://ebible.org/Scriptures/grcbyz_vpl.zip|ebible|": {
+      "fetched_at": "2026-11-07T22:51:56+00:00",
+      "sha256": "b18fa65234dbb2f037f64fa91084743788dc199503fd47b1f5a86134c6351ead",
+      "size": 1399478,
+      "source": "ebible"
+    },
+    "http|https://ebible.org/Scriptures/grcmt_vpl.zip|ebible|": {
+      "fetched_at": "2026-11-07T22:51:56+00:00",
+      "sha256": "0c9255a17aaa90e0e5da097e6101e79bade92caa28a10ac1a4d990779ea585ff",
+      "size": 1192425,
+      "source": "ebible"
+    },
+    "http|https://ebible.org/Scriptures/grctcgnt_vpl.zip|ebible|": {
+      "fetched_at": "2026-11-07T22:51:57+00:00",
+      "sha256": "572f0ed8b9b938e96fb6d210de34e07f601c1538cfff967d82d836014b0e4c49",
+      "size": 1403735,
+      "source": "ebible"
+    },
+    "http|https://ebible.org/Scriptures/grctr_vpl.zip|ebible|": {
+      "fetched_at": "2026-11-07T22:51:54+00:00",
+      "sha256": "04f667ea71267ffb213148ebde5a659da1e6b540a69c8e43c2484c42ebd2cc68",
+      "size": 1416531,
+      "source": "ebible"
+    },
     "http|https://ebible.org/Scriptures/latVUC_usfm.zip|ebible|": {
       "fetched_at": "2026-11-06T04:51:31+00:00",
       "sha256": "5d73ce3473e40b70cfcc976b967e0f259cbb031d6c0cd4f9798fbabf9f5b4e6c",

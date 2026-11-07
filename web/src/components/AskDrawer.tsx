@@ -108,6 +108,22 @@ export function AskDrawer() {
     window.addEventListener(EVENT, on);
     return () => window.removeEventListener(EVENT, on);
   }, []);
+  // phones: the ✦ button slides away while reading down the page and comes back on the way up
+  const [tucked, setTucked] = useState(false);
+  useEffect(() => {
+    let last = 0;
+    const onScroll = (e: Event) => {
+      const el = e.target instanceof Element ? e.target : document.scrollingElement;
+      if (!el || el.closest?.(".ask-drawer, .picker-pop, .wm-sheet, .menu")) return;
+      const y = el.scrollTop;
+      if (Math.abs(y - last) < 12) return;
+      setTucked(y > last && y > 120);
+      last = y;
+    };
+    document.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    return () => document.removeEventListener("scroll", onScroll, { capture: true });
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
@@ -123,7 +139,7 @@ export function AskDrawer() {
       {/* with a verse open, the study panel has its own "Ask AI" button */}
       {!open && !(location.pathname.startsWith("/read") && new URLSearchParams(location.search).has("v")) && (
         <button
-          className="ask-fab"
+          className={`ask-fab${tucked ? " tucked" : ""}`}
           onClick={() => openAsk(contextFromUrl(location.pathname, location.search))}
           title="Ask the study assistant"
           aria-label="Ask the study assistant"

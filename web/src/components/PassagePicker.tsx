@@ -133,6 +133,9 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
           {chosen && (
             <div className="picker-chapters">
               <h4>{chosen.name}</h4>
+              <p className="pc-sub">
+                {GROUPS.find((g) => g.id === chosen.testament)?.label} · {chosen.chapters} chapters
+              </p>
               <div className="chapter-grid">
                 {Array.from({ length: chosen.chapters }, (_, i) => i + 1).map((c) => (
                   <button
