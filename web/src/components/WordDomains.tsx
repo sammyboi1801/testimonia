@@ -21,9 +21,9 @@ function Meaning({ data, onWord }: { data: WordDomainsData; onWord: (s: string) 
   const rest = data.senses.filter((s) => !shown.has(s.id));
   const [allRest, setAllRest] = useState(false);
   return (
-    <details className="section wd" open>
+    <details className="section wd">
       <summary>
-        Meaning <span className="count">{hebrew ? "semantic domains (SDBH)" : "Louw–Nida senses"}</span>
+        Senses <span className="count">grouped by meaning</span>
       </summary>
       <div className="section-body">
         {data.fields.map((f) => (
@@ -98,7 +98,7 @@ function SenseList({ senses, hebrew, named = false }: { senses: WordSense[]; heb
       {senses.map((s) => (
         <li key={s.id}>
           <span className="wd-gloss">{s.gloss ?? s.label}</span>
-          <span className="wd-code">{hebrew ? (named ? s.label : "") : `LN ${s.code}`}</span>
+          <span className="wd-code" title={hebrew ? undefined : `Louw–Nida ${s.code}`}>{hebrew && named ? s.label : ""}</span>
           <span className="wd-n">{s.n > 0 ? s.n.toLocaleString() : ""}</span>
         </li>
       ))}
@@ -112,13 +112,15 @@ function Septuagint({ data, onWord }: { data: WordDomainsData; onWord: (s: strin
   const words = data.lxx.words;
   const max = Math.max(1, ...words.map((w) => w.n));
   return (
-    <details className="section wd" open>
+    <details className="section wd">
       <summary>
-        Septuagint <span className="count">{data.lxx.total.toLocaleString()} places</span>
+        {toGreek ? "In the Greek Old Testament" : "The Hebrew behind it"} <span className="count">{data.lxx.total.toLocaleString()} places</span>
       </summary>
       <div className="section-body">
         <p className="wd-note">
-          {toGreek ? "How the Greek translators rendered this word." : "Hebrew words this word renders in the Greek Old Testament."}
+          {toGreek
+            ? "When Jews translated the Hebrew Bible into Greek (the Septuagint), these are the Greek words they chose for this word."
+            : "In the Greek Old Testament (the Septuagint), this word was used to translate these Hebrew words — a clue to what it meant to Jewish readers."}
         </p>
         <div className="wd-lxx">
           {words.slice(0, limit).map((w) => (

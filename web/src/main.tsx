@@ -47,6 +47,7 @@ import { lastReadingPath } from "./lib";
 import { AskDrawer } from "./components/AskDrawer";
 import { TopBar } from "./components/TopBar";
 import { TabBar } from "./components/TabBar";
+import { TimelineLab } from "./pages/TimelineLab";
 import { AskPage } from "./pages/AskPage";
 import { BookPage } from "./pages/BookPage";
 import { DomainPage } from "./pages/DomainPage";
@@ -92,6 +93,7 @@ function App() {
           <Route path="/manuscripts" element={<ManuscriptsPage />} />
           <Route path="/manuscript/:id" element={<ManuscriptPage />} />
           <Route path="/rulers" element={<RulersPage />} />
+          <Route path="/lab/timeline" element={<TimelineLab />} />
           <Route path="/ask" element={<AskPage />} />
           <Route path="/notes" element={<NotesPage />} />
           <Route path="/search" element={<SearchPage />} />

@@ -1,0 +1,57 @@
+/* Timeline prototype: A · River (vertical) and B · Cards (swipe) */
+.tlx { padding: 16px max(14px, calc((100% - 760px) / 2)) 40px; min-width: 0; max-width: 100vw; box-sizing: border-box; overflow-x: clip; }
+.cd { min-width: 0; width: 100%; }
+.tlx-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.tlx-title { display: flex; align-items: baseline; gap: 10px; }
+.tlx-title h1 { margin: 0; }
+.tlx-proto { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 1px 8px; }
+
+/* A · river */
+.rv { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 40px; gap: 6px; }
+.rv-century {
+  position: sticky; top: 0; z-index: 3; margin: 18px 0 4px; padding: 10px 0 8px; background: var(--bg);
+  border-bottom: 1px solid var(--rule); font-size: calc(22px * var(--display-size));
+}
+.rv-century span { display: block; margin-top: 2px; font-family: var(--font-ui); font-size: 12px; font-weight: 400; color: var(--muted); }
+.rv-row { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-bottom: 1px dashed color-mix(in srgb, var(--rule) 70%, transparent); }
+.rv-year { font-size: 13px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; padding-top: 3px; }
+.rv-body { display: grid; gap: 4px; min-width: 0; }
+.rv-body p { margin: 0; }
+.rv-event { font-family: var(--font-text); font-size: 17px; line-height: 1.35; color: var(--ink); }
+.rv-event.major { font-weight: 600; }
+.rv-line { font-size: 13.5px; line-height: 1.45; color: var(--ink-soft); }
+.rv-line i { font-style: normal; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.rv-rulers { border-left: 3px solid #b5703a; padding-left: 8px; }
+.rv-writers { border-left: 3px solid #5a7894; padding-left: 8px; }
+.rv-works { border-left: 3px solid #6f8a52; padding-left: 8px; }
+.rv-quiet { padding: 6px 0 6px 86px; font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+.rv-scrub {
+  position: sticky; top: 70px; align-self: start; display: flex; flex-direction: column; gap: 1px; max-height: calc(100dvh - 160px); overflow-y: auto;
+  scrollbar-width: none;
+}
+.rv-scrub button { border: 0; background: none; padding: 3px 0; font-size: 10.5px; font-weight: 600; color: var(--muted); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.rv-scrub button small { display: block; font-size: 8px; font-weight: 500; }
+.rv-scrub button:hover { color: var(--accent); }
+
+/* B · cards */
+.cd-scale { display: flex; align-items: center; gap: 10px; font-size: 11.5px; color: var(--muted); margin-bottom: 10px; }
+.cd-scale input { flex: 1; accent-color: var(--accent); }
+.cd-strip { display: flex; width: 100%; min-width: 0; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: 0; }
+.cd-strip::-webkit-scrollbar { display: none; }
+.cd-card {
+  flex: 0 0 100%; scroll-snap-align: center; box-sizing: border-box; padding: 18px 18px 8px; background: var(--panel);
+  border: 1px solid var(--rule); border-radius: 18px; min-height: 60dvh;
+}
+.cd-card header { margin-bottom: 8px; }
+.cd-when { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.cd-card h2 { margin: 2px 0 0; font-size: calc(34px * var(--display-size)); }
+.cd-group h3 { margin: 14px 0 4px; font-family: var(--font-ui); font-size: 11.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.cd-group ul { list-style: none; margin: 0; padding: 0; }
+.cd-group li { padding: 6px 0; border-bottom: 1px dashed color-mix(in srgb, var(--rule) 70%, transparent); font-family: var(--font-text); font-size: 16.5px; }
+.cd-group li.major { font-weight: 600; }
+.cd-group li.cd-inline { font-size: 15.5px; line-height: 1.5; }
+.cd-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+.cd-tip { margin-top: 8px; }
+@media (min-width: 761px) {
+  .cd-card { flex-basis: 100%; }
+}

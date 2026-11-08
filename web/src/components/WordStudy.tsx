@@ -30,11 +30,25 @@ export function WordStudy({ strong, books, onBack, onWord }: { strong: string; b
         <span className="muted">{data.lemma?.translit}</span>
         <span className="tag">{strong}</span>
       </div>
-      {data.lemma?.gloss && <div style={{ fontSize: 16, margin: "4px 0 8px" }}>{data.lemma.gloss}</div>}
+      {data.lemma?.gloss && <div className="ws-gloss">{data.lemma.gloss}</div>}
+      <p className="ws-summary">
+        Appears <b>{data.total.toLocaleString()}</b> {data.total === 1 ? "time" : "times"} in the {hebrew ? "Hebrew Bible" : "New Testament"}
+        {data.glosses.length > 0 && (
+          <>
+            , most often translated{" "}
+            {data.glosses.slice(0, 3).map((g, i, a) => (
+              <span key={g.gloss}>
+                {i > 0 && (i === a.length - 1 ? " or " : ", ")}“{g.gloss}”
+              </span>
+            ))}
+          </>
+        )}
+        .
+      </p>
 
       <details className="section" open>
         <summary>
-          Used <span className="count">{data.total} times</span>
+          How it is translated <span className="count">and where</span>
         </summary>
         <div className="section-body">
           <div style={{ marginBottom: 8 }}>
@@ -51,27 +65,9 @@ export function WordStudy({ strong, books, onBack, onWord }: { strong: string; b
         </div>
       </details>
 
-      <WordDomains strong={strong} onWord={onWord} />
-
-      {data.lexicons.length > 0 && lex && (
-        <details className="section" open>
-          <summary>Lexicons</summary>
-          <div className="section-body">
-            <div className="tabs">
-              {data.lexicons.map((l, i) => (
-                <button key={l.lexicon_id} className={i === tab ? "on" : ""} onClick={() => setTab(i)} title={l.title}>
-                  {LEX_SHORT[l.lexicon_id] ?? l.lexicon_id}
-                </button>
-              ))}
-            </div>
-            <Html html={lex.body} className="lexicon-body" onWord={onWord} />
-          </div>
-        </details>
-      )}
-
-      <details className="section" open>
+      <details className="section">
         <summary>
-          Occurrences <span className="count">{data.occurrences.length}</span>
+          Every verse it is in <span className="count">{data.occurrences.length}</span>
         </summary>
         <div className="section-body">
           {data.occurrences.slice(0, limit).map((o) => (
@@ -90,6 +86,27 @@ export function WordStudy({ strong, books, onBack, onWord }: { strong: string; b
           )}
         </div>
       </details>
+      <h4 className="ws-deeper">Go deeper</h4>
+      <WordDomains strong={strong} onWord={onWord} />
+
+      {data.lexicons.length > 0 && lex && (
+        <details className="section">
+          <summary>
+            Dictionary entries <span className="count">{data.lexicons.length}</span>
+          </summary>
+          <div className="section-body">
+            <div className="tabs">
+              {data.lexicons.map((l, i) => (
+                <button key={l.lexicon_id} className={i === tab ? "on" : ""} onClick={() => setTab(i)} title={l.title}>
+                  {LEX_SHORT[l.lexicon_id] ?? l.lexicon_id}
+                </button>
+              ))}
+            </div>
+            <Html html={lex.body} className="lexicon-body" onWord={onWord} />
+          </div>
+        </details>
+      )}
+
     </div>
   );
 }
