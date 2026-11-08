@@ -108,7 +108,7 @@ function River({ decades }: { decades: Decade[] }) {
   let quiet = 0;
   let century: number | null = null;
   const flushQuiet = (key: string) => {
-    if (quiet) rows.push(<div key={key} className="rv-quiet">· {quiet * STEP} quiet years ·</div>);
+    if (quiet) rows.push(<div key={key} className="river-quiet">· {quiet * STEP} quiet years ·</div>);
     quiet = 0;
   };
   for (const d of decades) {
@@ -117,7 +117,7 @@ function River({ decades }: { decades: Decade[] }) {
       flushQuiet(`q${d.start}`);
       century = c;
       rows.push(
-        <h2 key={`c${c}`} id={`cent${c}`} className="rv-century">
+        <h2 key={`c${c}`} id={`cent${c}`} className="river-century">
           {c >= 0 ? `${c / 100 + 1}${["st", "nd", "rd"][c / 100] ?? "th"} century AD` : `${-c / 100}${["st", "nd", "rd"][-c / 100 - 1] ?? "th"} century BC`}
           <span>{d.ruling.slice(0, 3).map((r) => r.name).join(" · ")}</span>
         </h2>,
@@ -129,21 +129,21 @@ function River({ decades }: { decades: Decade[] }) {
     }
     flushQuiet(`q${d.start}`);
     rows.push(
-      <article key={d.start} className="rv-row">
-        <div className="rv-year">{decadeLabel(d.start)}</div>
-        <div className="rv-body">
+      <article key={d.start} className="river-row">
+        <div className="river-year">{decadeLabel(d.start)}</div>
+        <div className="river-body">
           {d.events.map((e) => (
             <p key={e.id} className={`rv-event${e.major ? " major" : ""}`}>
               {e.title}
             </p>
           ))}
           {d.rulersNew.length > 0 && (
-            <p className="rv-line rv-rulers">
+            <p className="river-line rv-rulers">
               <i>Rules</i> {d.rulersNew.map((r) => `${r.name} (${r.realm})`).join(" · ")}
             </p>
           )}
           {d.writersNew.length > 0 && (
-            <p className="rv-line rv-writers">
+            <p className="river-line rv-writers">
               <i>Writing</i>{" "}
               {d.writersNew.map((w, i) => (
                 <span key={w.id}>
@@ -154,7 +154,7 @@ function River({ decades }: { decades: Decade[] }) {
             </p>
           )}
           {d.works.length > 0 && (
-            <p className="rv-line rv-works">
+            <p className="river-line rv-works">
               <i>Written</i>{" "}
               {d.works.slice(0, 3).map((w, i) => (
                 <span key={w.id}>
@@ -171,9 +171,9 @@ function River({ decades }: { decades: Decade[] }) {
   }
   flushQuiet("qend");
   return (
-    <div className="rv">
-      <div className="rv-list">{rows}</div>
-      <nav className="rv-scrub" aria-label="Jump to a century">
+    <div className="river">
+      <div className="river-list">{rows}</div>
+      <nav className="river-scrub" aria-label="Jump to a century">
         {centuries.map((c) => (
           <button key={c} onClick={() => document.getElementById(`cent${c}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}>
             {c === 0 ? "1" : c > 0 ? c : `${-c}`}

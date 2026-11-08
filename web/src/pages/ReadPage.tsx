@@ -91,6 +91,9 @@ export function ReadPage() {
 
   if (!Number.isInteger(ch) || ch < 1) return <Navigate to="/read/John/1" replace />;
   const books = meta.data?.books ?? [];
+  // a chapter with no text in this numbering (Additions to Esther 1–9): go to the first that has text
+  const firstCh = books.find((b) => b.osis === book)?.first_chapter ?? 1;
+  if (ch < firstCh) return <Navigate to={`/read/${book}/${firstCh}`} replace />;
 
   return (
     <div className={`workspace${open ? "" : " panel-closed"}${selected ? " has-verse" : ""}`} style={{ ["--study-w" as string]: `${settings.layout.study}px` }}>

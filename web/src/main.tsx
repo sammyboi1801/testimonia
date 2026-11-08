@@ -47,6 +47,7 @@ import { lastReadingPath } from "./lib";
 import { AskDrawer } from "./components/AskDrawer";
 import { TopBar } from "./components/TopBar";
 import { TabBar } from "./components/TabBar";
+import { MapHost } from "./components/MapHost";
 import { TimelineLab } from "./pages/TimelineLab";
 import { AskPage } from "./pages/AskPage";
 import { BookPage } from "./pages/BookPage";
@@ -112,6 +113,7 @@ function App() {
       </ErrorBoundary>
       <ErrorBoundary resetKey={location.pathname}>
         <AskDrawer />
+        <MapHost />
       </ErrorBoundary>
       <TabBar />
     </div>

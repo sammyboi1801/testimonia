@@ -15,6 +15,7 @@ export interface Edition {
 }
 
 export interface Book {
+  first_chapter?: number; // chapters before this have no text (Additions to Esther starts at 10)
   osis: string;
   name: string;
   testament: "OT" | "NT" | "DC" | "EX";

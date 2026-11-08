@@ -386,6 +386,68 @@ def chapter_places(request: Request, book: str, chapter: int) -> dict[str, Any]:
     return {"verses": by_verse}
 
 
+MAX_FOCUS = 400
+
+
+@router.get("/places/in")
+def places_in(
+    request: Request,
+    ref: str | None = Query(None, max_length=200),
+    person: str | None = Query(None, max_length=120),
+    event: str | None = Query(None, max_length=120),
+) -> dict[str, Any]:
+    """The mapped places of a passage ('2 Kings 1', 'Acts 13-14', 'Ruth'), a person's verses or an event's
+    narrative, in the order the text first names them: what the map panel and the assistant show."""
+    s = store(request)
+    spans: list[tuple[int, int]] = []
+    title = ""
+    if ref:
+        from ..refs import parse_refs
+
+        found = parse_refs(ref)
+        if not found:
+            book = _book_by_name(ref)
+            if book:
+                spans.append((_verse_key(f"{book}.1.1") - 1, _verse_key(f"{book}.{BY_OSIS[book].chapters}.1") + 999))
+                title = BY_OSIS[book].name
+        for rng in found:
+            spans.append((rng.start, rng.end))
+            title = title or rng.label()
+    elif person:
+        row = s.one("SELECT name FROM person WHERE id = ?", (person,))
+        if not row:
+            raise HTTPException(404, f"unknown person {person}")
+        title = row["name"]
+        spans = [(r["vkey"], r["vkey"]) for r in s.all("SELECT vkey FROM person_ref WHERE person_id = ?", (person,))]
+    elif event:
+        row = s.one("SELECT title FROM event WHERE id = ?", (event,))
+        if not row:
+            raise HTTPException(404, f"unknown event {event}")
+        title = row["title"]
+        spans = [
+            (r["start_vkey"], r["end_vkey"])
+            for r in s.all("SELECT start_vkey, end_vkey FROM event_ref WHERE event_id = ?", (event,))
+        ]
+    if not spans:
+        raise HTTPException(404, "give a passage, a person or an event")
+    where = " OR ".join("r.vkey BETWEEN ? AND ?" for _ in spans)
+    rows = s.all(
+        "SELECT p.id, p.name, p.kind, p.lat, p.lon, p.modern_name, min(r.vkey) AS first, count(*) AS n "
+        f"FROM place_ref r JOIN place p ON p.id = r.place_id WHERE ({where}) AND p.lat IS NOT NULL "
+        "GROUP BY p.id ORDER BY first LIMIT ?",
+        (*[k for span in spans for k in span], MAX_FOCUS),
+    )
+    for row in rows:
+        row["first_osis"] = _osis(row.pop("first"))
+    return {"title": title, "places": rows}
+
+
+def _book_by_name(name: str) -> str | None:
+    from ..books import resolve_book
+
+    return resolve_book(name.strip())
+
+
 @router.get("/verse/{osis}/entities")
 def verse_entities(request: Request, osis: str, limit: int = Query(40, ge=1, le=200)) -> dict[str, Any]:
     """People and places a verse names, and the events whose narrative includes it."""

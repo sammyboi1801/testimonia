@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
+import { openMap } from "../pins";
 import type { TextMark } from "./Footnotes";
 
 /** A place named in a verse (from /api/chapter/{book}/{chapter}/places). */
@@ -89,7 +90,18 @@ export function PlaceName({ place, children }: { place: PlaceInText; children: R
             </span>
             <span className="place-card-meta">Named in {place.verses} verses</span>
             <span className="place-card-links">
-              {place.lat != null && <Link to={`/atlas?place=${encodeURIComponent(place.id)}`}>Show on map</Link>}
+              {place.lat != null && (
+                <button
+                  className="link-btn"
+                  onClick={() => {
+                    // the map opens beside the text with the chapter's places, this one first
+                    const m = /^\/read\/([^/]+)\/(\d+)/.exec(window.location.pathname);
+                    openMap(m ? { ref: `${m[1]} ${m[2]}`, select: place.id } : { places: [place.id], title: place.name, select: place.id });
+                  }}
+                >
+                  Show on map
+                </button>
+              )}
               <Link to={`/place/${encodeURIComponent(place.id)}`}>Place page</Link>
             </span>
           </span>,

@@ -61,10 +61,14 @@ def meta(request: Request) -> dict[str, Any]:
         "FROM edition WHERE kind <> 'manuscript' ORDER BY sort, id"
     )
     present = {
-        r["book"]: r["chapters"] for r in s.all("SELECT book, max(chapter) AS chapters FROM verse GROUP BY book")
+        r["book"]: (r["first"], r["chapters"])
+        for r in s.all(
+            "SELECT book, min(chapter) AS first, max(chapter) AS chapters FROM verse WHERE chapter > 0 GROUP BY book"
+        )
     }
     books = [
-        {**r, "chapters": present[r["osis"]]}
+        # Additions to Esther starts at chapter 10 in this numbering: the reader offers only chapters with text
+        {**r, "first_chapter": present[r["osis"]][0], "chapters": present[r["osis"]][1]}
         for r in s.all(
             "SELECT osis, name, testament, hebrew_name, greek_name, latin_name, genre, ord, "
             "(SELECT value FROM external_id x WHERE x.entity_type = 'book' AND x.entity_id = book.osis "

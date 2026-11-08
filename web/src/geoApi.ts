@@ -177,6 +177,18 @@ export const usePerson = (id: string | undefined) =>
   useQuery({ queryKey: ["person", id], queryFn: () => getJson<PersonView>(`/api/person/${encodeURIComponent(id!)}`), enabled: !!id, ...FOREVER });
 export const useEvent = (id: string | undefined) =>
   useQuery({ queryKey: ["event", id], queryFn: () => getJson<EventView>(`/api/event/${encodeURIComponent(id!)}`), enabled: !!id, ...FOREVER });
+/** A passage's (or a person's, an event's) mapped places in the order the text first names them. */
+export interface PlacesIn {
+  title: string;
+  places: { id: string; name: string; kind: string | null; lat: number; lon: number; modern_name: string | null; n: number; first_osis: string }[];
+}
+export const usePlacesIn = (q: { ref?: string; person?: string; event?: string } | null) =>
+  useQuery({
+    queryKey: ["places-in", q?.ref, q?.person, q?.event],
+    queryFn: () => getJson<PlacesIn>("/api/places/in", Object.fromEntries(Object.entries(q ?? {}).filter(([, v]) => v)) as Record<string, string>),
+    enabled: !!(q && (q.ref || q.person || q.event)),
+    ...FOREVER,
+  });
 export const useVerseEntities = (osis: string) =>
   useQuery({ queryKey: ["verse-entities", osis], queryFn: () => getJson<VerseEntities>(`/api/verse/${osis}/entities`), ...FOREVER });
 

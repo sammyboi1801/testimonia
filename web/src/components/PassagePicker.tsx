@@ -108,7 +108,7 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
                 if (e.key !== "Enter" || !shown.length) return;
                 const b = shown[0]!;
                 if (wantCh && wantCh <= b.chapters) go(b.osis, wantCh);
-                else if (b.chapters === 1) go(b.osis, 1);
+                else if (b.chapters === (b.first_chapter ?? 1)) go(b.osis, b.chapters);
                 else pick(b.osis);
               }}
             />
@@ -123,7 +123,7 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
                       <button
                         key={b.osis}
                         className={b.osis === chosen?.osis ? "on" : ""}
-                        onClick={() => (b.chapters === 1 ? go(b.osis, 1) : pick(b.osis))}
+                        onClick={() => (b.chapters === (b.first_chapter ?? 1) ? go(b.osis, b.chapters) : pick(b.osis))}
                         title={[b.hebrew_name, b.greek_name, b.latin_name].filter(Boolean).join(" · ")}
                       >
                         {b.name}
@@ -137,10 +137,10 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
             <div className="picker-chapters">
               <h4>{chosen.name}</h4>
               <p className="pc-sub">
-                {GROUPS.find((g) => g.id === chosen.testament)?.label} · {chosen.chapters} chapters
+                {GROUPS.find((g) => g.id === chosen.testament)?.label} · {chosen.chapters - (chosen.first_chapter ?? 1) + 1} chapters
               </p>
               <div className="chapter-grid">
-                {Array.from({ length: chosen.chapters }, (_, i) => i + 1).map((c) => (
+                {Array.from({ length: chosen.chapters - (chosen.first_chapter ?? 1) + 1 }, (_, i) => i + (chosen.first_chapter ?? 1)).map((c) => (
                   <button
                     key={c}
                     className={`${chosen.osis === book && c === chapter ? "on" : ""}${wantCh === c && shown[0]?.osis === chosen.osis ? " hint" : ""}`}
