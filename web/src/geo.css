@@ -88,10 +88,20 @@
 .library-head .library-links .rd-links { margin: 0; width: auto; flex-wrap: nowrap; gap: 18px; }
 .library-head .library-links .library-aside-link { margin: 0; font-size: 13.5px; color: var(--link); }
 @media (max-width: 760px) {
+  /* phones: the views as one full-width control, the extras as a row of pills that clearly scroll */
+  .library-head { display: grid; gap: 10px; }
+  .library-head h1 { margin: 0; }
+  .library-head .view-switch { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; }
+  .library-head .view-switch > * { display: flex; align-items: center; justify-content: center; padding: 8px 4px; }
   .library-head .library-links {
-    width: 100%; margin: 2px 0 8px; gap: 16px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
+    width: auto; margin: 0 -14px 6px; padding: 0 14px 2px; gap: 8px; overflow-x: auto; scrollbar-width: none; align-items: center;
   }
+  .library-head .library-links .rd-links { gap: 8px; }
   .library-head .library-links::-webkit-scrollbar { display: none; }
+  .library-head .library-links a {
+    flex: none; padding: 7px 14px; border: 1px solid var(--rule); border-radius: 999px; background: var(--panel);
+    color: var(--ink-soft); font-size: 13.5px; background-image: none; text-decoration: none;
+  }
 }
 .leaflet-tooltip.pm-tip-card { padding: 7px 10px; max-width: 240px; white-space: normal; line-height: 1.35; }
 .leaflet-tooltip.pm-tip-card strong { display: block; font-family: var(--font-display); font-weight: var(--display-weight); font-size: 16px; }

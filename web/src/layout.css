@@ -151,6 +151,25 @@ a {
 .ph-close { margin-left: auto; }
 @media (min-width: 761px) { .ph-close { margin-right: 30px; } } /* clear of the › that hides the panel */
 .about-tab { display: grid; gap: 12px; padding-top: 4px; }
+/* folding sections: a heading row each; the first open, the rest one tap away */
+.tab-body .block { margin: 0; border-bottom: 1px solid var(--rule); }
+.tab-body .block > h3 {
+  display: flex; align-items: center; gap: 8px; margin: 0; padding: 12px 2px; cursor: pointer; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-body .block > h3::after {
+  content: ""; width: 7px; height: 7px; margin-left: auto; flex: none; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted);
+  transform: rotate(45deg) translateY(-2px); transition: transform 0.18s ease;
+}
+.tab-body .block > h3 > button { order: 2; margin-left: auto; }
+.tab-body .block > h3::after { order: 3; }
+.tab-body .block > h3:has(> button)::after { margin-left: 12px; }
+.tab-body .block:not(:first-of-type):not(.open) > h3::after,
+.tab-body .block:first-of-type.closed > h3::after { transform: rotate(-45deg); }
+.tab-body .block:not(:first-of-type):not(.open) > :not(h3),
+.tab-body .block:first-of-type.closed > :not(h3) { display: none; }
+.tab-body .block > :not(h3) { animation: act-in 0.18s ease-out; }
+.tab-body .block > :last-child { margin-bottom: 14px; }
 .about-tab .glance { margin: 0; }
 .about-when { display: flex; flex-wrap: wrap; gap: 4px 0; font-size: 13.5px; color: var(--ink-soft); }
 .about-when span + span::before { content: "·"; margin: 0 8px; color: var(--muted); }

@@ -96,6 +96,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
         ))}
       </nav>
 
+      <div className="tab-body" key={active} onClick={toggleSection}>
       {active === "about" && (
         <div className="about-tab">
           <div className="about-when">
@@ -136,8 +137,21 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
       {active === "links" && <LinksTab g={g} books={books} onWord={onWord} />}
       {active === "words" &&
         (word ? <WordStudy strong={word} books={books} onBack={onCloseWord} onWord={onWord} /> : <WordsTab g={g} onWord={onWord} />)}
+      </div>
     </div>
   );
+}
+
+/** Sections in a tab fold to their headings: the first starts open, the rest open on a tap (buttons inside a
+ *  heading, like the ΑΒΓ switch, keep working). One handler for every section, so all tabs behave the same. */
+function toggleSection(e: React.MouseEvent) {
+  const t = e.target as HTMLElement;
+  if (t.closest("button, a, input, select")) return;
+  const h = t.closest(".tab-body .block > h3");
+  const block = h?.parentElement;
+  if (!block) return;
+  const first = block === block.parentElement?.querySelector(":scope > section.block");
+  block.classList.toggle(first ? "closed" : "open");
 }
 
 function tabCount(t: Tab, g: VerseGuide, fathers: number): string {

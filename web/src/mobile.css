@@ -15,10 +15,14 @@
   .omnibox input { font-size: 16px; } /* 16px stops iOS zooming into the field */
   .menu-btn { display: inline-flex; justify-content: center; font-size: 18px; }
   .topbar-menu { display: none; }
+  /* ⋯ opens a small card in the corner, not a drawer across the page */
   .topbar.menu-open .topbar-menu {
-    display: grid; gap: 6px; position: absolute; top: 100%; left: 0; right: 0; z-index: 80; padding: 10px 14px 14px;
-    background: var(--panel); border-bottom: 1px solid var(--rule); box-shadow: var(--shadow);
+    display: block; position: absolute; top: calc(100% - 4px); right: 10px; left: auto; z-index: 80; padding: 6px;
+    background: var(--panel); border: 1px solid var(--rule); border-radius: 14px; box-shadow: 0 10px 30px rgb(0 0 0 / 0.3);
+    animation: tl-pop 0.14s ease-out; transform-origin: top right;
   }
+  .topbar.menu-open .topbar-tools { gap: 2px; }
+  .topbar.menu-open .topbar-tools .icon-btn { min-width: 46px; min-height: 44px; border-radius: 10px; }
   .topbar.menu-open .topnav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
   .topbar.menu-open .topnav a { padding: 10px; border: 1px solid var(--rule); border-radius: var(--radius); text-align: center; border-bottom-width: 1px; }
   .topbar.menu-open .topnav a.active { border-color: var(--accent); color: var(--accent); }
@@ -245,4 +249,14 @@
   .wm-bar { bottom: calc(var(--tabbar-h) + 8px); }
   .audio-bar, .reader-head .audio-bar { bottom: calc(var(--tabbar-h) + 8px); }
   .work-text { padding-bottom: 120px; }
+}
+@media (max-width: 760px) {
+  /* a sheet or panel covers the tab bar, as in any app */
+  body:has(.reader-tools.open) .tabbar, body:has(.picker-pop) .tabbar, body:has(.wm-layer) .tabbar,
+  body:has(.workspace.has-verse:not(.panel-closed)) .tabbar, body:has(.ask-layer) .tabbar { display: none; }
+  /* translations: chips and "change" on one line; the list opens full width beneath */
+  .reader-tools.open .edition-picker { align-items: center; }
+  .reader-tools.open .add-wrap { display: contents; }
+  .reader-tools.open .chip.add { border-style: solid; color: var(--accent); }
+  .reader-tools.open .menu { flex-basis: 100%; }
 }

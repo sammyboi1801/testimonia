@@ -420,7 +420,7 @@ function EditionPicker({ editions, chosen, onChange, single }: { editions: Editi
       })}
       <div className="add-wrap">
         <button className="chip add" onClick={() => setOpen(!open)} aria-expanded={open}>
-          {single ? "change" : "+ translation"}
+          {single ? "Change" : "+ Add translation"}
         </button>
         {open && (
           <ul className="menu" onMouseLeave={() => setOpen(false)}>
