@@ -1,5 +1,5 @@
 import { useCallback, useState, type FormEvent } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { resolveRef } from "../api";
 import { verseUrl } from "../lib";
 import { useSettings, type Theme } from "../settings";
@@ -12,6 +12,8 @@ const narrow = typeof window !== "undefined" && window.matchMedia("(max-width: 7
 
 export function TopBar() {
   const navigate = useNavigate();
+  // phones: a ‹ back button whenever there is somewhere in the app to go back to (installed apps have no browser Back)
+  const canGoBack = useLocation().key !== "default";
   const { settings, update } = useSettings();
   const [q, setQ] = useState("");
   // ?settings in the URL opens the pane (handy for screenshots and links to settings)
@@ -34,7 +36,12 @@ export function TopBar() {
 
   return (
     <header className={`topbar${menu ? " menu-open" : ""}`}>
-      <NavLink to="/" className="brand" title="Testimonia">
+      {canGoBack && (
+        <button className="icon-btn back-btn" onClick={() => navigate(-1)} aria-label="Back" title="Back">
+          ‹
+        </button>
+      )}
+      <NavLink to="/" className={`brand${canGoBack ? " has-back" : ""}`} title="Testimonia">
         <img className="brand-mark" src="/favicon.svg" alt="" width="28" height="28" />
         <span className="brand-name">Testimonia</span>
       </NavLink>

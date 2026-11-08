@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Book } from "../types";
+import { useBackClose } from "../backClose";
+
 
 const GROUPS: { id: Book["testament"]; label: string }[] = [
   { id: "OT", label: "Old Testament" },
@@ -12,6 +14,7 @@ const GROUPS: { id: Book["testament"]; label: string }[] = [
 export function PassagePicker({ books, book, chapter }: { books: Book[]; book: string; chapter: number }) {
   // ?picker in the URL opens it (screenshots, links)
   const [open, setOpen] = useState(() => new URLSearchParams(window.location.search).has("picker"));
+  useBackClose(open, () => setOpen(false));
   const [picked, setPicked] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
   // phones show one step at a time: this book's chapters first (the usual move), or the book list
@@ -55,7 +58,7 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
     setOpen(false);
     setPicked(null);
     setFilter("");
-    navigate(`/read/${osis}/${ch}`);
+    navigate(`/read/${osis}/${ch}`, { replace: (window.history.state as { sheet?: string } | null)?.sheet !== undefined });
   }
 
   function pick(osis: string) {

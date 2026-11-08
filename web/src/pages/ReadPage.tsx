@@ -26,6 +26,17 @@ export function ReadPage() {
   const data = useChapter(book, ch, editions);
   const selected = params.get("v");
   const drag = useRef<number | null>(null); // pull-down-to-close on phones
+  // closing a verse picked on this page steps Back (the pick added that entry); otherwise it replaces
+  const pickedHere = useRef(false);
+  useEffect(() => {
+    if (!selected) pickedHere.current = false;
+  }, [selected]);
+  const closeVerse = () => {
+    if (pickedHere.current) {
+      pickedHere.current = false;
+      window.history.back();
+    } else setParam({ v: null, w: null, t: null, to: null }, true);
+  };
   const through = Number(params.get("to")) || null; // a range from the selected verse, shaded in the text
   const word = params.get("w");
   const tabParam = params.get("t") as Tab | null;
@@ -51,8 +62,9 @@ export function ReadPage() {
   // choosing a verse brings the study panel back if it was hidden
   const select = useCallback(
     (osis: string) => {
-      if (osis === selected) return setParam({ v: null, w: null, t: null, to: null }, true); // tap again: deselect
-      setParam({ v: osis, w: null, to: null }, true); // picking a verse ends a marked range
+      if (osis === selected) return closeVerse(); // tap again: deselect
+      if (!selected) pickedHere.current = true;
+      setParam({ v: osis, w: null, to: null }, Boolean(selected)); // first pick: Back deselects; switching replaces
       if (!open) setOpen(true);
     },
     [setParam, open, setOpen, selected],
@@ -116,14 +128,14 @@ export function ReadPage() {
           const dy = drag.current === null ? 0 : e.changedTouches[0]!.clientY - drag.current;
           drag.current = null;
           el.style.transform = "";
-          if (dy > 90 && selected) setParam({ v: null, w: null, t: null, to: null }, true);
+          if (dy > 90 && selected) closeVerse();
         }}
       >
         <button className="panel-hide icon-btn" onClick={() => setOpen(false)} title="Hide the study panel ( ] )" aria-label="Hide the study panel">
           ›
         </button>
         {selected ? (
-          <StudyPanel osis={selected} books={books} tab={tab} word={word} onTab={setTab} onWord={openWord} onCloseWord={closeWord} onClose={() => setParam({ v: null, w: null, t: null, to: null }, true)} />
+          <StudyPanel osis={selected} books={books} tab={tab} word={word} onTab={setTab} onWord={openWord} onCloseWord={closeWord} onClose={closeVerse} />
         ) : (
           <div className="guide-empty">
             <BookIntro book={books.find((b) => b.osis === (data.data?.book ?? book))} />

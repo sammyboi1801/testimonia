@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useBackClose } from "../backClose";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMeta, useSection, useTimeline, useToc } from "../api";
 import { Html } from "../components/Html";
@@ -39,6 +40,7 @@ export function WorkPage() {
   const text = useRef<HTMLDivElement>(null);
   const activeLink = useRef<HTMLAnchorElement>(null);
   const [sheet, setSheet] = useState<"toc" | "about" | null>(null);
+  useBackClose(sheet !== null, () => setSheet(null));
   const [find, setFind] = useState("");
   const swipe = useRef<{ x: number; y: number } | null>(null);
 
@@ -180,6 +182,7 @@ export function WorkPage() {
                         className={s.ord === n ? "active" : ""}
                         ref={s.ord === n ? (el) => el?.scrollIntoView({ block: "center" }) : undefined}
                         style={{ paddingLeft: 18 + (s.level - 1) * 14 }}
+                        replace
                         onClick={() => setSheet(null)}
                       >
                         {s.title || s.cite}

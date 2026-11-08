@@ -45,6 +45,8 @@ export default function AtlasPage() {
   const hideUncertain = params.get("certain") === "1";
   const satellite = params.get("sat") === "1";
   const [q, setQ] = useState("");
+  const [peek, setPeek] = useState(false); // phones: the sheet pulled down
+  const pull = useRef<number | null>(null);
   const atlas = useAtlas();
   const meta = useMeta();
   const routes = useAtlasRoutes(paul);
@@ -233,7 +235,22 @@ export default function AtlasPage() {
   return (
     <div className="atlas-page">
       <div className="atlas-map" ref={el} role="application" aria-label="Map of biblical places" />
-      <aside className={`atlas-panel${selected ? " has-place" : ""}`}>
+      <aside
+        className={`atlas-panel${selected ? " has-place" : ""}${peek ? " peek" : ""}`}
+        onTouchStart={(e) => {
+          const box = e.currentTarget;
+          pull.current = box.scrollTop <= 0 ? e.touches[0]!.clientY : null;
+        }}
+        onTouchEnd={(e) => {
+          if (pull.current === null) return;
+          const dy = e.changedTouches[0]!.clientY - pull.current;
+          pull.current = null;
+          if (dy > 60) setPeek(true);
+          else if (dy < -40) setPeek(false);
+        }}
+      >
+        {/* phones: a handle to pull the sheet down to just the search (or the place name), and back up */}
+        <button className="atlas-grip" onClick={() => setPeek(!peek)} aria-label={peek ? "Show the panel" : "Shrink the panel"} />
         <header className="atlas-head">
           <h1>Atlas</h1>
           <span className="muted small">{atlas.data ? `${count.toLocaleString()} places` : "Loading places…"}</span>

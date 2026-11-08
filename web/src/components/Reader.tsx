@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useBackClose } from "../backClose";
 import { Link } from "react-router-dom";
 import { isRtl, langClass, nativeLabel } from "../lib";
 import { MODES, useSettings } from "../settings";
@@ -33,6 +34,7 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
   const span: [number, number] | null = first && through && through > first ? [first, through] : null;
   const { settings, update } = useSettings();
   const [viewOpen, setViewOpen] = useState(false); // phones: the View sheet
+  useBackClose(viewOpen, () => setViewOpen(false));
   const byId = useMemo(() => new Map(editions.map((e) => [e.id, e])), [editions]);
   const isNT = data.verses.some((v) => v.words.tagnt?.length);
   const wordEd = isNT ? "tagnt" : "tahot";

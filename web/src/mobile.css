@@ -260,3 +260,10 @@
   .reader-tools.open .chip.add { border-style: solid; color: var(--accent); }
   .reader-tools.open .menu { flex-basis: 100%; }
 }
+
+/* ‹ Back in the phone header (desktop has the browser's own) */
+.back-btn { display: none; }
+@media (max-width: 760px) {
+  .back-btn { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 36px; height: 40px; margin-right: -4px; font-size: 30px; line-height: 1; color: var(--ink); }
+  .brand.has-back .brand-mark { width: 26px; height: 26px; }
+}

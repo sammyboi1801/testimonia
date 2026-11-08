@@ -265,3 +265,31 @@
   .fam-self { padding-left: 0; }
   .mini-map { height: 220px; }
 }
+
+/* phones: the atlas panel is a bottom sheet that pulls down to a peek; the credit is a small ⓘ */
+.atlas-grip { display: none; }
+@media (max-width: 760px) {
+  .atlas-panel, .atlas-panel:not(.has-place) {
+    left: 0; right: 0; bottom: 0; border-radius: 18px 18px 0 0; max-height: 58vh; padding-top: 0;
+    transition: max-height 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .atlas-grip {
+    display: block; width: 100%; height: 22px; margin: 0 0 2px; border: 0; background: none; position: sticky; top: 0; z-index: 2;
+  }
+  .atlas-grip::before { content: ""; display: block; width: 40px; height: 5px; margin: 8px auto; border-radius: 3px; background: var(--rule); }
+  /* a place open: the sheet is about that place (✕ returns to search and filters) */
+  .atlas-panel.has-place > :not(.atlas-grip):not(.atlas-card):not(article) { display: none; }
+  .atlas-panel.peek { max-height: 128px; overflow: hidden; }
+  .atlas-panel.peek:not(.has-place) > :not(.atlas-grip):not(.atlas-find) { display: none; }
+  .atlas-panel.peek .atlas-matches { display: none; }
+  .atlas-panel.peek.has-place .atlas-card > :not(.atlas-close):not(h2):not(.sub) { display: none; }
+  /* the sources credit: a quiet ⓘ, the full text when tapped */
+  .atlas-map .leaflet-control-attribution {
+    max-width: 30px; height: 26px; overflow: hidden; white-space: nowrap; padding: 0 0 0 26px; position: relative; margin: 6px !important;
+    border-radius: 13px; font-size: 11px; background: color-mix(in srgb, var(--panel) 85%, transparent) !important; color: var(--muted);
+  }
+  .atlas-map .leaflet-control-attribution::before { content: "ⓘ"; position: absolute; left: 7px; top: 3px; font-size: 15px; color: var(--ink-soft); }
+  .atlas-map .leaflet-control-attribution:hover, .atlas-map .leaflet-control-attribution:active {
+    max-width: calc(100vw - 80px); height: auto; white-space: normal; padding: 6px 10px 6px 28px; line-height: 1.4;
+  }
+}

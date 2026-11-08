@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Chat } from "./Chat";
+import { useBackClose } from "../backClose";
+
 
 interface AskRequest {
   context: string | null;
@@ -96,6 +98,7 @@ function SelectionAsk() {
 export function AskDrawer() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  useBackClose(open, () => setOpen(false));
   const [req, setReq] = useState<AskRequest>({ context: null });
   const [nonce, setNonce] = useState(0);
 
