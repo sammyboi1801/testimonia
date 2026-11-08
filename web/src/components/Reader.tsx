@@ -26,7 +26,7 @@ interface Props {
   selected: string | null;
   through?: number | null;
   onSelect: (osis: string) => void;
-  onWord: (strong: string) => void;
+  onWord: (strong: string, osis?: string) => void;
 }
 
 export function Reader({ data, books, editions, selected, through, onSelect, onWord }: Props) {
@@ -150,7 +150,7 @@ interface RowCtx {
   selected: string | null;
   span: [number, number] | null; // verses of a range opened from a reference (in this chapter)
   onSelect: (osis: string) => void;
-  onWord: (strong: string) => void;
+  onWord: (strong: string, osis?: string) => void;
   footnotes: boolean;
   speaking: string | null;
   notes: Record<string, Note>;
@@ -296,7 +296,7 @@ function OriginalCell({ words, ctx }: { words: Word[]; ctx: RowCtx }) {
   );
 }
 
-function WordChip({ w, lang, onWord }: { w: Word; lang: "grc" | "hbo"; onWord: (s: string) => void }) {
+function WordChip({ w, lang, onWord }: { w: Word; lang: "grc" | "hbo"; onWord: (s: string, osis?: string) => void }) {
   const variant = lang === "grc" && w.editions && w.editions !== ALL_GREEK ? w.editions : null;
   return (
     <HoverWord w={w} lang={lang} onWord={onWord}>
@@ -313,7 +313,7 @@ function lemmaId(w: Word): string | null {
 }
 
 /** Hover card for an original-language word: dictionary form, gloss, parsing, editions, pronunciation. */
-function HoverWord({ w, lang, onWord, children }: { w: Word; lang: "grc" | "hbo"; onWord: (s: string) => void; children: React.ReactNode }) {
+function HoverWord({ w, lang, onWord, children }: { w: Word; lang: "grc" | "hbo"; onWord: (s: string, osis?: string) => void; children: React.ReactNode }) {
   const { settings } = useSettings();
   const [open, setOpen] = useState(false);
   const timer = useRef<number | undefined>(undefined);
@@ -324,7 +324,8 @@ function HoverWord({ w, lang, onWord, children }: { w: Word; lang: "grc" | "hbo"
       className="hover-word"
       onMouseEnter={() => {
         window.clearTimeout(timer.current);
-        if (settings.hover.cards) timer.current = window.setTimeout(() => setOpen(true), settings.hover.delay);
+        // touch screens skip the card: a tap opens the full word study instead
+        if (settings.hover.cards && window.matchMedia("(hover: hover)").matches) timer.current = window.setTimeout(() => setOpen(true), settings.hover.delay);
       }}
       onMouseLeave={() => {
         window.clearTimeout(timer.current);
@@ -332,7 +333,10 @@ function HoverWord({ w, lang, onWord, children }: { w: Word; lang: "grc" | "hbo"
       }}
       onClick={(e) => {
         e.stopPropagation();
-        if (id) onWord(id);
+        setOpen(false);
+        // the verse the word belongs to, so phones (where the panel shows only with a verse) open the study at once
+        const osis = (e.currentTarget.closest("[data-osis]") as HTMLElement | null)?.dataset.osis;
+        if (id) onWord(id, osis);
       }}
     >
       {children}
@@ -346,7 +350,7 @@ function HoverWord({ w, lang, onWord, children }: { w: Word; lang: "grc" | "hbo"
           <span className="wc-gloss">{w.gloss ?? w.lemma_gloss}</span>
           {(w.morph_text || w.morph) && <span className="wc-morph">{w.morph_text ?? w.morph}</span>}
           {variant && <span className="wc-var">Only in: {variant}</span>}
-          {id && <span className="wc-hint">Click for word study · {id}</span>}
+          {id && <span className="wc-hint">Click the word for its full study · {id}</span>}
         </span>
       )}
     </span>

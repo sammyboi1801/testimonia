@@ -79,7 +79,13 @@ export function ReadPage() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, setOpen]);
-  const openWord = useCallback((strong: string) => setParam({ w: strong, t: "words" }), [setParam]);
+  const openWord = useCallback(
+    (strong: string, osis?: string) => {
+      setParam({ w: strong, t: "words", ...(osis && osis !== selected ? { v: osis, to: null } : {}) });
+      if (!open) setOpen(true);
+    },
+    [setParam, selected, open, setOpen],
+  );
   const closeWord = useCallback(() => setParam({ w: null }), [setParam]);
   const setTab = useCallback((t: Tab) => setParam({ t, w: null }, true), [setParam]);
 
