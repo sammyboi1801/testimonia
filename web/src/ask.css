@@ -199,3 +199,17 @@ mark.phrase { color: inherit; padding: 0.04em 0; border-radius: 2px; background:
 .sel-btn:hover { background: var(--panel-2); color: var(--ink); }
 .sel-ask { color: var(--accent); font-weight: 600; }
 .vtext { -webkit-user-select: text; user-select: text; }
+
+/* the assistant at work while hidden: a soft pulse; an answer waiting: a dot */
+.ask-layer.hidden { display: none; }
+.tabbar button.ask-working svg, .ask-fab.ask-working .ask-fab-star { animation: ask-breathe 1.6s ease-in-out infinite; color: var(--accent); }
+.tabbar button.ask-ready, .ask-fab.ask-ready { position: relative; }
+.tabbar button.ask-ready::after, .ask-fab.ask-ready::after {
+  content: ""; position: absolute; top: 8px; right: calc(50% - 16px); width: 9px; height: 9px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 0 2px var(--panel); animation: ask-pop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.ask-fab.ask-ready::after { top: -2px; right: -2px; background: #3f8f5a; }
+.tabbar button.ask-ready { color: var(--accent); }
+@keyframes ask-breathe { 0%, 100% { opacity: 0.55; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
+@keyframes ask-pop { from { transform: scale(0); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .tabbar button.ask-working svg, .ask-fab.ask-working .ask-fab-star { animation: none; } }

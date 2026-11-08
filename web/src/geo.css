@@ -337,3 +337,16 @@
   body:has(.mp) .tabbar { display: none; }
 }
 .mp-map.atlas-map { position: relative; inset: auto; }
+/* atlas: focus banner, pins, measuring */
+.atlas-focus { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 10px; background: var(--accent-soft); font-size: 13px; }
+.atlas-pins { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 13px; }
+.atlas-pins select { font: inherit; font-size: 13px; padding: 4px 8px; border: 1px solid var(--rule); border-radius: 8px; background: var(--bg); color: var(--ink); }
+.atlas-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 10px; }
+.atlas-card-actions .conf { margin: 0; }
+.atlas-card-actions .chip.on { border-color: var(--accent); color: var(--accent); }
+.atlas-measure { margin: 0 0 12px; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--panel-2); font-size: 13.5px; }
+.atlas-measure .link-btn { margin-left: 8px; }
+.measure-line { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 6 6; fill: none; opacity: 0.8; }
+.pm.pinned, .leaflet-interactive.pinned { stroke: var(--accent) !important; stroke-width: 3px !important; }
+.mp-context { fill: var(--muted); fill-opacity: 0.45; stroke: none; }
+.mp-context-label span { position: absolute; left: 6px; top: -8px; white-space: nowrap; font: 11.5px var(--font-text); color: var(--muted); opacity: 0.8; text-shadow: 0 0 3px var(--bg), 0 0 3px var(--bg); }

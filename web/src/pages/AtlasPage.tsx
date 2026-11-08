@@ -11,10 +11,12 @@ import {
   useAtlas,
   useAtlasRoutes,
   usePlace,
+  usePlacesIn,
   type AtlasPlace,
   type RouteFeature,
 } from "../geoApi";
 import { osisLabel, verseUrl } from "../lib";
+import { pins, usePins } from "../pins";
 import type { Book } from "../types";
 
 const JOURNEY_LABEL: Record<number, string> = { 1: "First journey", 2: "Second journey", 3: "Third journey", 4: "To Rome" };
@@ -27,6 +29,21 @@ function labelThreshold(z: number): number {
   if (z < 7.5) return 12;
   if (z < 8.5) return 4;
   return 0;
+}
+
+/** Zoomed out, only places named often keep a dot (pinned, focused and chosen places always do). */
+function dotThreshold(z: number): number {
+  if (z < 5) return 40;
+  if (z < 6) return 12;
+  if (z < 7) return 4;
+  return 0;
+}
+
+/** Great-circle distance in km. */
+function km(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
+  const r = Math.PI / 180;
+  const h = Math.sin(((b.lat - a.lat) * r) / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(((b.lon - a.lon) * r) / 2) ** 2;
+  return 6371 * 2 * Math.asin(Math.sqrt(h));
 }
 
 function radius(p: AtlasPlace, selected: boolean): number {
@@ -44,6 +61,17 @@ export default function AtlasPage() {
   const paul = params.get("paul") === "1";
   const hideUncertain = params.get("certain") === "1";
   const satellite = params.get("sat") === "1";
+  const focusRef = params.get("focus");
+  const focusPerson = params.get("person");
+  const focusEvent = params.get("event");
+  const pinnedOnly = params.get("pinned") === "1";
+  const setId = params.get("set");
+  const from = params.get("from");
+  const { pinned, sets } = usePins();
+  const activeSet = sets.find((x) => x.id === setId) ?? null;
+  const focus = usePlacesIn(focusRef || focusPerson || focusEvent ? { ref: focusRef ?? undefined, person: focusPerson ?? undefined, event: focusEvent ?? undefined } : null);
+  const focusIds = useMemo(() => focus.data?.places.map((p) => p.id) ?? null, [focus.data]);
+  const [zoom, setZoom] = useState(6);
   const [q, setQ] = useState("");
   const [peek, setPeek] = useState(false); // phones: the sheet pulled down
   const pull = useRef<number | null>(null);
@@ -69,13 +97,15 @@ export default function AtlasPage() {
   const bookOrd = books.find((b) => b.osis === book)?.ord;
   const visible = useMemo(() => {
     const all = atlas.data?.places ?? [];
+    const only = focusIds ? new Set(focusIds) : activeSet ? new Set(activeSet.places) : pinnedOnly ? new Set(pinned) : null;
     return all.filter((p) => {
+      if (only) return only.has(p.id) || p.id === selected;
       if (hideUncertain && confidenceBand(p.confidence) === "uncertain") return false;
       if (bookOrd) return p.books.includes(bookOrd);
       if (testament) return p.books.some((o) => testamentOf.get(o) === testament);
       return true;
     });
-  }, [atlas.data, hideUncertain, bookOrd, testament, testamentOf]);
+  }, [atlas.data, hideUncertain, bookOrd, testament, testamentOf, focusIds, activeSet, pinnedOnly, pinned, selected]);
   const booksWithPlaces = useMemo(() => {
     const used = new Set((atlas.data?.places ?? []).flatMap((p) => p.books));
     return books.filter((b) => used.has(b.ord) && (!testament || b.testament === testament));
@@ -105,6 +135,8 @@ export default function AtlasPage() {
     m.zoomControl?.setPosition("topright");
     layers.current = { routes: L.layerGroup().addTo(m), markers: L.layerGroup().addTo(m), labels: L.layerGroup().addTo(m) };
     map.current = m;
+    m.on("zoomend", () => setZoom(m.getZoom()));
+    setZoom(m.getZoom());
     let alive = true;
     addBasemap(m)
       .catch(() => undefined)
@@ -141,11 +173,29 @@ export default function AtlasPage() {
     if (!m || !ls || !ready) return;
     ls.markers.clearLayers();
     const highlight = new Set(show);
+    const narrowed = !!(focusIds || activeSet || pinnedOnly || book);
+    const min = narrowed ? 0 : dotThreshold(zoom);
+    const pinSet = new Set(pinned);
+    const order = new Map((focusIds ?? []).map((id, i) => [id, i + 1]));
+    // measuring: a dashed line between the two places
+    const fromP = from ? visible.find((p) => p.id === from) ?? atlas.data?.places.find((p) => p.id === from) : null;
+    const toP = selected ? atlas.data?.places.find((p) => p.id === selected) : null;
+    if (fromP && toP && fromP.id !== toP.id) L.polyline([[fromP.lat, fromP.lon], [toP.lat, toP.lon]], { className: "measure-line", interactive: false }).addTo(ls.markers);
     for (const p of visible) {
       const sel = p.id === selected;
+      const n = order.get(p.id);
+      if (p.verses < min && !sel && !pinSet.has(p.id) && !highlight.has(p.id) && p.id !== from) continue;
+      if (n) {
+        L.marker([p.lat, p.lon], {
+          icon: L.divIcon({ className: `mp-pin${sel ? " on" : ""}${pinSet.has(p.id) ? " pinned" : ""}`, html: `<span class="mp-num">${n}</span><span class="mp-name">${escapeHtml(p.name)}</span>`, iconSize: [0, 0] }),
+        })
+          .on("click", () => set({ place: p.id }))
+          .addTo(ls.markers);
+        continue;
+      }
       const marker = L.circleMarker([p.lat, p.lon], {
-        radius: radius(p, sel),
-        className: placeClass(p.kind, p.confidence, `${sel ? "sel" : ""}${highlight.has(p.id) ? " hl" : ""}`),
+        radius: radius(p, sel) + (pinSet.has(p.id) ? 1 : 0),
+        className: placeClass(p.kind, p.confidence, `${sel ? "sel" : ""}${highlight.has(p.id) ? " hl" : ""}${pinSet.has(p.id) ? " pinned" : ""}`),
         bubblingMouseEvents: false,
       });
       const certainty =
@@ -158,7 +208,7 @@ export default function AtlasPage() {
       marker.on("click", () => set({ place: p.id }));
       marker.addTo(ls.markers);
     }
-  }, [visible, selected, ready, show]);
+  }, [visible, selected, ready, show, zoom, focusIds, activeSet, pinnedOnly, pinned, book, from, atlas.data]);
 
   // place names, largest first, skipping any that would overlap
   useEffect(() => {
@@ -167,11 +217,13 @@ export default function AtlasPage() {
     if (!m || !ls || !ready) return;
     const draw = () => {
       ls.labels.clearLayers();
-      const min = labelThreshold(m.getZoom());
+      const min = focusIds || activeSet || pinnedOnly ? 0 : labelThreshold(m.getZoom()); // a narrowed map names every place
       const bounds = m.getBounds().pad(0.1);
       const boxes: [number, number, number, number][] = [];
       const highlight = new Set(show);
+      const numbered = new Set(focusIds ?? []); // these carry their names in their numbered pins
       const ranked = visible
+        .filter((p) => !numbered.has(p.id))
         .filter((p) => p.verses >= min || p.id === selected || highlight.has(p.id))
         .filter((p) => bounds.contains([p.lat, p.lon]))
         .sort((a, b) => Number(b.id === selected) - Number(a.id === selected) || Number(highlight.has(b.id)) - Number(highlight.has(a.id)) || b.verses - a.verses);
@@ -198,7 +250,7 @@ export default function AtlasPage() {
     return () => {
       m.off("zoomend moveend", draw);
     };
-  }, [visible, selected, ready, show]);
+  }, [visible, selected, ready, show, focusIds, activeSet, pinnedOnly]);
 
   // Paul's journeys
   useEffect(() => {
@@ -218,8 +270,9 @@ export default function AtlasPage() {
     const phone = size.x < 760;
     const covered: [number, number] = phone ? [0, Math.round(window.innerHeight * 0.46) + 16] : [370, 0];
     const pad = { paddingTopLeft: L.point(phone ? 0 : covered[0], 0), paddingBottomRight: L.point(0, covered[1]) };
-    if (show.length > 1) {
-      const pts = atlasPlaces.filter((p) => show.includes(p.id)).map((p) => L.latLng(p.lat, p.lon));
+    const group = focusIds ?? activeSet?.places ?? (pinnedOnly ? pinned : show.length > 1 ? show : null);
+    if (group && group.length > 0 && !selected) {
+      const pts = atlasPlaces.filter((p) => group.includes(p.id)).map((p) => L.latLng(p.lat, p.lon));
       if (pts.length) m.fitBounds(L.latLngBounds(pts), { ...pad, maxZoom: 9 });
       return;
     }
@@ -229,7 +282,7 @@ export default function AtlasPage() {
     const pt = m.latLngToContainerPoint(ll);
     const clear = pt.x > covered[0] + 40 && pt.x < size.x - 40 && pt.y > 40 && pt.y < size.y - covered[1] - 40;
     if (!clear || m.getZoom() < 6) m.flyToBounds(L.latLngBounds(ll, ll), { ...pad, maxZoom: Math.max(m.getZoom(), 7.5), duration: 0.6 });
-  }, [selected, show, ready, atlasPlaces]);
+  }, [selected, show, ready, atlasPlaces, focusIds, activeSet, pinnedOnly]);
 
   const count = visible.length;
   return (
@@ -296,6 +349,43 @@ export default function AtlasPage() {
             ))}
           </select>
         </div>
+        {(focusIds || activeSet || pinnedOnly) && (
+          <div className="atlas-focus">
+            <span>
+              <b>{focusIds ? focus.data?.title : activeSet ? activeSet.name : "Pinned places"}</b>
+              <span className="muted"> · {visible.length} {visible.length === 1 ? "place" : "places"}{focusIds ? ", numbered in the order the text names them" : ""}</span>
+            </span>
+            <button className="link-btn" onClick={() => set({ focus: null, person: null, event: null, set: null, pinned: null })}>
+              Show all
+            </button>
+          </div>
+        )}
+        <div className="atlas-pins">
+          <label>
+            <input type="checkbox" checked={pinnedOnly} disabled={!pinned.length} onChange={(e) => set({ pinned: e.target.checked ? "1" : null, set: null, focus: null, person: null, event: null })} /> ★ Pinned only
+            <span className="muted"> ({pinned.length})</span>
+          </label>
+          {sets.length > 0 && (
+            <select value={setId ?? ""} onChange={(e) => set({ set: e.target.value || null, pinned: null, focus: null, person: null, event: null })} aria-label="Saved sets">
+              <option value="">Saved sets…</option>
+              {sets.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.name} ({x.places.length})
+                </option>
+              ))}
+            </select>
+          )}
+          {pinned.length > 1 && (
+            <button className="link-btn" onClick={() => { const name = window.prompt("Name this set of pinned places", "My places"); if (name) pins.saveSet(name, pinned); }}>
+              Save pins as set
+            </button>
+          )}
+          {activeSet && (
+            <button className="link-btn" onClick={() => { pins.deleteSet(activeSet.id); set({ set: null }); }}>
+              Delete set
+            </button>
+          )}
+        </div>
         <div className="atlas-toggles">
           <label>
             <input type="checkbox" checked={paul} onChange={(e) => set({ paul: e.target.checked ? "1" : null })} /> Paul's journeys
@@ -309,7 +399,7 @@ export default function AtlasPage() {
           </label>
         </div>
         {selected ? (
-          <PlaceCard id={selected} books={books} onClose={() => set({ place: null })} />
+          <PlaceCard id={selected} books={books} onClose={() => set({ place: null })} from={from ? (atlas.data?.places.find((p) => p.id === from) ?? null) : null} onMeasure={(id) => set({ from: id })} />
         ) : (
           <Legend paul={paul} routes={routes.data} />
         )}
@@ -374,7 +464,8 @@ function Legend({ paul, routes }: { paul: boolean; routes?: RouteFeature[] }) {
   );
 }
 
-function PlaceCard({ id, books, onClose }: { id: string; books: Book[]; onClose: () => void }) {
+function PlaceCard({ id, books, onClose, from, onMeasure }: { id: string; books: Book[]; onClose: () => void; from: AtlasPlace | null; onMeasure: (id: string | null) => void }) {
+  const isPinned = usePins().pinned.includes(id);
   const { data, isLoading, error } = usePlace(id);
   if (isLoading) return <div className="atlas-card loading">Loading…</div>;
   if (error || !data) return <div className="atlas-card error">Could not load this place.</div>;
@@ -390,7 +481,27 @@ function PlaceCard({ id, books, onClose }: { id: string; books: Book[]; onClose:
         {KIND_LABEL[p.kind ?? "site"] ?? p.kind}
         {p.modern_name && ` · today ${p.modern_name}`}
       </div>
-      <div className={`conf conf-${band}`}>{CONFIDENCE_LABEL[band]}</div>
+      <div className="atlas-card-actions">
+        <span className={`conf conf-${band}`}>{CONFIDENCE_LABEL[band]}</span>
+        <button className={`chip${isPinned ? " on" : ""}`} onClick={() => pins.toggle(p.id)} aria-pressed={isPinned}>
+          {isPinned ? "★ Pinned" : "☆ Pin"}
+        </button>
+        {p.lat != null &&
+          (from && from.id !== p.id ? null : (
+            <button className="chip" onClick={() => onMeasure(from?.id === p.id ? null : p.id)}>
+              {from?.id === p.id ? "Stop measuring" : "Measure from here"}
+            </button>
+          ))}
+      </div>
+      {from && from.id !== p.id && p.lat != null && p.lon != null && (
+        <div className="atlas-measure">
+          <b>{Math.round(km(from, { lat: p.lat, lon: p.lon }))} km</b> from {from.name} as the crow flies · about{" "}
+          {Math.max(1, Math.round((km(from, { lat: p.lat, lon: p.lon }) * 1.25) / 30))} days on foot
+          <button className="link-btn" onClick={() => onMeasure(null)}>
+            Clear
+          </button>
+        </div>
+      )}
       {p.summary && <p className="atlas-summary">{p.summary}</p>}
       <h3>
         Named in {data.verses.count.toLocaleString()} {data.verses.count === 1 ? "verse" : "verses"}

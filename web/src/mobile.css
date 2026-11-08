@@ -253,7 +253,7 @@
 @media (max-width: 760px) {
   /* a sheet or panel covers the tab bar, as in any app */
   body:has(.reader-tools.open) .tabbar, body:has(.picker-pop) .tabbar, body:has(.wm-layer) .tabbar,
-  body:has(.workspace.has-verse:not(.panel-closed)) .tabbar, body:has(.ask-layer) .tabbar { display: none; }
+  body:has(.workspace.has-verse:not(.panel-closed)) .tabbar, body:has(.ask-layer:not(.hidden)) .tabbar { display: none; }
   /* translations: chips and "change" on one line; the list opens full width beneath */
   .reader-tools.open .edition-picker { align-items: center; }
   .reader-tools.open .add-wrap { display: contents; }

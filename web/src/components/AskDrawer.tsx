@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useLocation } from "react-router-dom";
 import { Chat } from "./Chat";
+import { mapScreenContext } from "../pins";
 import { useBackClose } from "../backClose";
 
 
@@ -10,6 +11,25 @@ interface AskRequest {
 }
 
 const EVENT = "testimonia:ask";
+
+/** The assistant's state for the Ask tab and button: working on an answer, or an answer waiting unread. */
+export type AskStatus = "idle" | "working" | "ready";
+let askStatus: AskStatus = "idle";
+const statusListeners = new Set<() => void>();
+function setAskStatus(s: AskStatus) {
+  if (s === askStatus) return;
+  askStatus = s;
+  statusListeners.forEach((l) => l());
+}
+export function useAskStatus(): AskStatus {
+  return useSyncExternalStore(
+    (l) => {
+      statusListeners.add(l);
+      return () => statusListeners.delete(l);
+    },
+    () => askStatus,
+  );
+}
 
 /** Open the assistant drawer from anywhere, optionally about a verse ("John 1:18") and with a question. */
 export function openAsk(context: string | null = null, question?: string): void {
@@ -41,6 +61,8 @@ export function screenContext(): string {
   } else {
     parts.push(`the page ${pathname}${heading ? ` ("${heading}")` : ""}`);
   }
+  const map = mapScreenContext();
+  if (map) parts.push(map);
   return `${parts.join("; ")} — address ${pathname}${search}`;
 }
 
@@ -101,11 +123,20 @@ export function AskDrawer() {
   useBackClose(open, () => setOpen(false));
   const [req, setReq] = useState<AskRequest>({ context: null });
   const [nonce, setNonce] = useState(0);
+  const status = useAskStatus();
+  const [mounted, setMounted] = useState(false); // once opened, the chat stays alive so answers finish in the background
+  const openRef = useRef(open);
+  openRef.current = open;
+  const onBusy = (busy: boolean) => setAskStatus(busy ? "working" : openRef.current || askStatus === "idle" ? "idle" : "ready");
+  useEffect(() => {
+    if (open && askStatus === "ready") setAskStatus("idle"); // seen
+  }, [open]);
 
   useEffect(() => {
     const on = (e: Event) => {
       setReq((e as CustomEvent<AskRequest>).detail);
       setNonce((n) => n + 1);
+      setMounted(true);
       setOpen(true);
     };
     window.addEventListener(EVENT, on);
@@ -142,7 +173,7 @@ export function AskDrawer() {
       {/* with a verse open, the study panel has its own "Ask AI" button */}
       {!open && !(location.pathname.startsWith("/read") && new URLSearchParams(location.search).has("v")) && (
         <button
-          className={`ask-fab${tucked ? " tucked" : ""}`}
+          className={`ask-fab${tucked ? " tucked" : ""} ask-${status}`}
           onClick={() => openAsk(contextFromUrl(location.pathname, location.search))}
           title="Ask the study assistant"
           aria-label="Ask the study assistant"
@@ -153,8 +184,8 @@ export function AskDrawer() {
           <span className="ask-fab-label">Ask</span>
         </button>
       )}
-      {open && (
-        <div className="ask-layer" onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}>
+      {mounted && (
+        <div className={`ask-layer${open ? "" : " hidden"}`} aria-hidden={!open} onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}>
           <aside className="ask-drawer" role="dialog" aria-label="Study assistant">
             <header className="ask-drawer-head">
               <strong>✦ Study assistant</strong>
@@ -163,7 +194,7 @@ export function AskDrawer() {
                 ✕
               </button>
             </header>
-            <Chat key={nonce} context={req.context} initial={req.question} compact />
+            <Chat context={req.context} initial={req.question} requestId={nonce} compact onBusy={onBusy} />
           </aside>
         </div>
       )}

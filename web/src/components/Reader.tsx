@@ -86,12 +86,6 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
           <NavArrow to={data.prev} dir="‹" />
           <PassagePicker books={books} book={data.book} chapter={data.chapter} />
           <NavArrow to={data.next} dir="›" />
-          <button className="map-btn" onClick={() => openMap({ ref: `${data.book} ${data.chapter}`, title: `${data.name} ${data.chapter}` })} title="The places in this chapter, on a map" aria-label="Map this chapter">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2-6-2Zm0 0v14m6-12v14" />
-            </svg>
-            <span>Map</span>
-          </button>
           <button className="view-btn" onClick={() => setViewOpen(true)} aria-label="Reading view and translations">
             <span aria-hidden>Aa</span> {MODES.find((m) => m.id === mode)?.label}
           </button>
@@ -122,6 +116,15 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
           next={data.next}
           onVerse={setSpeaking}
         />
+        <button className="map-btn" onClick={() => {
+          setViewOpen(false);
+           openMap({ ref: `${data.book} ${data.chapter}`, title: `${data.name} ${data.chapter}` });
+        }} title="The places in this chapter, on a map" aria-label="Map this chapter">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2-6-2Zm0 0v14m6-12v14" />
+          </svg>
+          <span>Map<span className="map-long"> this chapter</span></span>
+        </button>
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { lastReadingPath } from "../lib";
-import { openAsk } from "./AskDrawer";
+import { openAsk, useAskStatus } from "./AskDrawer";
 
 /** Phones: the app's sections in a bar under the thumb, like any native app. (Wide screens keep the top bar.) */
 const ICON: Record<string, ReactNode> = {
@@ -24,6 +24,7 @@ function Icon({ name }: { name: string }) {
 
 export function TabBar() {
   const { pathname, search } = useLocation();
+  const status = useAskStatus();
   const tabs = [
     { id: "bible", label: "Bible", to: pathname.startsWith("/read") ? pathname : lastReadingPath(), on: /^\/(read|book|passage)\b/.test(pathname) },
     { id: "library", label: "Library", to: "/library", on: LIBRARY.test(pathname) },
@@ -40,7 +41,7 @@ export function TabBar() {
           <span>{t.label}</span>
         </Link>
       ))}
-      <button className={pathname.startsWith("/ask") ? "on" : ""} onClick={() => openAsk(about)}>
+      <button className={`${pathname.startsWith("/ask") ? "on" : ""} ask-${status}`} onClick={() => openAsk(about)} aria-label={status === "ready" ? "Ask — an answer is ready" : status === "working" ? "Ask — working on an answer" : "Ask"}>
         <Icon name="ask" />
         <span>Ask</span>
       </button>

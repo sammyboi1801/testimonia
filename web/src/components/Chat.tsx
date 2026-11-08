@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { PRESETS, loadConfig, loadKey, runsInBrowser, saveConfig, saveKey, type AiConfig } from "../agent/providers";
 import { runInBrowser, runOnServer, type AgentEvent, type Turn } from "../agent/run";
 import { HIGHLIGHTS, useNotes, type Highlight } from "../notes";
+import { openMap, pins } from "../pins";
 import { screenContext } from "./AskDrawer";
 
 interface Message {
@@ -176,7 +177,19 @@ function Activity({ steps, live }: { steps: string[]; live: boolean }) {
 
 /** The study assistant: bring your own key, any provider; answers grounded in the library, with links.
  *  Used full-page (/ask) and in the drawer that opens from anywhere (`compact`). */
-export function Chat({ context, initial, compact = false }: { context: string | null; initial?: string; compact?: boolean }) {
+export function Chat({
+  context,
+  initial,
+  compact = false,
+  requestId,
+  onBusy,
+}: {
+  context: string | null;
+  initial?: string;
+  compact?: boolean;
+  requestId?: number; // a new request (the drawer reopened about something): refresh the suggested question
+  onBusy?: (busy: boolean) => void;
+}) {
   const navigate = useNavigate();
   const notesApi = useNotes();
   const [config, setConfig] = useState<AiConfig>(loadConfig);
@@ -210,6 +223,19 @@ export function Chat({ context, initial, compact = false }: { context: string | 
   }
   const [input, setInput] = useState(initial ?? (context ? `What should I know about ${context}?` : ""));
   const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    onBusy?.(busy);
+  }, [busy, onBusy]);
+  const firstRequest = useRef(requestId);
+  const suggested = useRef(initial ?? (context ? `What should I know about ${context}?` : ""));
+  useEffect(() => {
+    if (requestId === undefined || requestId === firstRequest.current) return;
+    // a new suggestion replaces the old one, never what the reader typed themselves
+    const next = initial ?? (context ? `What should I know about ${context}?` : "");
+    setInput((cur) => (!cur.trim() || cur === suggested.current || initial ? next : cur));
+    suggested.current = next;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestId]);
   const abort = useRef<AbortController | null>(null);
   const end = useRef<HTMLDivElement>(null);
   const preset = PRESETS.find((p) => p.id === config.preset) ?? PRESETS[0]!;
@@ -291,6 +317,16 @@ export function Chat({ context, initial, compact = false }: { context: string | 
       if (e.type === "navigate" && e.link.startsWith("/")) {
         navigate(e.link);
         e = { type: "tool", name: "show_in_app", summary: `opened ${e.link}` };
+      }
+      // the map beside the text, and pins: the assistant shows and keeps places
+      if (e.type === "map") {
+        openMap({ ref: e.ref, person: e.person, event: e.event, places: e.places, title: e.title });
+        e = { type: "tool", name: "map", summary: `mapped ${e.title ?? "places"}` };
+      } else if (e.type === "pins") {
+        if (e.action === "add") pins.add(e.places);
+        else if (e.action === "remove") pins.remove(e.places);
+        else pins.saveSet(e.name ?? "My places", e.places);
+        e = { type: "tool", name: "pins", summary: e.action === "save_set" ? `saved set “${e.name}”` : `${e.action === "add" ? "pinned" : "unpinned"} ${e.places.length} places` };
       }
       // changes to the reader's notes, asked for in the chat, applied here (notes live in this browser)
       if (e.type === "note") {

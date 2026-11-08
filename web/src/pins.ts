@@ -92,3 +92,21 @@ export function atlasUrl(r: MapRequest): string {
   if (r.select) q.set("place", r.select);
   return `/atlas?${q.toString()}`;
 }
+
+// ----------------------------------------------------------------------------- what the assistant can see
+
+/** The map panel's current contents, so the assistant knows what the reader is looking at. */
+let mapContext: { title: string; places: string[] } | null = null;
+export function setMapContext(c: { title: string; places: string[] } | null): void {
+  mapContext = c;
+}
+/** One line for the assistant: the open map and the reader's pins. */
+export function mapScreenContext(): string {
+  const parts: string[] = [];
+  if (mapContext) {
+    const names = mapContext.places.slice(0, 30).map((n, i) => `${i + 1}. ${n}`).join(", ");
+    parts.push(`the map beside the text shows ${mapContext.title}: ${names}${mapContext.places.length > 30 ? " …" : ""}`);
+  }
+  if (state.pinned.length) parts.push(`${state.pinned.length} pinned places${state.sets.length ? ` and saved sets: ${state.sets.map((s) => s.name).join(", ")}` : ""}`);
+  return parts.join("; ");
+}

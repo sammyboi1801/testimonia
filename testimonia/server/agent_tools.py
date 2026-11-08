@@ -13,6 +13,7 @@ import json
 import re
 import unicodedata
 from collections.abc import Callable
+from contextvars import ContextVar
 from types import SimpleNamespace
 from typing import Any
 
@@ -363,6 +364,48 @@ TOOLS: list[dict[str, Any]] = [
                 "text": {"type": "string", "description": "Note text (markdown) for add/replace"},
                 "color": {"type": "string", "description": "For highlight: gold, green, blue, rose, violet, or ''"},
                 "query": {"type": "string", "description": "For list: only notes containing this word"},
+            },
+            "required": ["action"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "map",
+        "description": (
+            "Show places on the map beside the reader's text: the places of a passage ('2 Kings 1', 'Acts 13-14', "
+            "'Ruth'), of a person's story (person: 'Elijah'), of an event ('Exodus'), or a list of place names. "
+            "They appear numbered in the order the text names them. Use it whenever geography helps."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "passage": {"type": "string", "description": "A passage or book, e.g. 'Acts 13-14'"},
+                "person": {"type": "string", "description": "A biblical person, e.g. 'Elijah'"},
+                "event": {"type": "string", "description": "An event, e.g. 'Exodus'"},
+                "places": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Place names, e.g. ['Jerusalem', 'Ekron']",
+                },
+                "title": {"type": "string", "description": "A short title for the map"},
+            },
+            "required": [],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "pins",
+        "description": (
+            "The reader's pinned places in the atlas (kept in their browser). 'list' shows them; 'add' / 'remove' pin "
+            "or unpin places by name; 'save_set' saves the given places (or the current pins) as a named set; "
+            "'show' opens the map with the pins. Change pins only when the reader asks."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "enum": ["list", "add", "remove", "save_set", "show"]},
+                "places": {"type": "array", "items": {"type": "string"}, "description": "Place names"},
+                "name": {"type": "string", "description": "For save_set: the set's name"},
             },
             "required": ["action"],
             "additionalProperties": False,
@@ -1169,6 +1212,117 @@ def notes_tool(notes: list[Any], args: dict[str, Any]) -> tuple[str, bool]:
     return f"{done} the reader's note on {_label(osis)} (it updates in their browser).", False
 
 
+#: what a map or pins call asks the reader's browser to do (read by the chat loop after the call)
+ACTION: ContextVar[dict[str, Any] | None] = ContextVar("agent_action", default=None)
+#: the reader's pinned place ids, sent with the question
+PINS: ContextVar[list[str] | None] = ContextVar("agent_pins", default=None)
+
+
+def _place_ids(store: Store, names: list[str]) -> tuple[list[dict[str, Any]], list[str]]:
+    """Place names → mapped places (the most-named match for each); and the names not found."""
+    found: list[dict[str, Any]] = []
+    missing: list[str] = []
+    for name in names[:60]:
+        n = str(name).strip()
+        row = store.one(
+            "SELECT p.id, p.name FROM place p WHERE p.lat IS NOT NULL AND (lower(p.name) = lower(?) OR p.id = lower(?)) "
+            "ORDER BY (SELECT count(*) FROM place_ref r WHERE r.place_id = p.id) DESC LIMIT 1",
+            (n, n),
+        ) or store.one(
+            "SELECT p.id, p.name FROM place p WHERE p.lat IS NOT NULL AND p.name LIKE ? "
+            "ORDER BY (SELECT count(*) FROM place_ref r WHERE r.place_id = p.id) DESC LIMIT 1",
+            (n + "%",),
+        )
+        if row and row["id"] not in {f["id"] for f in found}:
+            found.append(row)
+        elif not row:
+            missing.append(n)
+    return found, missing
+
+
+def map_places(
+    store: Store,
+    passage: str | None = None,
+    person: str | None = None,
+    event: str | None = None,
+    places: list[str] | None = None,
+    title: str | None = None,
+) -> str:
+    if places:
+        found, missing = _place_ids(store, places)
+        if not found:
+            raise ValueError(f"no mapped place matches {', '.join(places)}")
+        ACTION.set(
+            {
+                "type": "map",
+                "places": [p["id"] for p in found],
+                "title": title or ", ".join(p["name"] for p in found[:3]),
+            }
+        )
+        note = f" (not found: {', '.join(missing)})" if missing else ""
+        return f"Showing {len(found)} places on the map: {', '.join(p['name'] for p in found)}{note}."
+    q: dict[str, Any] = {}
+    if passage:
+        q["ref"] = passage
+    elif person:
+        row = store.one(
+            "SELECT p.id FROM person p WHERE lower(p.name) = lower(?) OR p.name LIKE ? "
+            "ORDER BY (SELECT count(*) FROM person_ref r WHERE r.person_id = p.id) DESC LIMIT 1",
+            (person.strip(), person.strip() + "%"),
+        )
+        if not row:
+            raise ValueError(f"no biblical person named {person!r}")
+        q["person"] = row["id"]
+    elif event:
+        row = store.one(
+            "SELECT id FROM event WHERE title LIKE ? ORDER BY length(title) LIMIT 1", ("%" + event.strip() + "%",)
+        )
+        if not row:
+            raise ValueError(f"no event matching {event!r}")
+        q["event"] = row["id"]
+    else:
+        raise ValueError("give a passage, a person, an event or place names")
+    try:
+        data = geo_api.places_in(_req(store), ref=q.get("ref"), person=q.get("person"), event=q.get("event"))
+    except HTTPException as e:
+        raise ValueError(str(e.detail)) from e
+    rows = data["places"]
+    ACTION.set({"type": "map", **q, "title": title or data["title"]})
+    if not rows:
+        return f"No mapped places in {data['title']}."
+    listed = "; ".join(f"{i + 1}. {p['name']} ({_label(p['first_osis'])})" for i, p in enumerate(rows[:40]))
+    more = f" …and {len(rows) - 40} more" if len(rows) > 40 else ""
+    return f"Showing the map of {data['title']} beside the reader's text: {len(rows)} places in the order named — {listed}{more}."
+
+
+def pins_tool(store: Store, action: str, places: list[str] | None = None, name: str | None = None) -> str:
+    current = PINS.get() or []
+    if action == "list":
+        if not current:
+            return "The reader has no pinned places."
+        marks = ",".join("?" * len(current))
+        rows = store.all(f"SELECT id, name FROM place WHERE id IN ({marks})", current)
+        return "Pinned places: " + ", ".join(r["name"] for r in rows)
+    if action == "show":
+        if not current:
+            return "The reader has no pinned places to show."
+        ACTION.set({"type": "map", "places": current, "title": "Pinned places"})
+        return f"Showing the reader's {len(current)} pinned places on the map."
+    ids: list[str] = []
+    if places:
+        found, _missing = _place_ids(store, places)
+        ids = [p["id"] for p in found]
+        if not ids:
+            raise ValueError(f"no mapped place matches {', '.join(places)}")
+    elif action == "save_set":
+        ids = list(current)
+    if not ids:
+        raise ValueError("name the places")
+    ACTION.set({"type": "pins", "action": action, "places": ids, "name": (name or "My places")[:80]})
+    verb = {"add": "Pinned", "remove": "Unpinned", "save_set": f"Saved as the set {name or 'My places'!r}:"}[action]
+    return f"{verb} {len(ids)} places (it updates in the reader's browser)."
+
+
 APP_PAGES = re.compile(
     r"^/(read|library|atlas|place|person|event|manuscript|manuscripts|book|passage|topic|topics|parallels|plans|rulers|"
     r"domains|search|notes)(/|\?|$)"
@@ -1389,6 +1543,8 @@ FUNCTIONS: dict[str, Callable[..., str]] = {
     "word_meanings": word_meanings,
     "manuscripts": manuscripts,
     "show_in_app": show_in_app,
+    "map": map_places,
+    "pins": pins_tool,
     "notes": lambda store, **args: notes_tool([], args)[0],  # run by the chat with the reader's notes (agent.py)
     "manuscript_text": manuscript_text,
     "bible_people_places": bible_people_places,
@@ -1439,6 +1595,7 @@ def validate(name: str, args: Any) -> str | None:
 
 def run(store: Store, name: str, args: Any) -> tuple[str, bool]:
     """Execute a tool → (text, is_error)."""
+    ACTION.set(None)
     error = validate(name, args)
     if error:
         return f"Error: {error}", True

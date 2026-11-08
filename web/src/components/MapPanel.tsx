@@ -5,7 +5,7 @@ import { useMeta } from "../api";
 import { useBackClose } from "../backClose";
 import { useAtlas, usePlacesIn } from "../geoApi";
 import { osisLabel, verseUrl } from "../lib";
-import { atlasUrl, onOpenMap, pins, usePins, type MapRequest } from "../pins";
+import { atlasUrl, onOpenMap, pins, setMapContext, usePins, type MapRequest } from "../pins";
 import { addBasemap, createMap, escapeHtml } from "./atlasMap";
 
 interface Spot {
@@ -22,7 +22,9 @@ interface Spot {
  *  numbered in the order the text names them and joined by a faint line. Opens from anywhere with openMap(). */
 export function MapPanel({ initial }: { initial: MapRequest }) {
   const [req, setReq] = useState<MapRequest | null>(initial);
-  useEffect(() => onOpenMap((r) => setReq(r)), []);
+  useEffect(() => {
+    return onOpenMap((r) => setReq(r)); // unsubscribe on unmount
+  }, []);
   useBackClose(req !== null, () => setReq(null));
   if (!req) return null;
   return <Panel key={JSON.stringify(req)} req={req} onClose={() => setReq(null)} />;
@@ -46,6 +48,11 @@ function Panel({ req, onClose }: { req: MapRequest; onClose: () => void }) {
   }, [query, found.data, atlas.data, req.places]);
   const title = req.title ?? found.data?.title ?? "Places";
   const loading = query ? found.isLoading : atlas.isLoading;
+  // the assistant sees what the map shows (its numbering included)
+  useEffect(() => {
+    setMapContext(spots.length ? { title, places: spots.map((s) => s.name) } : null);
+    return () => setMapContext(null);
+  }, [spots, title]);
 
   // ---------------------------------------------------------------- the map
   const el = useRef<HTMLDivElement>(null);
@@ -75,11 +82,13 @@ function Panel({ req, onClose }: { req: MapRequest; onClose: () => void }) {
     g.clearLayers();
     markers.current.clear();
     if (!spots.length) return;
-    if (spots.length > 1 && query) {
-      L.polyline(
-        spots.map((s) => [s.lat, s.lon] as [number, number]),
-        { className: "mp-path", interactive: false },
-      ).addTo(g);
+    // well-known places as quiet context, so the passage's places sit in a recognisable land
+    const mine = new Set(spots.map((s) => s.id));
+    for (const p of atlas.data?.places ?? []) {
+      if (mine.has(p.id) || p.verses < 60 || p.kind === "region") continue;
+      L.circleMarker([p.lat, p.lon], { radius: 2.5, className: "mp-context", interactive: false }).addTo(g);
+      if (p.verses >= 100)
+        L.marker([p.lat, p.lon], { interactive: false, keyboard: false, icon: L.divIcon({ className: "mp-context-label", html: `<span>${escapeHtml(p.name)}</span>`, iconSize: [0, 0] }) }).addTo(g);
     }
     spots.forEach((s, i) => {
       const mk = L.marker([s.lat, s.lon], {
@@ -95,7 +104,7 @@ function Panel({ req, onClose }: { req: MapRequest; onClose: () => void }) {
     });
     const b = L.latLngBounds(spots.map((s) => [s.lat, s.lon] as [number, number]));
     window.setTimeout(() => m.fitBounds(b, { padding: [36, 36], maxZoom: spots.length === 1 ? 9 : 10 }), 280);
-  }, [spots, pinned, active, query]);
+  }, [spots, pinned, active, query, atlas.data]);
   useEffect(() => {
     const s = spots.find((x) => x.id === active);
     if (s && map.current) map.current.panTo([s.lat, s.lon], { animate: true });

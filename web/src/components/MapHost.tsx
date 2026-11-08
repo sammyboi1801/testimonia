@@ -7,7 +7,9 @@ const MapPanel = lazy(() => import("./MapPanel").then((m) => ({ default: m.MapPa
 /** Listens for openMap() anywhere in the app and shows the map panel (loaded on first use). */
 export function MapHost() {
   const [first, setFirst] = useState<MapRequest | null>(null);
-  useEffect(() => onOpenMap((r) => setFirst((f) => f ?? r)), []);
+  useEffect(() => {
+    return onOpenMap((r) => setFirst((f) => f ?? r)); // unsubscribe on unmount
+  }, []);
   if (!first) return null;
   return (
     <Suspense fallback={null}>

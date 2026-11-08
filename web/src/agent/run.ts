@@ -3,12 +3,17 @@
 
 import { apiUrl } from "../api";
 import type { AiConfig } from "./providers";
+import { pins as pinStore } from "../pins";
+
+const pinIds = () => pinStore.get().pinned;
 
 export type AgentEvent =
   | { type: "text"; text: string }
   | { type: "tool"; name: string; summary: string }
   | { type: "notice"; message: string }
   | { type: "navigate"; link: string }
+  | { type: "map"; ref?: string; person?: string; event?: string; places?: string[]; title?: string }
+  | { type: "pins"; action: "add" | "remove" | "save_set"; places: string[]; name?: string }
   | { type: "note"; action: "add" | "replace" | "remove" | "highlight"; osis: string; text: string; highlight: string | null }
   | { type: "error"; message: string }
   | { type: "done"; model?: string; usage?: Record<string, number> };
@@ -59,7 +64,7 @@ export async function runOnServer(c: AiConfig, key: string, turns: Turn[], conte
   const res = await fetch(apiUrl("/api/agent/chat"), {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(key ? { "X-Api-Key": key } : {}) },
-    body: JSON.stringify({ provider: c.protocol, model: c.model, base_url: c.protocol === "openai" ? c.baseUrl : null, messages: turns, context, notes }),
+    body: JSON.stringify({ provider: c.protocol, model: c.model, base_url: c.protocol === "openai" ? c.baseUrl : null, messages: turns, context, notes, pins: pinIds() }),
     signal,
   });
   if (!res.ok) {
@@ -171,10 +176,11 @@ export async function runInBrowser(c: AiConfig, key: string, turns: Turn[], cont
         const r = await fetch(apiUrl("/api/agent/tool"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: p.name, input: args, ...(p.name === "notes" ? { notes } : {}) }),
+          body: JSON.stringify({ name: p.name, input: args, ...(p.name === "notes" ? { notes } : {}), ...(p.name === "pins" ? { pins: pinIds() } : {}) }),
           signal,
         });
-        const out = r.ok ? ((await r.json()) as { content: string; osis?: string }) : null;
+        const out = r.ok ? ((await r.json()) as { content: string; osis?: string; action?: AgentEvent | null }) : null;
+        if (out?.action) on(out.action);
         content = out ? out.content : `Error: ${await errorText(r)}`;
         if (out && !content.startsWith("Error") && p.name === "show_in_app") {
           const link = (args as { link?: unknown }).link;

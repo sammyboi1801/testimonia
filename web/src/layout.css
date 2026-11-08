@@ -229,15 +229,32 @@ a {
 .ws-gloss { font-size: 17px; margin: 4px 0 6px; }
 .ws-summary { margin: 0 0 12px; font-size: 14.5px; line-height: 1.5; color: var(--ink-soft); }
 .ws-deeper { margin: 20px 0 2px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-/* Map this chapter */
-.map-btn {
-  display: inline-flex; align-items: center; gap: 6px; margin-left: 12px; padding: 6px 12px; border: 1px solid var(--rule); border-radius: 999px;
-  background: var(--panel); color: var(--ink-soft); font-size: 13px; cursor: pointer;
+
+/* reader toolbar on wide screens: one family of controls, same height, grouped at the right of the title */
+@media (min-width: 761px) {
+  .reader-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 8px; }
+  .reader-head .chapter-title { margin-right: auto; }
+  .reader-head .modes { border: 1px solid var(--rule); border-radius: 999px; padding: 2px; gap: 0; background: var(--panel); }
+  .reader-head .modes button { height: 28px; padding: 0 12px; border: 0; border-radius: 999px; margin: 0; font-size: 13px; color: var(--ink-soft); }
+  .reader-head .modes button.on { background: var(--accent-soft); color: var(--accent); border: 0; }
+  .reader-head .edition-picker { display: inline-flex; align-items: center; gap: 4px; }
+  .reader-head .edition-picker .chip, .reader-head .listen-btn, .reader-head .map-btn {
+    display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px; margin: 0;
+    border: 1px solid var(--rule); border-style: solid; border-radius: 999px; background: var(--panel); color: var(--ink-soft); font-size: 13px; line-height: 1;
+  }
+  .reader-head .edition-picker .chip.add { color: var(--accent); }
+  .reader-head .edition-picker .chip:hover, .reader-head .listen-btn:hover, .reader-head .map-btn:hover { border-color: var(--accent); color: var(--ink); }
+  .reader-head .map-btn svg { color: var(--accent); }
 }
-.map-btn:hover { border-color: var(--accent); color: var(--accent); }
-.map-btn svg { color: var(--accent); }
+/* phones: the map is a row in the View sheet */
 @media (max-width: 760px) {
-  .map-btn { margin-left: auto; padding: 7px 10px; }
-  .map-btn span { display: none; }
-  .map-btn + .view-btn { margin-left: 6px; }
+  .reader-tools.open .map-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; margin: 0;
+    border: 1px solid var(--rule); border-radius: 12px; background: var(--panel); font-size: 15px; color: var(--ink);
+  }
+  .reader-tools.open .map-btn span { display: inline; }
+}
+@media (min-width: 761px) { .map-long { display: none; } }
+@media (max-width: 760px) {
+  .reader-tools.open .listen-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; border: 1px solid var(--rule); border-radius: 12px; background: var(--panel); font-size: 15px; color: var(--ink); }
 }

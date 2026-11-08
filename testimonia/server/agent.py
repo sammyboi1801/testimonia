@@ -57,6 +57,11 @@ topics, Gospel parallels and book overviews. A wikipedia tool gives background f
 You also act inside the app: show_in_app opens a page on the reader's screen beside this chat (a verse, a chapter of
 a father, the atlas at a place, a manuscript, the timeline). Use it when seeing helps: "where is Corinth?" opens the
 atlas there; "show me 1 Clement 5" opens that chapter. Open at most one page per answer.
+The map tool shows places beside the text without leaving the page: a passage's places in the order named, a
+person's or an event's, or places you name ("where did Elijah go?" → map person Elijah; comparing two cities → map
+those places). Prefer it to opening the atlas page. The pins tool keeps places for the reader (pin, save a named set),
+and the notes tool adds notes and highlights verses in the reader's colours. Act only when it helps or is asked, and
+say in a few words what you showed or changed.
 
 The reader's screen: each question tells you what is on their screen right now (page, passage, selected verse, work
 and section). Take "this", "here", "this chapter" to mean that, and use its ids directly with your tools.
@@ -98,14 +103,16 @@ class ChatRequest(BaseModel):
     model: str = Field(DEFAULT_CLAUDE, max_length=120)
     base_url: str | None = Field(None, max_length=300)  # OpenAI-compatible endpoint (…/v1)
     messages: list[Turn] = Field(min_length=1, max_length=60)
-    context: str | None = Field(None, max_length=1000)  # what is on the reader's screen (page, passage, verse)
+    context: str | None = Field(None, max_length=3000)  # what is on the reader's screen (page, passage, verse, the open map)
     notes: list[NoteIn] | None = Field(None, max_length=5000)  # the reader's notes (they live in the browser)
+    pins: list[str] | None = Field(None, max_length=2000)  # the reader's pinned place ids
 
 
 class ToolCall(BaseModel):
     name: str
     input: dict[str, Any]
     notes: list[NoteIn] | None = Field(default=None, max_length=5000)
+    pins: list[str] | None = Field(default=None, max_length=2000)
 
 
 def store(request: Request) -> Store:
@@ -129,8 +136,9 @@ def tool(request: Request, call: ToolCall) -> dict[str, Any]:
         text, is_error = (f"Error: {error}", True) if error else agent_tools.notes_tool(call.notes or [], call.input)
         osis = agent_tools.note_osis(str(call.input.get("verse", ""))) if not is_error else ""
         return {"content": text, "is_error": is_error, "osis": osis}
+    agent_tools.PINS.set(call.pins or [])
     text, is_error = agent_tools.run(store(request), call.name, call.input)
-    return {"content": text, "is_error": is_error}
+    return {"content": text, "is_error": is_error, "action": None if is_error else agent_tools.ACTION.get()}
 
 
 # ----------------------------------------------------------------------------- server-side loop
@@ -210,6 +218,7 @@ async def chat(request: Request, body: ChatRequest, x_api_key: str | None = Head
 
     async def events() -> AsyncIterator[str]:
         NOTES.set(body.notes or [])  # set inside the streaming task, where the tools run
+        agent_tools.PINS.set(body.pins or [])
         try:
             if body.provider == "anthropic":
                 gen = _claude(s, x_api_key or "", body.model or DEFAULT_CLAUDE, system, turns)
@@ -260,7 +269,15 @@ async def _tool(s: Store, name: str, args: Any) -> tuple[str, bool]:
     if name == "notes":  # the notes live in the browser: read them from the request, send changes back
         error = agent_tools.validate(name, args)
         return (f"Error: {error}", True) if error else agent_tools.notes_tool(NOTES.get([]), args)
-    return await asyncio.to_thread(agent_tools.run, s, name, args)
+    # tools run in a worker thread, whose context changes do not come back: carry the browser action out by hand
+    text, is_error, action = await asyncio.to_thread(_run_with_action, s, name, args)
+    agent_tools.ACTION.set(None if is_error else action)
+    return text, is_error
+
+
+def _run_with_action(s: Store, name: str, args: Any) -> tuple[str, bool, dict[str, Any] | None]:
+    text, is_error = agent_tools.run(s, name, args)
+    return text, is_error, agent_tools.ACTION.get()
 
 
 def _summary(name: str, args: Any) -> str:
@@ -347,6 +364,8 @@ def _navigation(name: str, args: Any, failed: bool) -> dict[str, Any] | None:
         return None
     if name == "show_in_app":
         return {"type": "navigate", "link": str(args.get("link", ""))}
+    if name in ("map", "pins"):
+        return agent_tools.ACTION.get()  # what the tool resolved: a map to open, pins to change
     if name == "notes" and args.get("action") in ("add", "replace", "remove", "highlight"):
         osis = agent_tools.note_osis(str(args.get("verse", "")))
         return {

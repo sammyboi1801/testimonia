@@ -364,3 +364,25 @@ def test_notes_over_http_returns_the_verse(client):
     ).json()
     assert r["osis"] == "John.1.1"
     assert not r["is_error"]
+
+
+def test_map_tool_needs_something_to_map(store):
+    text, err = agent_tools.run(store, "map", {})
+    assert err
+    assert "passage" in text
+
+
+def test_map_tool_reports_unknown_places(store):
+    _text, err = agent_tools.run(store, "map", {"places": ["Nowhere-at-all"]})
+    assert err
+    assert agent_tools.ACTION.get() is None
+
+
+def test_pins_list_and_show_without_pins(store):
+    agent_tools.PINS.set([])
+    assert "no pinned places" in agent_tools.run(store, "pins", {"action": "list"})[0]
+    assert "no pinned places" in agent_tools.run(store, "pins", {"action": "show"})[0]
+
+
+def test_places_in_needs_a_passage(client):
+    assert client.get("/api/places/in").status_code == 404
