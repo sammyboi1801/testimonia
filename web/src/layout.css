@@ -258,3 +258,7 @@ a {
 @media (max-width: 760px) {
   .reader-tools.open .listen-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; border: 1px solid var(--rule); border-radius: 12px; background: var(--panel); font-size: 15px; color: var(--ink); }
 }
+/* section headings share the text's left edge; verse numbers hang in the margin before it */
+.verses .pericope { margin-left: 84px; }
+@media (max-width: 760px) { .verses .pericope { margin-left: 36px; } }
+@media (min-width: 761px) { .reader-head .chapter-title { padding-left: 48px; } } /* "John 1" on the text's left edge, ‹ in the margin */
