@@ -16,6 +16,38 @@ export const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.r
 const AGENT_BASE = (import.meta.env.VITE_AGENT_BASE as string | undefined)?.replace(/\/+$/, "") ?? API_BASE;
 export const apiUrl = (path: string) => `${path.startsWith("/api/agent") ? AGENT_BASE : API_BASE}${path}`;
 
+/** Where the Bible's static files live (written by `testimonia export-static`); empty = always ask the API. */
+const STATIC = (import.meta.env.VITE_STATIC_DATA as string | undefined)?.replace(/\/+$/, "") ?? "";
+const WORD_EDITIONS = new Set(["tagnt", "tahot", "lxx"]);
+
+async function staticJson<T>(path: string): Promise<T | null> {
+  const res = await fetch(`${STATIC}/${path}`);
+  if (res.status === 404) return null;
+  if (!res.ok || !(res.headers.get("content-type") ?? "").includes("json")) throw new Error(`static ${res.status}`);
+  return (await res.json()) as T;
+}
+
+/** A chapter from the static files: the chapter itself, then each edition, fetched together and merged into the
+ *  same shape as /api/chapter. Throws (so the API is asked instead) when the files are not there. */
+async function staticChapter(book: string, chapter: number, editions: string[]): Promise<Chapter> {
+  if (!STATIC) throw new Error("no static data");
+  const base = await staticJson<Omit<Chapter, "editions"> & { present?: string[] }>(`chapter/${book}/${chapter}.json`);
+  if (!base?.present) throw new Error("chapter not exported");
+  // only the editions that have this chapter (the BSB has no Tobit): nothing is asked for in vain
+  const parts = await Promise.all(
+    editions.map((ed) => (base.present!.includes(ed) ? staticJson<Record<string, unknown>>(`text/${encodeURIComponent(ed)}/${book}/${chapter}.json`) : null)),
+  );
+  const verses = base.verses.map((v) => ({ ...v, texts: {} as Record<string, unknown>, words: {} as Record<string, unknown> }));
+  const byKey = new Map(verses.map((v) => [String(v.vkey), v]));
+  editions.forEach((ed, i) => {
+    for (const [k, val] of Object.entries(parts[i] ?? {})) {
+      const v = byKey.get(k);
+      if (v) (WORD_EDITIONS.has(ed) ? v.words : v.texts)[ed] = val;
+    }
+  });
+  return { ...base, editions, verses } as unknown as Chapter;
+}
+
 export async function getJson<T>(path: string, params?: Record<string, string | number | undefined>): Promise<T> {
   const url = new URL(apiUrl(path), window.location.origin);
   for (const [k, v] of Object.entries(params ?? {})) if (v !== undefined && v !== "") url.searchParams.set(k, String(v));
@@ -40,7 +72,7 @@ export const useMeta = () => useQuery({ queryKey: ["meta"], queryFn: () => getJs
 export const useChapter = (book: string, chapter: number, editions: string[]) =>
   useQuery({
     queryKey: ["chapter", book, chapter, editions.join(",")],
-    queryFn: () => getJson<Chapter>(`/api/chapter/${book}/${chapter}`, { editions: editions.join(",") }),
+    queryFn: () => staticChapter(book, chapter, editions).catch(() => getJson<Chapter>(`/api/chapter/${book}/${chapter}`, { editions: editions.join(",") })),
     ...FOREVER,
   });
 

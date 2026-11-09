@@ -123,6 +123,15 @@ def cmd_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_export_static(args: argparse.Namespace) -> int:
+    from .static_export import export
+
+    r = export(Path(args.db) if args.db else config.CORE_DB, Path(args.out))
+    mb = r["bytes"] / 1e6
+    print(f"wrote {r['files']:,} files ({mb:.0f} MB) for {r['chapters']:,} chapters in {r['seconds']}s to {args.out}")
+    return 0
+
+
 def cmd_info(args: argparse.Namespace) -> int:
     from . import db
 
@@ -189,6 +198,10 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     sub.add_parser("validate", help="check core.db integrity").set_defaults(func=cmd_validate)
     sub.add_parser("info", help="paths and database statistics").set_defaults(func=cmd_info)
+    p = sub.add_parser("export-static", help="write the Bible as static files for a CDN (the reader loads them first)")
+    p.add_argument("--out", required=True, help="folder to write (e.g. deploy/dist/data)")
+    p.add_argument("--db", help="database (default: core.db)")
+    p.set_defaults(func=cmd_export_static)
 
     args = parser.parse_args(argv)
     logfile = _setup_logging(args.verbose)
