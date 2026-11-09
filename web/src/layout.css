@@ -265,3 +265,4 @@ a {
 /* the reader says what is missing instead of leaving blanks */
 .reader-note { margin: 10px 0 4px; padding: 8px 12px; border-left: 3px solid var(--accent); background: var(--panel); border-radius: 0 8px 8px 0; font-size: 13.5px; color: var(--ink-soft); }
 .cell.words-missing { font-size: 12.5px; font-style: italic; color: var(--muted); padding: 4px 0 2px; }
+.work-credit { margin: -4px 0 14px; font-size: 12.5px; color: var(--muted); }

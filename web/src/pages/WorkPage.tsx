@@ -9,6 +9,14 @@ import { WikiCard, WikiHover } from "../components/Wiki";
 import { CATEGORY_LABELS, ERA_LABELS, formatYear, osisLabel, verseUrl } from "../lib";
 import type { Book, SectionView, Toc } from "../types";
 
+/** The CCEL book a text comes from ('…@anf01' → 'schaff/anf01'), for the credit line; null if not from CCEL. */
+function ccelVolume(edition: string): string | null {
+  const vol = edition.split("@")[1] ?? "";
+  if (/^(anf|npnf)\d+$/.test(vol)) return `schaff/${vol}`;
+  if (/^catena\d+$/.test(vol)) return `aquinas/${vol}`;
+  return null;
+}
+
 /** 'irenaeus.against-heresies@anf01' → 'Ante-Nicene Fathers vol. 1'. */
 function volumeLabel(edition: string): string {
   const vol = edition.split("@")[1] ?? "";
@@ -108,6 +116,15 @@ export function WorkPage() {
                 {volumeLabel(edition) && ` · ${volumeLabel(edition)}`}
               </div>
               <h2 className="work-section-title">{sec.data.section.title}</h2>
+              {ccelVolume(edition) && (
+                <p className="work-credit">
+                  Text from the{" "}
+                  <a href={`https://www.ccel.org/ccel/${ccelVolume(edition)}`} target="_blank" rel="noreferrer">
+                    Christian Classics Ethereal Library
+                  </a>{" "}
+                  (ccel.org), used for free, non-profit study.
+                </p>
+              )}
               <Html html={withoutRepeatedTitle(sec.data.section.html, sec.data.section.title)} footnotes idPrefix={`s${n}`} />
               <div className="pager">
                 <button className="chip" disabled={!sec.data.prev} onClick={() => sec.data.prev && navigate(`${base}/${sec.data.prev}`)}>

@@ -251,7 +251,7 @@ sources:
     name: CCEL ThML — Ante-Nicene Fathers 1–9, Nicene & Post-Nicene Fathers series 1 & 2
     url: https://www.ccel.org/
     download: "https://www.ccel.org/ccel/schaff/{anf01..anf09,npnf101..npnf114,npnf201..npnf214}.xml — fetched on the user's machine at build time"
-    public: false   # local use only until CCEL grants permission to redistribute derived data
+    public: true    # published for free, non-profit, educational use, as CCEL's copyright policy allows, with credit; permission requested from CCEL (Nov 2026)
     fetch:
       - http: https://www.ccel.org/ccel/schaff/anf01.xml
         target: ccel
@@ -341,7 +341,7 @@ sources:
     name: CCEL ThML — The Works of Flavius Josephus (tr. William Whiston, 1737)
     url: https://ccel.org/ccel/josephus/complete
     download: https://ccel.org/ccel/josephus/complete.xml — fetched on the user's machine at build time
-    public: false   # same CCEL policy as ccel-schaff (texts PD; CCEL asks permission before republishing its files)
+    public: true    # published for free, non-profit, educational use, as CCEL's copyright policy allows, with credit; permission requested from CCEL (Nov 2026)
     fetch:
       - http: https://ccel.org/ccel/josephus/complete.xml
         target: witnesses
@@ -423,7 +423,7 @@ sources:
     name: Thomas Aquinas, Catena Aurea (Newman translation, 1841)
     url: https://www.ccel.org/ccel/aquinas/catena1.xml
     download: as ccel-schaff (build-time fetch) or Wikisource
-    public: false   # CCEL-hosted digital text: local use only for now
+    public: true    # published for free, non-profit, educational use, as CCEL's copyright policy allows, with credit; permission requested from CCEL (Nov 2026)
     fetch:
       - http: https://www.ccel.org/ccel/aquinas/catena1.xml
         target: ccel

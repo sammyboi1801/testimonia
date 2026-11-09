@@ -37,3 +37,5 @@ web/dist/
 web/.env
 # the web app built for Firebase Hosting
 deploy/dist/
+# Firebase CLI deploy cache
+deploy/.firebase/
