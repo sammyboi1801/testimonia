@@ -234,6 +234,44 @@ export async function signIn(): Promise<void> {
   }
 }
 
+/** Friendly words for Firebase's error codes. */
+function authMessage(e: unknown): string {
+  const code = String((e as { code?: string })?.code ?? e);
+  if (code.includes("invalid-credential") || code.includes("wrong-password") || code.includes("user-not-found")) return "That email and password don't match an account.";
+  if (code.includes("email-already-in-use")) return "There is already an account with this email — sign in instead.";
+  if (code.includes("weak-password")) return "Choose a password of at least 6 characters.";
+  if (code.includes("invalid-email")) return "That doesn't look like an email address.";
+  if (code.includes("too-many-requests")) return "Too many attempts — try again in a few minutes.";
+  if (code.includes("network")) return "No connection — check your internet and try again.";
+  return "Something went wrong. Please try again.";
+}
+
+/** Email sign-in: 'signin' an existing account or 'create' a new one. Returns an error message, or null. */
+export async function signInWithEmail(mode: "signin" | "create", email: string, password: string): Promise<string | null> {
+  const f = await firebase();
+  if (!f) return "Sign-in is not set up.";
+  const a = f.mod.auth;
+  try {
+    if (mode === "create") await a.createUserWithEmailAndPassword(f.auth, email.trim(), password);
+    else await a.signInWithEmailAndPassword(f.auth, email.trim(), password);
+    return null;
+  } catch (e) {
+    return authMessage(e);
+  }
+}
+
+/** Send a password-reset email. Returns an error message, or null. */
+export async function resetPassword(email: string): Promise<string | null> {
+  const f = await firebase();
+  if (!f) return "Sign-in is not set up.";
+  try {
+    await f.mod.auth.sendPasswordResetEmail(f.auth, email.trim());
+    return null;
+  } catch (e) {
+    return authMessage(e);
+  }
+}
+
 export async function signOut(): Promise<void> {
   const f = await firebase();
   if (f) await f.mod.auth.signOut(f.auth);
@@ -252,7 +290,13 @@ export async function deleteAccount(): Promise<void> {
     await f.mod.auth.deleteUser(user);
   } catch {
     // Firebase asks for a recent sign-in before deleting an account
-    await f.mod.auth.reauthenticateWithPopup(user, new f.mod.auth.GoogleAuthProvider());
+    if (user.providerData.some((p: { providerId: string }) => p.providerId === "google.com")) {
+      await f.mod.auth.reauthenticateWithPopup(user, new f.mod.auth.GoogleAuthProvider());
+    } else {
+      const password = window.prompt("To delete your account, enter your password once more:");
+      if (!password) return;
+      await f.mod.auth.reauthenticateWithCredential(user, f.mod.auth.EmailAuthProvider.credential(user.email, password));
+    }
     await f.mod.auth.deleteUser(user);
   }
   setState({ status: "signed-out", user: null });

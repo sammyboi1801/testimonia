@@ -234,3 +234,12 @@ mark.phrase { color: inherit; padding: 0.04em 0; border-radius: 2px; background:
 .account-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
 .btn.danger { color: #b4443a; border-color: color-mix(in srgb, #b4443a 50%, var(--rule)); }
 @media (max-width: 760px) { .account-card { position: fixed; left: 12px; right: 12px; top: 60px; width: auto; } }
+.account-google { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; padding: 8px 12px; }
+.account-or { display: flex; align-items: center; gap: 8px; margin: 8px 0 2px; font-size: 11.5px; color: var(--muted); }
+.account-or::before, .account-or::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.account-form { display: grid; gap: 6px; }
+.account-form input { padding: 8px 10px; font: inherit; font-size: 15px; color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: 8px; }
+.account-form input:focus { outline: none; border-color: var(--accent); }
+.account-error { font-size: 12.5px; color: #b4443a; }
+.account-ok { font-size: 12.5px; color: #3f8f5a; }
+.account-forgot { justify-self: start; font-size: 12.5px; }

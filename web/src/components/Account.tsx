@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { deleteAccount, signIn, signOut, syncAvailable, useSync } from "../sync";
+import { deleteAccount, resetPassword, signIn, signInWithEmail, signOut, syncAvailable, useSync } from "../sync";
 
 const STATUS: Record<string, string> = {
   connecting: "Syncing…",
@@ -25,9 +25,12 @@ export function AccountButton() {
 
   if (!s.user)
     return (
-      <button className="account-signin" onClick={() => void signIn()} title="Keep your notes, pins and chats on every device">
-        Sign in to sync
-      </button>
+      <div className="account" ref={box}>
+        <button className="account-signin" onClick={() => setOpen(!open)} aria-expanded={open} title="Keep your notes, pins and chats on every device">
+          Sign in to sync
+        </button>
+        {open && <SignInCard />}
+      </div>
     );
 
   const initial = (s.user.name ?? s.user.email ?? "?").slice(0, 1).toUpperCase();
@@ -59,6 +62,69 @@ export function AccountButton() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Google, or an email and password (with a reset link for forgotten passwords). */
+function SignInCard() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ text: string; ok?: boolean } | null>(null);
+  const run = async (mode: "signin" | "create") => {
+    setBusy(true);
+    setMessage(null);
+    const err = await signInWithEmail(mode, email, password);
+    setBusy(false);
+    if (err) setMessage({ text: err });
+  };
+  return (
+    <div className="account-card" role="dialog" aria-label="Sign in">
+      <strong>Sign in to sync</strong>
+      <p className="muted small">Keep your notes, highlights, pins and chats on every device. Everything still works without an account.</p>
+      <button className="btn account-google" onClick={() => void signIn()} disabled={busy}>
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
+          <path fill="#4285F4" d="M22.6 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6c-.3 1.4-1.1 2.6-2.3 3.4v2.8h3.7c2.1-2 3.2-4.9 3.2-8.3Z" />
+          <path fill="#34A853" d="M12 23c3.1 0 5.7-1 7.6-2.8l-3.7-2.8c-1 .7-2.3 1.1-3.9 1.1-3 0-5.5-2-6.4-4.7H1.8v2.9C3.7 20.5 7.6 23 12 23Z" />
+          <path fill="#FBBC05" d="M5.6 13.8c-.2-.7-.4-1.4-.4-2.2s.1-1.5.4-2.2V6.5H1.8C1 8 .6 9.7.6 11.6s.4 3.6 1.2 5.1l3.8-2.9Z" />
+          <path fill="#EA4335" d="M12 4.8c1.7 0 3.2.6 4.4 1.7l3.3-3.3C17.7 1.3 15.1.2 12 .2 7.6.2 3.7 2.7 1.8 6.5l3.8 2.9C6.5 6.7 9 4.8 12 4.8Z" />
+        </svg>
+        Continue with Google
+      </button>
+      <div className="account-or">
+        <span>or with email</span>
+      </div>
+      <form
+        className="account-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void run("signin");
+        }}
+      >
+        <input type="email" autoComplete="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input type="password" autoComplete="current-password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+        {message && <span className={message.ok ? "account-ok" : "account-error"}>{message.text}</span>}
+        <div className="account-actions">
+          <button className="btn primary" type="submit" disabled={busy || !email || !password}>
+            Sign in
+          </button>
+          <button className="btn" type="button" disabled={busy || !email || password.length < 6} onClick={() => void run("create")}>
+            Create account
+          </button>
+        </div>
+        <button
+          className="link-btn account-forgot"
+          type="button"
+          disabled={!email}
+          onClick={async () => {
+            const err = await resetPassword(email);
+            setMessage(err ? { text: err } : { text: "Check your email for a link to set a new password.", ok: true });
+          }}
+        >
+          Forgot password?
+        </button>
+      </form>
     </div>
   );
 }
