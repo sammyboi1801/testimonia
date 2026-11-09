@@ -1,0 +1,29 @@
+id,name,sex,books,match,summary
+tobit,Tobit,M,Tob,Tobit|Tobit's|Tobias's father,"A devout Israelite of Naphtali exiled to Nineveh, blinded and healed"
+tobias,Tobias,M,Tob,Tobias,"Son of Tobit, who travels to Media with the angel Raphael and marries Sarah"
+sarah-daughter-of-raguel,Sarah (daughter of Raguel),F,Tob,Sarah|Sara,"Raguel's daughter, troubled by the demon Asmodeus, who marries Tobias"
+raguel,Raguel,M,Tob,Raguel,"Tobit's kinsman at Ecbatana, father of Sarah"
+anna-wife-of-tobit,Anna (wife of Tobit),F,Tob,Anna,"Tobit's wife, who supports the household during his blindness"
+raphael,Raphael,M,Tob,Raphael|Azarias,"The archangel who travels with Tobias as Azarias"
+asmodeus,Asmodeus,M,Tob,Asmodeus,The demon who afflicts Sarah
+judith,Judith,F,Jdt,Judith,"A devout widow of Bethulia who delivers Israel from Holofernes"
+holofernes,Holofernes,M,Jdt,Holofernes,The Assyrian general who besieges Bethulia
+achior,Achior,M,Jdt,Achior,"Leader of the Ammonites who recounts Israel's history and later joins Israel"
+ozias,Uzziah (Ozias) of Bethulia,M,Jdt,Ozias|Uzziah,The chief magistrate of Bethulia
+susanna,Susanna,F,Sus,Susanna,"A faithful wife falsely accused by two elders and vindicated by Daniel"
+joakim-husband-of-susanna,Joakim (husband of Susanna),M,Sus,Joacim|Joakim,"Susanna's husband, a wealthy Jew of Babylon"
+judas-maccabeus,Judas Maccabeus,M,1Macc|2Macc,Judas|Maccabeus|Maccabaeus,"Third son of Mattathias, leader of the revolt against Antiochus Epiphanes"
+jonathan-apphus,Jonathan Apphus,M,1Macc,Jonathan,"Son of Mattathias, leader and high priest after Judas"
+simon-thassi,Simon Thassi,M,1Macc,Simon,"Son of Mattathias, high priest and ethnarch after Jonathan"
+john-hyrcanus,John Hyrcanus,M,1Macc,John,"Son of Simon, who succeeds him"
+eleazar-avaran,Eleazar Avaran,M,1Macc,Eleazar,"Son of Mattathias, killed beneath a war elephant"
+eleazar-the-scribe,Eleazar the scribe,M,2Macc|4Macc,Eleazar,"An aged scribe martyred for refusing to eat pork"
+antiochus-iv-epiphanes,Antiochus IV Epiphanes,M,1Macc|2Macc|4Macc,Antiochus,"Seleucid king who persecuted the Jews and profaned the temple"
+nicanor,Nicanor,M,1Macc|2Macc,Nicanor,"Seleucid general defeated by Judas Maccabeus"
+lysias,Lysias,M,1Macc|2Macc,Lysias,Regent of the Seleucid kingdom
+heliodorus,Heliodorus,M,2Macc,Heliodorus,"Minister of Seleucus IV, turned back from the temple treasury"
+jesus-son-of-sirach,Jesus son of Sirach,M,Sir,Jesus the son of Sirach|son of Sirach,The author of the book of Sirach
+baruch,Baruch,M,Bar,Baruch,"Jeremiah's scribe, to whom the book is attributed"
+ptolemy-iv-philopator,Ptolemy IV Philopator,M,3Macc,Ptolemy|Philopator,King of Egypt who persecutes the Jews in 3 Maccabees
+mattathias,Mattathias,M,1Macc|2Macc,Mattathias|Matthathias,"Priest of Modein whose refusal to sacrifice began the Maccabean revolt"
+nebuchadnezzar,Nebuchadnezzar,M,Jdt|Bar|1Esd|AddEsth,Nebuchadnezzar|Nabuchodonosor,King of Babylon

@@ -34,7 +34,7 @@ export interface TopicDetail {
 
 /** The translation to show: the reader's first text column (not the Greek/Hebrew word editions), else the BSB. */
 export function preferredTranslation(editions: string[]): string {
-  return editions.find((e) => e !== "tagnt" && e !== "tahot") ?? "bsb";
+  return editions.find((e) => e !== "tagnt" && e !== "tahot" && e !== "lxx") ?? "bsb";
 }
 
 export const useTopics = () =>

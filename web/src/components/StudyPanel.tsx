@@ -159,7 +159,7 @@ function tabCount(t: Tab, g: VerseGuide, fathers: number): string {
   if (t === "text") return String(g.variants.length);
   if (t === "fathers") return String(fathers);
   if (t === "links") return String(g.quotations.length + g.crossrefs.length + (g.witnesses?.length ?? 0));
-  const w = g.words.tagnt?.length ? g.words.tagnt : g.words.tahot;
+  const w = g.words.tagnt?.length ? g.words.tagnt : g.words.tahot?.length ? g.words.tahot : g.words.lxx;
   return String(w?.length ?? 0);
 }
 
@@ -369,8 +369,10 @@ function LinksTab({ g, books, onWord }: { g: VerseGuide; books: Book[]; onWord: 
 }
 
 function WordsTab({ g, onWord }: { g: VerseGuide; onWord: (s: string) => void }) {
-  const nt = !!g.words.tagnt?.length;
-  const words = (nt ? g.words.tagnt : g.words.tahot) ?? [];
+  // Greek NT, else the Hebrew, else the Septuagint's Greek (books that survive in Greek)
+  const hebrew = !g.words.tagnt?.length && !!g.words.tahot?.length;
+  const nt = !hebrew;
+  const words = (g.words.tagnt?.length ? g.words.tagnt : hebrew ? g.words.tahot : g.words.lxx) ?? [];
   const lang = nt ? "grc" : "hbo";
   return (
     <>

@@ -15,6 +15,11 @@
       "fetched_at": "2026-11-06T17:29:31+00:00",
       "source": "lxx-swete"
     },
+    "git|https://github.com/QuantForgeSoftware/lxx|lxx-morpheus|": {
+      "commit": "46258f8bde173998ef0633d79eff3067b9041575",
+      "fetched_at": "2026-11-08T06:17:43+00:00",
+      "source": "lxx-morpheus"
+    },
     "git|https://github.com/STEPBible/STEPBible-Data|stepbible-data|": {
       "commit": "5de0a47f35f0fc13dfe1430d104e5db8a4285f9c",
       "fetched_at": "2026-11-05T23:55:40+00:00",

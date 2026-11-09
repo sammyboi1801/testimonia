@@ -22,7 +22,7 @@ export function ReadPage() {
     rememberReading(book, ch);
   }, [book, ch]);
   const needsWords = settings.mode === "interlinear" || settings.mode === "original";
-  const editions = needsWords ? [...settings.editions, "tagnt", "tahot"] : settings.editions;
+  const editions = needsWords ? [...settings.editions, "tagnt", "tahot", "lxx"] : settings.editions;
   const data = useChapter(book, ch, editions);
   const selected = params.get("v");
   const drag = useRef<number | null>(null); // pull-down-to-close on phones

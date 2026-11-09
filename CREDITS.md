@@ -7,7 +7,7 @@ Testimonia is built entirely on openly licensed data. This page lists every data
 uses, with the credit line its licence requires. A built `core.db` is distributed under
 **CC BY-SA 4.0** as a combination of these sources (see [DATA_LICENSE.md](DATA_LICENSE.md)).
 
-**48 sources** · 22 explicitly excluded
+**49 sources** · 22 explicitly excluded
 
 ## Summary
 
@@ -36,6 +36,7 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 | Project Gutenberg (selected PD works) | PD | 1 |
 | R. H. Charles, Apocrypha and Pseudepigrapha of the Old Testament (1913) | PD | 1 |
 | S. Schechter, Fragments of a Zadokite Work (1910) — Damascus Document, Hebrew + English | PD | 1 |
+| Septuagint (Swete) with Morpheus lemmas and parsing (QuantForge LXX) | CC-BY-SA-4.0 | 1 |
 | Suetonius, Pliny the Younger and Lucian in public-domain translations | PD | 1 |
 | Tacitus, Annals — tr. A. J. Church & W. J. Brodribb (1876), Perseus TEI | CC-BY-SA-4.0 | 1 |
 | Thomas Aquinas, Catena Aurea (Newman translation, 1841) | PD | 1 |
@@ -259,6 +260,14 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Licence:** PD
 - **Credit:** S. Schechter, Documents of Jewish Sectaries vol. 1 (Cambridge, 1910), public domain
 - **Used for:** `work`, `work_edition`, `work_section`
+
+### Septuagint (Swete) with Morpheus lemmas and parsing (QuantForge LXX)
+
+- **Source:** <https://github.com/QuantForgeSoftware/lxx>
+- **Licence:** CC-BY-SA-4.0 *(ShareAlike)*
+- **Credit:** Septuagint morphology © QuantForge Software, CC BY-SA 4.0, on the First1KGreek Swete text; lemmatised with Morpheus (Perseus)
+- **Used for:** `edition`, `token`, `morph_code`
+- **Pinned version:** git 46258f8bde
 
 ### Suetonius, Pliny the Younger and Lucian in public-domain translations
 

@@ -103,7 +103,9 @@ class ChatRequest(BaseModel):
     model: str = Field(DEFAULT_CLAUDE, max_length=120)
     base_url: str | None = Field(None, max_length=300)  # OpenAI-compatible endpoint (…/v1)
     messages: list[Turn] = Field(min_length=1, max_length=60)
-    context: str | None = Field(None, max_length=3000)  # what is on the reader's screen (page, passage, verse, the open map)
+    context: str | None = Field(
+        None, max_length=3000
+    )  # what is on the reader's screen (page, passage, verse, the open map)
     notes: list[NoteIn] | None = Field(None, max_length=5000)  # the reader's notes (they live in the browser)
     pins: list[str] | None = Field(None, max_length=2000)  # the reader's pinned place ids
 

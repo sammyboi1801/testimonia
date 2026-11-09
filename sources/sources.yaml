@@ -730,6 +730,20 @@ sources:
     feeds: [edition, edition_verse]
     phase: 2
 
+  - id: lxx-morpheus
+    name: Septuagint (Swete) with Morpheus lemmas and parsing (QuantForge LXX)
+    url: https://github.com/QuantForgeSoftware/lxx
+    download: git clone (data/ only; commit pinned in sources.lock.json)
+    fetch:
+      - git: https://github.com/QuantForgeSoftware/lxx
+        target: lxx-morpheus
+    license: CC-BY-SA-4.0
+    attribution: "Septuagint morphology © QuantForge Software, CC BY-SA 4.0, on the First1KGreek Swete text; lemmatised with Morpheus (Perseus)"
+    feeds: [edition, token, morph_code]
+    phase: 1
+    share_alike: true
+    notes: "Lemmas linked to the STEPBible Greek lexicon for glosses; Esther's lettered additions not yet placed"
+
   - id: lxx-swete
     name: Septuagint, Swete edition (First1KGreek digital text)
     url: https://github.com/OpenGreekAndLatin/First1KGreek/tree/master/data/tlg0527

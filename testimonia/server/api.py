@@ -21,7 +21,8 @@ router = APIRouter(prefix="/api")
 
 OUTSIDE = ("jewish", "pagan")  # work categories of non-Christian witnesses
 LEXICON_ORDER = ["tbesg", "tbesh", "abbott-smith", "lsj", "bdb"]
-WORD_EDITIONS = {"tagnt": "NT", "tahot": "OT"}  # word-data editions (rendered as interlinear)
+# word-data editions (interlinear); lxx: the Greek Old Testament and the deuterocanon
+WORD_EDITIONS = {"tagnt": "NT", "tahot": "OT", "lxx": "OT"}
 
 
 def store(request: Request) -> Store:
@@ -431,7 +432,7 @@ def book_guide(request: Request, osis: str, preview: str = "bsb") -> dict[str, A
     stats = s.one(
         "SELECT (SELECT count(*) FROM verse WHERE vkey BETWEEN ? AND ? AND verse > 0) AS verses, "
         "(SELECT max(chapter) FROM verse WHERE vkey BETWEEN ? AND ?) AS chapters, "
-        "(SELECT count(*) FROM token WHERE vkey BETWEEN ? AND ? AND edition_id IN ('tagnt', 'tahot')) AS words, "
+        "(SELECT count(*) FROM token WHERE vkey BETWEEN ? AND ? AND edition_id IN ('tagnt', 'tahot', 'lxx')) AS words, "
         "(SELECT count(*) FROM variant_unit WHERE start_vkey BETWEEN ? AND ?) AS variants, "
         "(SELECT count(*) FROM citation c JOIN work w ON w.id = c.work_id WHERE c.start_vkey BETWEEN ? AND ? "
         "AND w.category NOT IN ('jewish', 'pagan')) AS citations",

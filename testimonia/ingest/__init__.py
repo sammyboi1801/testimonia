@@ -11,6 +11,7 @@ MODULES = (
     "curated",
     "ebible",
     "septuagint",
+    "lxx_morph",
     "openbible",
     "stepbible",
     "verses",
@@ -26,6 +27,7 @@ MODULES = (
     "geography",
     "theographic",
     "rulers",
+    "deuterocanon",
 )
 
 __all__ = ["MODULES", "STEPS", "Context", "IngestError", "Step", "load_all", "step"]

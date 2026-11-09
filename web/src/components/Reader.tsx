@@ -37,9 +37,12 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
   const [viewOpen, setViewOpen] = useState(false); // phones: the View sheet
   useBackClose(viewOpen, () => setViewOpen(false));
   const byId = useMemo(() => new Map(editions.map((e) => [e.id, e])), [editions]);
-  const isNT = data.verses.some((v) => v.words.tagnt?.length);
-  const wordEd = isNT ? "tagnt" : "tahot";
-  const textEds = data.editions.filter((e) => e !== "tagnt" && e !== "tahot");
+  // the words under the text: Greek NT, Hebrew OT, or the Septuagint's Greek where there is no Hebrew (the deuterocanon)
+  const hasNT = data.verses.some((v) => v.words.tagnt?.length);
+  const hasHebrew = data.verses.some((v) => v.words.tahot?.length);
+  const wordEd = hasNT ? "tagnt" : hasHebrew ? "tahot" : "lxx";
+  const isNT = wordEd !== "tahot"; // i.e. the words are Greek
+  const textEds = data.editions.filter((e) => e !== "tagnt" && e !== "tahot" && e !== "lxx");
   const primary = textEds[0];
   const headings = useMemo(() => new Map(data.headings.map((h) => [h.vkey, h.title])), [data.headings]);
   const container = useRef<HTMLDivElement>(null);
@@ -184,7 +187,7 @@ function NavArrow({ to, dir }: { to: Chapter["prev"]; dir: string }) {
 
 function ColumnHeads({ mode, textEds, primary, ctx }: { mode: string; textEds: string[]; primary?: string; ctx: RowCtx }) {
   const label = (id?: string) => (id ? ctx.byId.get(id)?.abbrev ?? id : "");
-  const heads = mode === "parallel" ? textEds.map(label) : mode === "original" ? [ctx.isNT ? "Greek (SBLGNT)" : "Hebrew (Leningrad)", label(primary)] : [];
+  const heads = mode === "parallel" ? textEds.map(label) : mode === "original" ? [ctx.wordEd === "lxx" ? "Greek (Septuagint)" : ctx.isNT ? "Greek (SBLGNT)" : "Hebrew (Leningrad)", label(primary)] : [];
   if (heads.length < 2) return null;
   return (
     <div className="verse-row column-heads" style={{ ["--cols" as string]: String(heads.length) }}>
