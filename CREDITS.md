@@ -172,7 +172,6 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Credit:** Philip Schaff (ed.), Ante-Nicene / Nicene and Post-Nicene Fathers; digital text courtesy of the Christian Classics Ethereal Library
 - **Used for:** `work`, `work_edition`, `work_section`, `citation`, `person`
 - **Pinned version:** fetched 2026-11-06
-- **Status:** local builds only — not included in published databases
 
 ### CCEL ThML — The Works of Flavius Josephus (tr. William Whiston, 1737)
 
@@ -181,7 +180,6 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Credit:** Flavius Josephus, tr. William Whiston (1737); digital text courtesy of the Christian Classics Ethereal Library
 - **Used for:** `work`, `work_edition`, `work_section`, `citation`
 - **Pinned version:** fetched 2026-11-06
-- **Status:** local builds only — not included in published databases
 
 ### Historical images on the front page (Wikimedia Commons)
 
@@ -292,7 +290,6 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Credit:** Catena Aurea, trans. J.H. Newman (1841), public domain
 - **Used for:** `commentary`, `commentary_entry`
 - **Pinned version:** fetched 2026-11-06
-- **Status:** local builds only — not included in published databases
 
 ### Wikipedia page summaries (introductions shown live in the app)
 
