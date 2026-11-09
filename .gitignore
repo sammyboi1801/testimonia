@@ -35,3 +35,5 @@ web/dist/
 
 # local Firebase config for sign-in (see web/.env.example)
 web/.env
+# the web app built for Firebase Hosting
+deploy/dist/

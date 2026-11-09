@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "web/dist",
+    "public": "dist",
     "ignore": [
       "firebase.json",
       "**/.*"
@@ -21,7 +21,8 @@
           }
         ]
       }
-    ]
+    ],
+    "site": "testimonia"
   },
   "firestore": {
     "rules": "firestore.rules"
