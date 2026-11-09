@@ -247,9 +247,9 @@ mark.phrase { color: inherit; padding: 0.04em 0; border-radius: 2px; background:
 /* phones: in the ⋯ menu the account is its own full-width row; the sign-in and account cards rise as a bottom sheet */
 @media (max-width: 760px) {
   .topbar.menu-open .topbar-menu .topbar-tools { flex-wrap: wrap; justify-content: space-around; row-gap: 6px; min-width: 260px; }
-  .topbar.menu-open .topbar-tools .account { flex-basis: 100%; order: -1; }
+  .topbar.menu-open .topbar-tools .account:has(.account-signin) { flex-basis: 100%; order: -1; } /* signed in: the avatar sits in the row */
   .topbar.menu-open .account-signin { width: 100%; height: 42px; font-size: 14.5px; }
-  .topbar.menu-open .account-avatar { margin: 0 auto; }
+  .topbar.menu-open .account-avatar { margin: 0; }
   .account-card {
     position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: auto; max-height: 86dvh; overflow-y: auto; z-index: 97;
     padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; border-width: 1px 0 0;
