@@ -12,6 +12,7 @@ const SYNCED = {
   "testimonia.pins.v1": "pins",
   "testimonia.settings.v1": "settings",
   "testimonia.ai.chats.v1": "chats",
+  "testimonia.ai.config": "assistant", // provider and model only; the API key is stored apart and never synced
 } as const;
 type Key = keyof typeof SYNCED;
 const KEYS = Object.keys(SYNCED) as Key[];
@@ -97,7 +98,7 @@ export function merge(key: Key, local: unknown, remote: unknown): unknown {
     }
     return [...byId.values()].sort((a, b) => (b.updated ?? "").localeCompare(a.updated ?? "")).slice(0, 100);
   }
-  return local; // settings: this device's
+  return remote; // settings and the assistant choice: the account's (the newest change from any device)
 }
 
 function fit(key: Key, value: unknown): string {

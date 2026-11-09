@@ -261,3 +261,12 @@ mark.phrase { color: inherit; padding: 0.04em 0; border-radius: 2px; background:
   .account-actions .btn { flex: 1; padding: 10px; }
   body:has(.account-card) .tabbar { display: none; }
 }
+@media (max-width: 760px) {
+  /* the ⋯ menu: one even row of equal 44px targets (the avatar the same size as the icons) */
+  .topbar.menu-open .topbar-menu .topbar-tools { justify-content: space-between; align-items: center; gap: 4px; min-width: 0; }
+  .topbar.menu-open .topbar-menu .topbar-tools > .icon-btn,
+  .topbar.menu-open .topbar-menu .topbar-tools > .account:not(:has(.account-signin)) {
+    width: 44px; height: 44px; min-width: 44px; display: grid; place-items: center; margin: 0;
+  }
+  .topbar.menu-open .account-avatar { width: 34px; height: 34px; }
+}

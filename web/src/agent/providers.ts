@@ -71,7 +71,7 @@ export interface AiConfig {
   remember: boolean;
 }
 
-const CONFIG_KEY = "testimonia.ai.config";
+export const CONFIG_KEY = "testimonia.ai.config";
 const KEY_KEY = "testimonia.ai.key";
 
 export function loadConfig(): AiConfig {

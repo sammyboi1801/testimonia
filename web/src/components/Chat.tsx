@@ -2,7 +2,7 @@ import DOMPurify from "dompurify";
 import { marked } from "marked";
 import { memo, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { PRESETS, loadConfig, loadKey, runsInBrowser, saveConfig, saveKey, type AiConfig } from "../agent/providers";
+import { CONFIG_KEY, PRESETS, loadConfig, loadKey, runsInBrowser, saveConfig, saveKey, type AiConfig } from "../agent/providers";
 import { runInBrowser, runOnServer, type AgentEvent, type Turn } from "../agent/run";
 import { HIGHLIGHTS, useNotes, type Highlight } from "../notes";
 import { openMap, pins } from "../pins";
@@ -31,6 +31,7 @@ interface Conversation {
   title: string;
   updated: string; // ISO
   messages: Message[];
+  model?: string; // which assistant answered: 'DeepSeek', 'Claude (Anthropic)'
 }
 const CHATS_KEY = "testimonia.ai.chats.v1";
 const CURRENT_KEY = "testimonia.ai.current";
@@ -93,6 +94,7 @@ function History({ chats, current, onOpen, onNew, onDelete, onClose }: { chats: 
             <button className="ah-open" onClick={() => onOpen(c.id)}>
               <span className="ah-title">{c.title}</span>
               <span className="ah-meta">
+                {c.model ? `${c.model} · ` : ""}
                 {when(c.updated)} · {c.messages.filter((m) => m.role === "user").length} questions
               </span>
             </button>
@@ -194,6 +196,9 @@ export function Chat({
   const navigate = useNavigate();
   const notesApi = useNotes();
   const [config, setConfig] = useState<AiConfig>(loadConfig);
+  useEffect(() => {
+    return onRemoteChange(CONFIG_KEY, () => setConfig(loadConfig())); // chosen on another device
+  }, []);
   const [key, setKey] = useState(loadKey);
   const [setup, setSetup] = useState(() => !loadKey() && !PRESETS.find((p) => p.id === loadConfig().preset)?.local);
   const [chats, setChats] = useState<Conversation[]>(loadChats);
@@ -258,7 +263,7 @@ export function Chat({
       const prev = all.find((c) => c.id === chatId);
       const unchanged = prev && prev.messages.length === messages.length && prev.messages.at(-1)?.content === messages.at(-1)?.content;
       if (unchanged) return all;
-      const next = [{ id: chatId, title: titleOf(messages), updated: new Date().toISOString(), messages: messages.slice(-80) }, ...rest];
+      const next = [{ id: chatId, title: titleOf(messages), updated: new Date().toISOString(), messages: messages.slice(-80), model: prev?.model ?? preset.label }, ...rest];
       saveChats(next);
       return next;
     });
