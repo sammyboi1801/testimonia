@@ -32,3 +32,6 @@ web/dist/
 
 # Claude Code local state (agent worktrees, settings)
 .claude/
+
+# local Firebase config for sign-in (see web/.env.example)
+web/.env

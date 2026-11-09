@@ -213,3 +213,24 @@ mark.phrase { color: inherit; padding: 0.04em 0; border-radius: 2px; background:
 @keyframes ask-breathe { 0%, 100% { opacity: 0.55; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
 @keyframes ask-pop { from { transform: scale(0); } to { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .tabbar button.ask-working svg, .ask-fab.ask-working .ask-fab-star { animation: none; } }
+
+/* account: sign in to sync */
+.account { position: relative; }
+.account-signin { padding: 5px 12px; border: 1px solid var(--accent); border-radius: 999px; background: transparent; color: var(--accent); font-size: 13px; cursor: pointer; white-space: nowrap; }
+.account-signin:hover { background: var(--accent-soft); }
+.account-avatar { width: 32px; height: 32px; padding: 0; border: 2px solid var(--rule); border-radius: 50%; overflow: hidden; background: var(--accent-soft); color: var(--accent); font-weight: 700; cursor: pointer; display: grid; place-items: center; }
+.account-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.account-avatar.status-synced { border-color: #3f8f5a; }
+.account-avatar.status-saving, .account-avatar.status-connecting { border-color: var(--accent); }
+.account-avatar.status-error { border-color: #b4443a; }
+.account-card {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 90; width: 280px; display: grid; gap: 4px; padding: 14px;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 14px; box-shadow: 0 10px 30px rgb(0 0 0 / 0.3);
+}
+.account-card p { margin: 6px 0; }
+.account-status { font-size: 12.5px; color: var(--ink-soft); }
+.account-status.status-synced::before { content: "● "; color: #3f8f5a; }
+.account-status.status-error::before { content: "● "; color: #b4443a; }
+.account-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.btn.danger { color: #b4443a; border-color: color-mix(in srgb, #b4443a 50%, var(--rule)); }
+@media (max-width: 760px) { .account-card { position: fixed; left: 12px; right: 12px; top: 60px; width: auto; } }

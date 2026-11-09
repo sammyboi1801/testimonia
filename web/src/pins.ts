@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { onRemoteChange } from "./sync";
 
 /** Pinned places and named sets of them ("Elijah's journeys"), kept in this browser like the notes. */
 export interface PinSet {
@@ -15,6 +16,11 @@ interface PinState {
 const KEY = "testimonia.pins.v1";
 let state: PinState = load();
 const listeners = new Set<() => void>();
+// signed in: pins changed on another device
+onRemoteChange(KEY, () => {
+  state = load();
+  listeners.forEach((l) => l());
+});
 
 function load(): PinState {
   try {

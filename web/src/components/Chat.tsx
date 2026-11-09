@@ -6,6 +6,7 @@ import { PRESETS, loadConfig, loadKey, runsInBrowser, saveConfig, saveKey, type 
 import { runInBrowser, runOnServer, type AgentEvent, type Turn } from "../agent/run";
 import { HIGHLIGHTS, useNotes, type Highlight } from "../notes";
 import { openMap, pins } from "../pins";
+import { onRemoteChange } from "../sync";
 import { screenContext } from "./AskDrawer";
 
 interface Message {
@@ -196,6 +197,9 @@ export function Chat({
   const [key, setKey] = useState(loadKey);
   const [setup, setSetup] = useState(() => !loadKey() && !PRESETS.find((p) => p.id === loadConfig().preset)?.local);
   const [chats, setChats] = useState<Conversation[]>(loadChats);
+  useEffect(() => {
+    return onRemoteChange(CHATS_KEY, () => setChats(loadChats()));
+  }, []); // chats from another device
   const [chatId, setChatId] = useState<string>(() => {
     const saved = localStorage.getItem(CURRENT_KEY);
     const list = loadChats();

@@ -8,6 +8,11 @@ WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web/ ./
+# optional sign-in and sync (Firebase web config: not secret, it ships in the page); empty = no sign-in
+ARG VITE_FIREBASE_API_KEY=""
+ARG VITE_FIREBASE_AUTH_DOMAIN=""
+ARG VITE_FIREBASE_PROJECT_ID=""
+ARG VITE_FIREBASE_APP_ID=""
 RUN npm run build
 
 # ---- server

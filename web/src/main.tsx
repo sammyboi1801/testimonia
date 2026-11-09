@@ -47,6 +47,7 @@ import { lastReadingPath } from "./lib";
 import { AskDrawer } from "./components/AskDrawer";
 import { TopBar } from "./components/TopBar";
 import { TabBar } from "./components/TabBar";
+import { startSync } from "./sync";
 import { MapHost } from "./components/MapHost";
 import { TimelineLab } from "./pages/TimelineLab";
 import { AskPage } from "./pages/AskPage";
@@ -128,6 +129,9 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
     });
   });
 }
+
+// sign-in and sync, when this build has a Firebase config (otherwise nothing happens)
+void startSync();
 
 const root = document.getElementById("root");
 if (!root) throw new Error("#root missing from index.html");

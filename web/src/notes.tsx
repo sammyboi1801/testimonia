@@ -2,6 +2,7 @@
 // Export/import moves them between devices.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { onRemoteChange } from "./sync";
 
 export const HIGHLIGHTS = [
   { id: "gold", label: "Gold" },
@@ -57,6 +58,10 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   const [notes, setNotes] = useState<Record<string, Note>>(load);
   const latest = useRef(notes);
   latest.current = notes;
+  // signed in: notes changed on another device arrive here
+  useEffect(() => {
+    return onRemoteChange(KEY, () => setNotes(load()));
+  }, []);
 
   // keep tabs in step: a note written in one tab appears in the others
   useEffect(() => {

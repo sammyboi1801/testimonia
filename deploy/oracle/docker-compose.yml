@@ -10,7 +10,13 @@
 #     docker compose --profile caddy up -d --build
 services:
   app:
-    build: ../..
+    build:
+      context: ../..
+      args: # optional sign-in and sync: set these in .env (see web/.env.example)
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:-}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN:-}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID:-}
+        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:-}
     image: testimonia
     restart: unless-stopped
     environment:

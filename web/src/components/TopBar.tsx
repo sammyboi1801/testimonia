@@ -4,6 +4,7 @@ import { resolveRef } from "../api";
 import { verseUrl } from "../lib";
 import { useSettings, type Theme } from "../settings";
 import { SettingsPane } from "./SettingsPane";
+import { AccountButton } from "./Account";
 
 const NEXT_THEME: Record<Theme, Theme> = { system: "light", light: "dark", dark: "system" };
 const THEME_ICON: Record<Theme, string> = { system: "◐", light: "☀", dark: "☾" };
@@ -65,6 +66,7 @@ export function TopBar() {
         <NavLink to="/ask">Ask</NavLink>
       </nav>
       <div className="topbar-tools">
+        <AccountButton />
         <button
           className="icon-btn"
           title="Smaller text"

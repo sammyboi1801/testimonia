@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { onRemoteChange } from "./sync";
 
 export type Theme = "system" | "light" | "dark";
 export type FathersScope = "pre-nicene" | "to-451" | "all";
@@ -229,6 +230,9 @@ function save(s: Settings) {
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(load);
+  useEffect(() => {
+    return onRemoteChange(KEY, () => setSettings(load()));
+  }, []); // changed on another device
   const systemDark = useSystemDark();
   const dark = settings.theme === "dark" || (settings.theme === "system" && systemDark);
   const update = useCallback((patch: Partial<Settings>) => {
