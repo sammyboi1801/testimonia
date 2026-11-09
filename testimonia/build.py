@@ -103,7 +103,8 @@ def build(
     keep_going: bool = False,
     target: Path | None = None,
 ) -> BuildReport:
-    target = target or config.CORE_DB
+    # a public build goes to its own file: it must never replace the full (private) database
+    target = target or (config.CORE_DB.with_name("core-public.db") if public else config.CORE_DB)
     config.ensure_dirs()
     manifest = sources.load()
     steps = plan(only)
