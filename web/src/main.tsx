@@ -51,6 +51,7 @@ import { startSync } from "./sync";
 import { MapHost } from "./components/MapHost";
 import { TimelineLab } from "./pages/TimelineLab";
 const LandingPage = lazy(() => import("./pages/LandingPage"));
+const HomePage = lazy(() => import("./pages/HomePage"));
 import { AskPage } from "./pages/AskPage";
 import { BookPage } from "./pages/BookPage";
 import { DomainPage } from "./pages/DomainPage";
@@ -89,6 +90,7 @@ function App() {
           <Route path="/" element={<Suspense fallback={loading}><LandingPage /></Suspense>} />
           {/* the installed app opens here: straight back to the reading */}
           <Route path="/app" element={<Navigate to={lastReadingPath()} replace />} />
+          <Route path="/home" element={<Suspense fallback={loading}><HomePage /></Suspense>} />
           <Route path="/read/:book/:chapter" element={<ReadPage />} />
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/library/:edition/:ord" element={<WorkPage />} />

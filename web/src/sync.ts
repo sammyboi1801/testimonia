@@ -13,6 +13,8 @@ const SYNCED = {
   "testimonia.settings.v1": "settings",
   "testimonia.ai.chats.v1": "chats",
   "testimonia.ai.config": "assistant", // provider and model only; the API key is stored apart and never synced
+  "testimonia.plans": "plans", // reading plan progress
+  "testimonia.lastRead": "reading", // where you were reading
 } as const;
 type Key = keyof typeof SYNCED;
 const KEYS = Object.keys(SYNCED) as Key[];
@@ -33,10 +35,11 @@ export const syncAvailable = config !== null;
 
 export interface SyncState {
   status: "off" | "signed-out" | "connecting" | "synced" | "saving" | "error";
+  ready: boolean; // the first sign-in check has answered (until then, signed-out may just mean "not known yet")
   user: { name: string | null; email: string | null; photo: string | null } | null;
   error?: string;
 }
-let state: SyncState = { status: config ? "signed-out" : "off", user: null };
+let state: SyncState = { status: config ? "signed-out" : "off", user: null, ready: !config };
 const listeners = new Set<() => void>();
 function setState(patch: Partial<SyncState>) {
   state = { ...state, ...patch };
@@ -98,7 +101,15 @@ export function merge(key: Key, local: unknown, remote: unknown): unknown {
     }
     return [...byId.values()].sort((a, b) => (b.updated ?? "").localeCompare(a.updated ?? "")).slice(0, 100);
   }
-  return remote; // settings and the assistant choice: the account's (the newest change from any device)
+  if (key === "testimonia.plans") {
+    const out: Record<string, { start: string | null; done: number[] }> = { ...(remote as Record<string, { start: string | null; done: number[] }>) };
+    for (const [id, p] of Object.entries(local as typeof out)) {
+      const r = out[id];
+      out[id] = r ? { start: r.start ?? p.start, done: [...new Set([...(r.done ?? []), ...(p.done ?? [])])].sort((a, b) => a - b) } : p;
+    }
+    return out;
+  }
+  return remote; // settings, the assistant choice, the reading position: the account's (newest from any device)
 }
 
 function fit(key: Key, value: unknown): string {
@@ -213,7 +224,11 @@ export async function startSync(): Promise<void> {
     if (this === window.localStorage && k in SYNCED) scheduleUpload(k as Key);
   };
   const f = (await firebase())!;
-  f.mod.auth.onAuthStateChanged(f.auth, (user: any) => (user ? void connect(user) : disconnect()));
+  f.mod.auth.onAuthStateChanged(f.auth, (user: any) => {
+    setState({ ready: true });
+    if (user) void connect(user);
+    else disconnect();
+  });
   try {
     await f.mod.auth.getRedirectResult(f.auth); // finishing a sign-in that went by redirect (phones)
   } catch {

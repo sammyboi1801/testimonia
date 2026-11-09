@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useChapter, useMeta } from "../api";
 import { openAsk } from "../components/AskDrawer";
 import { lastReadingPath } from "../lib";
@@ -145,12 +145,15 @@ function LiveVerse() {
 export default function LandingPage() {
   const meta = useMeta();
   const sync = useSync();
+  const goHome = sync.ready && !!sync.user && !new URLSearchParams(window.location.search).has("welcome");
   const counts = meta.data?.counts;
   const translations = meta.data ? meta.data.editions.filter((e) => e.kind !== "interlinear").length : null;
   const reading = lastReadingPath();
   const returning = reading !== "/read/John/1";
   const where = returning ? reading.replace(/^\/read\/([^/]+)\/(\d+).*$/, (_m, b: string, c: string) => `${meta.data?.books.find((x) => x.osis === b)?.name ?? b} ${c}`) : null;
 
+  // signed in: straight to your desk (/?welcome shows this page anyway)
+  if (goHome) return <Navigate to="/home" replace />;
   return (
     <div className="lp">
       {/* ------------------------------------------------------------------ hero */}
