@@ -262,3 +262,6 @@ a {
 .verses .pericope { margin-left: 84px; }
 @media (max-width: 760px) { .verses .pericope { margin-left: 36px; } }
 @media (min-width: 761px) { .reader-head .chapter-title { padding-left: 48px; } } /* "John 1" on the text's left edge, ‹ in the margin */
+/* the reader says what is missing instead of leaving blanks */
+.reader-note { margin: 10px 0 4px; padding: 8px 12px; border-left: 3px solid var(--accent); background: var(--panel); border-radius: 0 8px 8px 0; font-size: 13.5px; color: var(--ink-soft); }
+.cell.words-missing { font-size: 12.5px; font-style: italic; color: var(--muted); padding: 4px 0 2px; }

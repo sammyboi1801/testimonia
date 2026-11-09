@@ -34,6 +34,7 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
   const first = selected ? Number(selected.split(".")[2]) : 0;
   const span: [number, number] | null = first && through && through > first ? [first, through] : null;
   const { settings, update } = useSettings();
+  const mode = settings.mode;
   const [viewOpen, setViewOpen] = useState(false); // phones: the View sheet
   useBackClose(viewOpen, () => setViewOpen(false));
   const byId = useMemo(() => new Map(editions.map((e) => [e.id, e])), [editions]);
@@ -42,11 +43,19 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
   const hasHebrew = data.verses.some((v) => v.words.tahot?.length);
   const wordEd = hasNT ? "tagnt" : hasHebrew ? "tahot" : "lxx";
   const isNT = wordEd !== "tahot"; // i.e. the words are Greek
-  const textEds = data.editions.filter((e) => e !== "tagnt" && e !== "tahot" && e !== "lxx");
+  // the reader's own translations that have this chapter; if none does, the first fallback that does
+  const hasText = (e: string) => data.verses.some((v) => v.texts[e]?.text);
+  const chosen = settings.editions.filter((e) => e !== "tagnt" && e !== "tahot" && e !== "lxx");
+  const available = chosen.filter(hasText);
+  const fallback = available.length ? null : data.editions.find((e) => !chosen.includes(e) && e !== "tagnt" && e !== "tahot" && e !== "lxx" && hasText(e)) ?? null;
+  const textEds = available.length ? available : fallback ? [fallback] : [];
   const primary = textEds[0];
+  const missing = chosen.filter((e) => !hasText(e));
+  const hasWords = data.verses.some((v) => v.words[wordEd]?.length);
+  // no word-by-word text for this book (2 Esdras, the Prayer of Manasseh): the word modes show the translations instead
+  const view = (mode === "interlinear" || mode === "original") && !hasWords ? "parallel" : mode;
   const headings = useMemo(() => new Map(data.headings.map((h) => [h.vkey, h.title])), [data.headings]);
   const container = useRef<HTMLDivElement>(null);
-  const mode = settings.mode;
   const [speaking, setSpeaking] = useState<string | null>(null);
   const verseLabel = useCallback((osis: string) => osis.replace(/^([1-4]?[A-Za-z]+)\.(\d+)\.(\d+)$/, `${data.name} $2:$3`), [data.name]);
   const listenEd = primary ? byId.get(primary) : undefined;
@@ -79,7 +88,7 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
     staleTime: Infinity,
   });
   const places = placesQuery.data?.verses ?? {};
-  const ctx: RowCtx = { byId, wordEd, isNT, onSelect, onWord, selected, span, footnotes: settings.display.footnotes, speaking, notes, places };
+  const ctx: RowCtx = { byId, wordEd, isNT, hasWords, onSelect, onWord, selected, span, footnotes: settings.display.footnotes, speaking, notes, places };
 
   return (
     <div className="reader" ref={container}>
@@ -131,11 +140,25 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
         </div>
       </div>
 
+      {(missing.length > 0 || ((mode === "interlinear" || mode === "original") && !hasWords)) && (
+        <p className="reader-note">
+          {missing.length > 0 && (
+            <>
+              {missing.map((e) => byId.get(e)?.abbrev ?? e).join(", ")} {missing.length === 1 ? "does" : "do"} not include {data.name}
+              {fallback ? <> — showing {byId.get(fallback)?.abbrev ?? fallback}</> : null}.{" "}
+            </>
+          )}
+          {(mode === "interlinear" || mode === "original") && !hasWords && (
+            <>{data.name} has no word-by-word Greek or Hebrew here{data.book === "2Esd" ? " (it survives in Latin, not Greek)" : ""}; the translation is shown.</>
+          )}
+        </p>
+      )}
+
       {mode === "reading" ? (
         <ReadingView data={data} edition={primary} headings={headings} ctx={ctx} />
       ) : (
         <div className="verses">
-          <ColumnHeads mode={mode} textEds={textEds} primary={primary} ctx={ctx} />
+          <ColumnHeads mode={view} textEds={textEds} primary={primary} ctx={ctx} />
           {data.verses.map((v) => (
             <Fragment key={v.vkey}>
               {headings.get(v.vkey) && (
@@ -143,7 +166,7 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
                   {headings.get(v.vkey)} <PassageLink osis={v.osis} title={headings.get(v.vkey)} variant="heading" />
                 </h2>
               )}
-              <VerseRow v={v} mode={mode} textEds={textEds} primary={primary} ctx={ctx} />
+              <VerseRow v={v} mode={view} textEds={textEds} primary={primary} ctx={ctx} />
             </Fragment>
           ))}
         </div>
@@ -160,6 +183,7 @@ interface RowCtx {
   byId: Map<string, Edition>;
   wordEd: string;
   isNT: boolean;
+  hasWords: boolean; // the chapter has word-by-word text at all
   selected: string | null;
   span: [number, number] | null; // verses of a range opened from a reference (in this chapter)
   onSelect: (osis: string) => void;
@@ -226,11 +250,15 @@ function VerseRow({ v, mode, textEds, primary, ctx }: { v: ChapterVerse; mode: s
       {mode === "interlinear" && (
         <div className="stack">
           {primary && <TextCell v={v} id={primary} ctx={ctx} />}
-          <div className={`cell words ${ctx.isNT ? "greek" : "hebrew"}`} dir={ctx.isNT ? "ltr" : "rtl"}>
-            {words.map((w) => (
-              <WordChip key={w.pos} w={w} lang={ctx.isNT ? "grc" : "hbo"} onWord={ctx.onWord} />
-            ))}
-          </div>
+          {words.length > 0 ? (
+            <div className={`cell words ${ctx.isNT ? "greek" : "hebrew"}`} dir={ctx.isNT ? "ltr" : "rtl"}>
+              {words.map((w) => (
+                <WordChip key={w.pos} w={w} lang={ctx.isNT ? "grc" : "hbo"} onWord={ctx.onWord} />
+              ))}
+            </div>
+          ) : (
+            ctx.hasWords && <div className="cell words-missing">not in the {ctx.isNT ? "Greek" : "Hebrew"} text</div>
+          )}
         </div>
       )}
     </div>
@@ -291,6 +319,8 @@ function TextCell({ v, id, ctx }: { v: ChapterVerse; id: string; ctx: RowCtx }) 
 function OriginalCell({ words, ctx }: { words: Word[]; ctx: RowCtx }) {
   const shown = ctx.isNT ? words.filter((w) => !w.editions || w.editions.split("+").includes("SBL")) : words;
   const lang = ctx.isNT ? "grc" : "hbo";
+  // a verse the Greek or Hebrew does not have (John 1:52 in some numberings, Sirach 24:18): say so
+  if (shown.length === 0) return <div className="cell words-missing">not in the {ctx.isNT ? "Greek" : "Hebrew"} text</div>;
   return (
     <div className={`cell original ${ctx.isNT ? "greek" : "hebrew"}`} dir={ctx.isNT ? "ltr" : "rtl"} lang={lang}>
       {shown.map((w) => (

@@ -22,7 +22,9 @@ export function ReadPage() {
     rememberReading(book, ch);
   }, [book, ch]);
   const needsWords = settings.mode === "interlinear" || settings.mode === "original";
-  const editions = needsWords ? [...settings.editions, "tagnt", "tahot", "lxx"] : settings.editions;
+  // the reader's translations, then broad ones to fall back on (Psalm 151 is not in the KJV, Tobit not in the BSB)
+  const FALLBACK = ["web", "kjva", "brenton", "dra"];
+  const editions = [...new Set([...settings.editions, ...FALLBACK, ...(needsWords ? ["tagnt", "tahot", "lxx"] : [])])];
   const data = useChapter(book, ch, editions);
   const selected = params.get("v");
   const drag = useRef<number | null>(null); // pull-down-to-close on phones
