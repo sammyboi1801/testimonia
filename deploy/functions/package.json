@@ -1,0 +1,8 @@
+{
+  "name": "testimonia-edge",
+  "private": true,
+  "description": "Firebase Hosting → this function → the Testimonia server; Firebase's CDN caches the library's answers.",
+  "main": "index.js",
+  "engines": { "node": "22" },
+  "dependencies": { "firebase-functions": "^6.3.2", "firebase-admin": "^13.4.0" }
+}

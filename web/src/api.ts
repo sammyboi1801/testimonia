@@ -12,7 +12,9 @@ export class ApiError extends Error {
 
 /** Where the API lives: same origin by default, or a separate server (e.g. Cloud Run behind Firebase Hosting). */
 export const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/+$/, "") ?? "";
-export const apiUrl = (path: string) => `${API_BASE}${path}`;
+// the assistant streams its answers: it talks to the server directly (VITE_AGENT_BASE), never through a cache
+const AGENT_BASE = (import.meta.env.VITE_AGENT_BASE as string | undefined)?.replace(/\/+$/, "") ?? API_BASE;
+export const apiUrl = (path: string) => `${path.startsWith("/api/agent") ? AGENT_BASE : API_BASE}${path}`;
 
 export async function getJson<T>(path: string, params?: Record<string, string | number | undefined>): Promise<T> {
   const url = new URL(apiUrl(path), window.location.origin);

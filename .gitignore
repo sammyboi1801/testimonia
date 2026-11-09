@@ -39,3 +39,4 @@ web/.env
 deploy/dist/
 # Firebase CLI deploy cache
 deploy/.firebase/
+deploy/functions/node_modules/
