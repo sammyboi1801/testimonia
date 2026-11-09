@@ -15,6 +15,8 @@ const SYNCED = {
   "testimonia.ai.config": "assistant", // provider and model only; the API key is stored apart and never synced
   "testimonia.plans": "plans", // reading plan progress
   "testimonia.lastRead": "reading", // where you were reading
+  "testimonia.activity": "activity", // days with reading (streak)
+  "testimonia.profile": "profile", // the name you chose
 } as const;
 type Key = keyof typeof SYNCED;
 const KEYS = Object.keys(SYNCED) as Key[];
@@ -101,6 +103,7 @@ export function merge(key: Key, local: unknown, remote: unknown): unknown {
     }
     return [...byId.values()].sort((a, b) => (b.updated ?? "").localeCompare(a.updated ?? "")).slice(0, 100);
   }
+  if (key === "testimonia.activity") return [...new Set([...((remote as string[]) ?? []), ...((local as string[]) ?? [])])].sort().slice(-400);
   if (key === "testimonia.plans") {
     const out: Record<string, { start: string | null; done: number[] }> = { ...(remote as Record<string, { start: string | null; done: number[] }>) };
     for (const [id, p] of Object.entries(local as typeof out)) {

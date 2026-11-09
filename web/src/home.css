@@ -1,0 +1,130 @@
+/* The home desk: a daily Bible-app home in the Testimonia theme */
+.hm2 { --hm-w: 1180px; width: 100%; max-width: 100vw; overflow-x: clip; padding: 18px max(16px, calc((100% - var(--hm-w)) / 2)) 60px; box-sizing: border-box; display: grid; gap: 22px; }
+.hm-eyebrow { font-size: 11.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: rgb(255 255 255 / 0.78); }
+.hm-eyebrow.accent { color: var(--accent); }
+.hm-sub { font-size: 14px; line-height: 1.5; color: var(--muted); }
+.hm2 h2 { margin: 0; font-family: var(--font-display); font-weight: var(--display-weight); font-size: clamp(24px, 2.4vw, 30px); color: var(--ink); }
+
+/* name prompt */
+.hm-name { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 16px; border: 1px solid var(--accent); border-radius: 14px; background: var(--accent-soft); }
+.hm-name span { font-weight: 600; color: var(--ink); }
+.hm-name input { flex: 1; min-width: 160px; padding: 9px 12px; font: inherit; font-size: 16px; color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: 10px; }
+.hm-name .lp-btn { padding: 9px 18px; }
+
+/* verse of the day: full-bleed image, the verse in large type */
+.hm-votd {
+  position: relative; overflow: hidden; border-radius: 24px; min-height: 420px; display: flex;
+  background: #1b1712 var(--votd-img) center / cover no-repeat; box-shadow: 0 24px 70px rgb(0 0 0 / 0.35);
+}
+.hm-votd-shade { position: absolute; inset: 0; background: linear-gradient(100deg, rgb(16 12 8 / 0.92) 0%, rgb(16 12 8 / 0.78) 45%, rgb(16 12 8 / 0.35) 100%); }
+.hm-votd-inner { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 34px 38px; max-width: 760px; color: #f4ecdf; }
+.hm-votd-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; }
+.hm-date { font-size: 13px; color: rgb(255 255 255 / 0.62); }
+.hm-votd-text { margin: 6px 0 0; font-family: var(--font-display); font-weight: var(--display-weight); font-size: clamp(26px, 3.4vw, 42px); line-height: 1.22; color: #fbf6ee; }
+.hm-votd-ref { font-size: 16px; font-weight: 600; letter-spacing: 0.02em; color: #e8b88a; }
+.hm-votd-father {
+  display: grid; gap: 6px; max-width: 620px; padding: 14px 16px; border-left: 3px solid #e8b88a; border-radius: 0 12px 12px 0;
+  background: rgb(255 255 255 / 0.07); color: #efe5d6; text-decoration: none; background-image: none; backdrop-filter: blur(6px);
+}
+.hm-father-snip { font-family: var(--font-text); font-size: 16px; line-height: 1.5; font-style: italic; color: rgb(255 255 255 / 0.86); }
+.hm-votd-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.lp-btn.glass { background: rgb(255 255 255 / 0.1); border-color: rgb(255 255 255 / 0.22); color: #fbf6ee; backdrop-filter: blur(8px); }
+.lp-btn.glass:hover { background: rgb(255 255 255 / 0.18); border-color: rgb(255 255 255 / 0.4); }
+
+/* today */
+.hm-today { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; }
+.hm-today.with-plan { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 0.9fr); }
+.hm-card {
+  display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 22px; border: 1px solid var(--rule); border-radius: 20px;
+  background: var(--panel); color: inherit; text-decoration: none; background-image: none;
+}
+a.hm-card { transition: border-color 0.15s ease, transform 0.15s ease; }
+a.hm-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.hm-title { font-family: var(--font-display); font-weight: var(--display-weight); font-size: clamp(26px, 2.6vw, 34px); line-height: 1.1; color: var(--ink); }
+.hm-quote { margin: 2px 0 0; font-family: var(--font-text); font-size: 17px; line-height: 1.55; color: var(--ink-soft); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.hm-progress { display: flex; align-items: center; gap: 12px; margin-top: auto; padding-top: 8px; font-size: 12.5px; color: var(--muted); }
+.hm-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--rule); overflow: hidden; }
+.hm-bar i { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+.hm-big { font-family: var(--font-display); font-size: 52px; line-height: 1; color: var(--ink); }
+.hm-big small { font-size: 20px; color: var(--muted); }
+.hm-week { display: flex; justify-content: space-between; gap: 4px; margin: 6px 0; }
+.hm-week span { display: grid; justify-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+.hm-week i { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--rule); }
+.hm-week .on i { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* quick links */
+.hm-go { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.hm-go a { display: grid; gap: 2px; padding: 14px 16px; border: 1px solid var(--rule); border-radius: 14px; background: var(--panel); text-decoration: none; background-image: none; }
+.hm-go a:hover { border-color: var(--accent); }
+.hm-go strong { font-size: 15px; color: var(--ink); }
+.hm-go span { font-size: 12.5px; color: var(--muted); }
+
+/* sections */
+.hm-section { display: grid; gap: 14px; }
+.hm-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.hm-section-head a { font-size: 14px; font-weight: 600; color: var(--accent); }
+
+/* plan covers, a sideways shelf */
+.hm-shelf { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(210px, 240px); gap: 14px; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+.hm-cover { display: grid; gap: 6px; align-content: start; scroll-snap-align: start; text-decoration: none; background-image: none; color: inherit; }
+.hm-cover-img { position: relative; aspect-ratio: 4 / 3; border-radius: 16px; background-size: cover; background-position: center; border: 1px solid var(--rule); overflow: hidden; transition: transform 0.25s ease; }
+.hm-cover-img::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 40%, rgb(0 0 0 / 0.55)); }
+.hm-cover-img span { position: absolute; left: 10px; bottom: 10px; z-index: 1; padding: 3px 10px; border-radius: 999px; background: rgb(0 0 0 / 0.55); color: #fff; font-size: 12px; font-weight: 600; }
+.hm-cover:hover .hm-cover-img { transform: translateY(-3px); }
+.hm-cover strong { font-family: var(--font-display); font-weight: var(--display-weight); font-size: 19px; line-height: 1.2; color: var(--ink); }
+.hm-cover .hm-sub { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 13px; }
+
+/* get started */
+.hm-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.hm-step { display: grid; gap: 6px; align-content: start; padding: 18px; border: 1px solid var(--rule); border-radius: 16px; background: var(--panel); color: inherit; font: inherit; text-align: left; text-decoration: none; background-image: none; cursor: pointer; }
+.hm-step:hover { border-color: var(--accent); }
+.hm-step b { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 14px; }
+.hm-step strong { font-size: 16px; color: var(--ink); }
+.hm-step span { font-size: 13.5px; line-height: 1.45; color: var(--muted); }
+
+/* your study */
+.hm-study { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.hm-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.hm-list li { border-bottom: 1px solid color-mix(in srgb, var(--rule) 55%, transparent); min-width: 0; }
+.hm-list li:last-child { border-bottom: 0; }
+.hm-list a, .hm-row {
+  display: flex; align-items: baseline; gap: 8px; width: 100%; min-width: 0; padding: 9px 0; border: 0; background: none;
+  color: var(--ink); font: inherit; font-size: 14.5px; text-align: left; text-decoration: none; background-image: none; cursor: pointer;
+}
+.hm-list b { flex: none; font-weight: 600; }
+.hm-row b { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hm-snip { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-soft); }
+.hm-when { flex: none; margin-left: auto; font-size: 12px; color: var(--muted); }
+.hm-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--hl); flex: none; align-self: center; }
+.hm-colours { display: flex; flex-wrap: wrap; gap: 6px; }
+.hm-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border: 1px solid var(--rule); border-radius: 999px; font-size: 12.5px; color: var(--ink-soft); }
+
+/* explore: image tiles */
+.hm-explore { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.hm-tile {
+  position: relative; display: flex; align-items: flex-end; min-height: 150px; border-radius: 18px; overflow: hidden; border: 1px solid var(--rule);
+  background-size: cover; background-position: center; text-decoration: none; background-image: none; transition: transform 0.2s ease;
+}
+.hm-tile::before { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 20%, rgb(10 8 5 / 0.85)); }
+.hm-tile div { position: relative; display: grid; gap: 2px; padding: 14px 16px; }
+.hm-tile strong { font-family: var(--font-display); font-size: 21px; color: #fbf6ee; }
+.hm-tile span { font-size: 13px; color: rgb(255 255 255 / 0.75); }
+.hm-tile:hover { transform: translateY(-3px); }
+
+@media (max-width: 900px) {
+  .hm-today, .hm-today.with-plan { grid-template-columns: minmax(0, 1fr); }
+  .hm-go { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hm-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hm-explore { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .hm2 { gap: 16px; padding-top: 12px; }
+  .hm-votd { min-height: 0; border-radius: 20px; }
+  .hm-votd-inner { padding: 24px 20px; }
+  .hm-votd-shade { background: linear-gradient(180deg, rgb(16 12 8 / 0.7), rgb(16 12 8 / 0.92)); }
+  .hm-votd-actions .lp-btn { flex: 1 1 calc(50% - 8px); padding: 11px 12px; font-size: 14px; }
+  .hm-go { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hm-go a:last-child { grid-column: 1 / -1; }
+  .hm-steps, .hm-explore { grid-template-columns: minmax(0, 1fr); }
+  .hm-tile { min-height: 120px; }
+}
