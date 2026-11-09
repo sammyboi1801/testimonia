@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import mimetypes
 from pathlib import Path
+from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -51,6 +52,21 @@ def create_app(db_path: Path | None = None, dist: Path = DIST, agent_allow_priva
     app = FastAPI(title="Testimonia", version=__version__, docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.state.store = Store(db_path or config.CORE_DB)
     app.add_middleware(GZipExceptStreams)
+
+    # the library's data only changes when the database is rebuilt: let browsers keep it for an hour
+    @app.middleware("http")
+    async def cache_library(request: Request, call_next: Any) -> Any:
+        response = await call_next(request)
+        path = request.url.path
+        if (
+            request.method == "GET"
+            and path.startswith("/api/")
+            and not path.startswith("/api/agent")
+            and response.status_code == 200
+        ):
+            response.headers.setdefault("Cache-Control", "public, max-age=3600")
+        return response
+
     # a front-end hosted elsewhere (e.g. Firebase Hosting) may call this API: TESTIMONIA_CORS_ORIGINS=https://a,https://b
     origins = [o.strip() for o in (config.setting("CORS_ORIGINS", "") or "").split(",") if o.strip()]
     if origins:

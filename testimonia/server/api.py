@@ -53,9 +53,21 @@ def _verse_key(osis: str) -> int:
 # ----------------------------------------------------------------------------- meta
 
 
+_META_CACHE: dict[int, dict[str, Any]] = {}
+
+
 @router.get("/meta")
 def meta(request: Request) -> dict[str, Any]:
+    """The library's summary. It only changes with the database, so it is built once per database and kept."""
     s = store(request)
+    key = id(s)
+    if key not in _META_CACHE:
+        _META_CACHE.clear()
+        _META_CACHE[key] = _build_meta(s)
+    return _META_CACHE[key]
+
+
+def _build_meta(s: Store) -> dict[str, Any]:
     editions = s.all(
         "SELECT id, title, abbrev, language, script_dir, kind, testament, versification_id, year, description, sort "
         # manuscript transcriptions are read on their manuscript's page, not offered as reading texts
