@@ -16,6 +16,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from .. import __version__, config
 from .agent import router as agent_router
 from .api import router
+from .daily import router as daily_router
 from .geography import router as geography_router
 from .manuscripts import router as manuscripts_router
 from .reading import router as reading_router
@@ -78,6 +79,7 @@ def create_app(db_path: Path | None = None, dist: Path = DIST, agent_allow_priva
         )
     app.include_router(router)
     app.include_router(geography_router)
+    app.include_router(daily_router)
     app.include_router(agent_router)
     app.include_router(study_router)
     app.include_router(reading_router)

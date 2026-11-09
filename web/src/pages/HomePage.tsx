@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { useChapter, useMeta, useVerse } from "../api";
+import { useQuery } from "@tanstack/react-query";
+import { getJson, useChapter, useMeta, useVerse } from "../api";
 import { openAsk } from "../components/AskDrawer";
 import { HIGHLIGHTS, useNotes } from "../notes";
 import { openMap, usePins } from "../pins";
@@ -13,14 +14,6 @@ import "../home.css";
 /** The study desk, built like the daily home of a Bible app: one verse for today, your reading and your plans,
  *  then what you have kept. Sections with nothing in them give way to suggestions instead of empty boxes. */
 
-// a verse for each day of the year, chosen from passages the early church quoted often
-const DAILY = [
-  "John.1.1", "Ps.23.1", "Isa.53.5", "Rom.8.28", "Matt.5.3", "John.3.16", "Phil.4.13", "Prov.3.5", "Gen.1.1", "Ps.46.10",
-  "Isa.40.31", "Matt.11.28", "John.14.6", "Rom.12.2", "Heb.11.1", "1Cor.13.4", "Gal.2.20", "Eph.2.8", "Ps.119.105", "Mic.6.8",
-  "John.1.14", "Lam.3.22", "Ps.51.10", "Isa.9.6", "Matt.6.33", "John.8.12", "Rom.5.8", "2Cor.5.17", "Col.1.15", "Heb.4.12",
-  "Ps.27.1", "Isa.43.2", "Jer.29.11", "Matt.28.19", "John.15.5", "Rom.10.9", "1John.4.8", "Rev.21.4", "Deut.6.4", "Ps.139.14",
-  "Isa.55.8", "Luke.1.37", "John.11.25", "Acts.2.38", "Phil.2.5", "Jas.1.5", "1Pet.5.7", "Ps.90.2", "Wis.7.26", "Sir.2.1",
-];
 const IMAGES = ["p66", "sinaiticus", "leningrad", "ignatius", "nicaea", "jerome", "kjv", "titus", "p52"];
 const COVERS = ["sinaiticus", "p66", "jerome", "leningrad", "ignatius", "nicaea", "kjv", "titus"];
 
@@ -63,17 +56,35 @@ function streak(days: string[]): { count: number; week: boolean[] } {
 
 // ----------------------------------------------------------------------------- verse of the day
 
+interface Early {
+  year: number | null;
+  snippet: string | null;
+  author: string | null;
+  work: string | null;
+}
+interface Daily {
+  osis: string | null;
+  occasion?: string | null;
+  early: Early | null;
+  pre_nicene_works?: number;
+  because?: string;
+}
+/** The reader's own date, so the verse changes at their midnight. */
+const today = () => isoDate(new Date());
+const useDaily = () => useQuery({ queryKey: ["daily", today()], queryFn: () => getJson<Daily>("/api/daily", { date: today() }), staleTime: 3_600_000 });
+
 function VerseOfTheDay({ name }: { name: string }) {
-  const osis = DAILY[dayOfYear() % DAILY.length]!;
+  const daily = useDaily();
+  const osis = daily.data?.osis ?? null;
   const img = IMAGES[dayOfYear() % IMAGES.length]!;
   const { data } = useVerse(osis);
   const meta = useMeta();
   const books = meta.data?.books ?? [];
   const text = data?.texts.find((t) => t.edition_id === "bsb")?.text ?? data?.texts.find((t) => t.edition_id === "web")?.text ?? data?.texts[0]?.text;
-  // the earliest writer who quoted it
-  const early = [...(data?.fathers ?? [])].filter((f) => f.year !== null && f.snippet && f.author).sort((a, b) => (a.year ?? 9999) - (b.year ?? 9999))[0];
+  const early = daily.data?.early ?? null; // the earliest named writer who quoted it
   const key = data?.words.tagnt?.[0] ?? data?.words.tahot?.[0];
-  const label = osisLabel(osis, books);
+  const label = osis ? osisLabel(osis, books) : "";
+  const occasion = daily.data?.occasion;
   return (
     <section className="hm-votd" style={{ ["--votd-img" as string]: `url(/landing/${img}.jpg)` }}>
       <div className="hm-votd-shade" />
@@ -81,34 +92,49 @@ function VerseOfTheDay({ name }: { name: string }) {
         <div className="hm-votd-top">
           <span className="hm-eyebrow">
             {greeting()}
-            {name ? `, ${name}` : ""} · Verse of the day
+            {name ? `, ${name}` : ""} · {occasion ?? "Verse of the day"}
           </span>
           <span className="hm-date">{new Date().toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" })}</span>
         </div>
-        <blockquote className="hm-votd-text">{text ? `“${text}”` : "…"}</blockquote>
-        <div className="hm-votd-ref">{label}</div>
-        {early && (
+        {text ? (
+          <blockquote className="hm-votd-text">“{text}”</blockquote>
+        ) : (
+          <div className="hm-votd-skel" aria-label="Loading the verse">
+            <i />
+            <i />
+            <i />
+          </div>
+        )}
+        <div className="hm-votd-ref">
+          {label}
+          {daily.data?.pre_nicene_works ? <span className="hm-votd-count"> · quoted in {daily.data.pre_nicene_works} works before Nicaea</span> : null}
+        </div>
+        {early && osis && (
           <Link className="hm-votd-father" to={`${verseUrl(osis)}&t=fathers`}>
-            <span className="hm-eyebrow">Quoted by {early.author ?? "an early writer"}, {early.year !== null ? formatYear(early.year) : ""}</span>
+            <span className="hm-eyebrow">
+              Quoted by {early.author ?? "an early writer"}
+              {early.work ? `, ${early.work}` : ""}
+              {early.year !== null ? ` · ${formatYear(early.year)}` : ""}
+            </span>
             <span className="hm-father-snip">{early.snippet!.replace(/<[^>]+>/g, "").slice(0, 170)}…</span>
           </Link>
         )}
         <div className="hm-votd-actions">
-          <Link className="lp-btn primary" to={verseUrl(osis)}>
+          <Link className="lp-btn primary" to={osis ? verseUrl(osis) : "/read/John/1"}>
             Read in context
           </Link>
           <button className="lp-btn glass" onClick={() => openAsk(label, `What did the early church make of ${label}?`)}>
             ✦ Ask about it
           </button>
           {key && (
-            <Link className="lp-btn glass" to={`${verseUrl(osis)}&t=words`}>
+            <Link className="lp-btn glass" to={osis ? `${verseUrl(osis)}&t=words` : "/read/John/1"}>
               The {data?.words.tagnt?.length ? "Greek" : "Hebrew"} words
             </Link>
           )}
           <button
             className="lp-btn glass"
             onClick={() => {
-              const share = { title: label, text: `${text ?? ""} — ${label}`, url: `${window.location.origin}${verseUrl(osis)}` };
+              const share = { title: label, text: `${text ?? ""} — ${label}`, url: `${window.location.origin}${osis ? verseUrl(osis) : "/"}` };
               if (navigator.share) void navigator.share(share).catch(() => undefined);
               else void navigator.clipboard?.writeText(`${share.text}\n${share.url}`);
             }}
@@ -118,6 +144,38 @@ function VerseOfTheDay({ name }: { name: string }) {
         </div>
       </div>
     </section>
+  );
+}
+
+// ----------------------------------------------------------------------------- for you
+
+function ForYouCard({ path }: { path: string }) {
+  const m = /^\/read\/([^/]+)\/(\d+)/.exec(path);
+  const book = m?.[1] ?? "John";
+  const ch = m?.[2] ?? "1";
+  const pick = useQuery({
+    queryKey: ["for-you", book, ch, today()],
+    queryFn: () => getJson<Daily>("/api/daily/for-you", { book, chapter: ch, date: today() }),
+    staleTime: 3_600_000,
+  });
+  const osis = pick.data?.osis ?? null;
+  const { data } = useVerse(osis);
+  const books = useMeta().data?.books ?? [];
+  const text = data?.texts.find((t) => t.edition_id === "bsb")?.text ?? data?.texts.find((t) => t.edition_id === "web")?.text ?? data?.texts[0]?.text;
+  if (!osis) return null;
+  return (
+    <Link className="hm-card hm-foryou" to={verseUrl(osis)}>
+      <span className="hm-eyebrow accent">For you</span>
+      <strong className="hm-title small">{osisLabel(osis, books)}</strong>
+      {text ? <p className="hm-quote">{text}</p> : <div className="hm-skel" />}
+      {pick.data?.because && <span className="hm-sub">Linked to {osisLabel(pick.data.because, books)}, which you were reading</span>}
+      {pick.data?.early?.author && (
+        <span className="hm-sub">
+          First quoted by {pick.data.early.author}
+          {pick.data.early.year !== null ? `, ${formatYear(pick.data.early.year)}` : ""}
+        </span>
+      )}
+    </Link>
   );
 }
 
@@ -132,23 +190,26 @@ function ContinueCard({ path }: { path: string }) {
   const info = meta.data?.books.find((b) => b.osis === book);
   const first = data?.verses.find((v) => v.verse >= 1);
   const text = first ? (first.texts.bsb ?? first.texts.web ?? first.texts.kjva)?.text : undefined;
-  const of = info?.chapters ?? 1;
+  const of = info?.chapters;
   return (
     <Link className="hm-card hm-continue" to={path}>
       <span className="hm-eyebrow accent">Continue reading</span>
       <strong className="hm-title">
-        {info?.name ?? book} {ch}
+        {info ? `${info.name} ${ch}` : "\u00a0"}
       </strong>
       {data?.headings[0]?.title && <span className="hm-sub">{data.headings[0].title}</span>}
       {text && <p className="hm-quote">{text.length > 200 ? `${text.slice(0, 200)}…` : text}</p>}
-      <div className="hm-progress">
-        <div className="hm-bar">
-          <i style={{ width: `${Math.round((100 * ch) / of)}%` }} />
+      {!text && <div className="hm-skel" />}
+      {of && (
+        <div className="hm-progress">
+          <div className="hm-bar">
+            <i style={{ width: `${Math.round((100 * ch) / of)}%` }} />
+          </div>
+          <span>
+            Chapter {ch} of {of}
+          </span>
         </div>
-        <span>
-          Chapter {ch} of {of}
-        </span>
-      </div>
+      )}
     </Link>
   );
 }
@@ -303,6 +364,7 @@ export default function HomePage() {
       <section className={`hm-today${plan ? " with-plan" : ""}`}>
         <ContinueCard path={lastReadingPath()} />
         {plan && <PlanToday plans={plans.data ?? []} />}
+        <ForYouCard path={lastReadingPath()} />
         <StreakCard />
       </section>
 
