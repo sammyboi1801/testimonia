@@ -11,3 +11,11 @@ web/dist
 *.db-*
 tests
 docs/screenshots
+**/*.db
+**/*.db-*
+deploy/oracle/data
+deploy/dist
+# settings and keys never go into an image
+**/.env
+**/.env.*
+!**/.env.example
