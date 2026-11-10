@@ -125,7 +125,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
               {g.commentary.length} comments
             </GlanceRow>
             <GlanceRow kind="fat" on={(g.commentaries?.length ?? 0) > 0} onClick={() => onTab("commentary")}>
-              {g.commentaries?.length ? `${g.commentaries.length} classic commentar${g.commentaries.length > 1 ? "ies" : "y"}: ${g.commentaries.map((c) => c.author.split(/['’ ]/)[0]).join(", ")}` : "No classic commentary on this verse"}
+              {g.commentaries?.length ? `${g.commentaries.length} classic commentar${g.commentaries.length > 1 ? "ies" : "y"}: ${g.commentaries.map((c) => SHORT_NAMES[c.commentary_id] ?? c.author).join(", ")}` : "No classic commentary on this verse"}
             </GlanceRow>
             <GlanceRow kind="quo" on={quotes.length > 0} onClick={() => onTab("links")}>
               {quotes.length ? `${quotes.length} Old ↔ New Testament link${quotes.length > 1 ? "s" : ""}` : "No OT ↔ NT quotation"} ·{" "}
@@ -299,6 +299,16 @@ function FathersTab({
     </>
   );
 }
+
+const SHORT_NAMES: Record<string, string> = {
+  "john-calvin": "Calvin",
+  "matthew-henry": "Henry",
+  "john-gill": "Gill",
+  "adam-clarke": "Clarke",
+  "keil-delitzsch": "Keil & Delitzsch",
+  "jamieson-fausset-brown": "JFB",
+  tyndale: "Tyndale",
+};
 
 /** The classic commentaries, oldest first. Long notes start folded. */
 function CommentaryTab({ notes, verse, onWord }: { notes: ClassicNote[]; verse: number; onWord: (s: string) => void }) {
