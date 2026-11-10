@@ -323,10 +323,19 @@ function CommentaryNote({ c, verse, onWord }: { c: ClassicNote; verse: number; o
   const from = c.start_vkey % 1000;
   const to = c.end_vkey % 1000;
   const range = from === to ? `v. ${from}` : to >= 999 ? `from v. ${from}` : `vv. ${from}–${to}`;
+  // a line to read while folded: the note's first words, past any heading like "Ephesians 2:4-7"
+  const preview = c.html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&[a-z]+;|&#\d+;/g, " ")
+    .replace(/^\s*(?:[1-3]?\s?[A-Za-z]+\.?\s+\d+:\d+(?:[-–]\d+)?\s*)/, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 140);
   return (
-    <section className="block open comm-note">
+    <section className="block comm-note">
       <h3>
         {c.author} <span className="muted small">{formatYear(c.year)} · {c.kind === "study-notes" ? "study notes" : "commentary"}{from !== verse || to !== verse ? ` · on ${range}` : ""}</span>
+        <span className="comm-preview">{preview}…</span>
       </h3>
       <div className={open ? "" : "comm-clamp"}>
         <Html html={c.html} className="comm-text" onWord={onWord} />
