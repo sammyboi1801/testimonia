@@ -397,9 +397,17 @@ export function Chat({
 
   return (
     <div className={compact ? "ask-chat compact" : "ask-chat"}>
+      <div className="ask-top">{/* pinned: model, history and settings stay in reach in a long chat */}
       <header className="ask-head">
         {!compact && <h1>Ask</h1>}
-        <button className="ask-model" onClick={() => setSetup(!setup)} title="Choose the model">
+        <button
+          className="ask-model"
+          onClick={() => {
+            const next = !setup;
+            setSetup(next);
+          }}
+          title="Choose the model and API key"
+        >
           <span className="muted small">Model</span> {preset.label}
           {config.model && <span className="muted"> · {config.model}</span>} ▾
         </button>
@@ -483,6 +491,7 @@ export function Chat({
           </button>
         </section>
       )}
+      </div>
 
       <div className="ask-thread" onClick={onAnswerClick}>
         {messages.length === 0 && (

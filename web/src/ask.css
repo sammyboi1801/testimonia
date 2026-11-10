@@ -274,3 +274,6 @@ mark.phrase { color: inherit; padding: 0.04em 0; border-radius: 2px; background:
 .account-leave p { margin: 0; }
 .account-check { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; color: var(--ink); cursor: pointer; }
 .account-check input { margin-top: 3px; accent-color: var(--accent); }
+/* the chat's top row (model · history · new) stays in reach however long the conversation grows */
+.ask-top { position: sticky; top: 0; z-index: 5; flex: none; background: var(--bg); padding-block: 4px; box-shadow: 0 8px 12px -10px rgb(0 0 0 / 0.3); max-height: 70dvh; overflow-y: auto; overscroll-behavior: contain; }
+.ask-top .ask-head { padding-block: 6px; }
