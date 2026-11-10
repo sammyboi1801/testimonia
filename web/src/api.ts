@@ -79,7 +79,8 @@ export const useChapter = (book: string, chapter: number, editions: string[]) =>
 export const useVerse = (osis: string | null) =>
   useQuery({
     queryKey: ["verse", osis],
-    queryFn: () => getJson<VerseGuide>(`/api/verse/${osis}`),
+    // ?r= changes whenever the verse data does, so the CDN's cached copies are not served after an update
+    queryFn: () => getJson<VerseGuide>(`/api/verse/${osis}`, { r: 2 }),
     enabled: !!osis,
     ...FOREVER,
   });
