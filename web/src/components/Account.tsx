@@ -12,6 +12,7 @@ const STATUS: Record<string, string> = {
 export function AccountButton() {
   const s = useSync();
   const [open, setOpen] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -47,8 +48,9 @@ export function AccountButton() {
           <p className="muted small">
             Your notes, highlights, pins, saved sets, chats and settings are kept with your account. Assistant API keys stay on this device only.
           </p>
-          <div className="account-actions">
-            <button className="btn" onClick={() => void signOut().then(() => setOpen(false))}>
+          {leaving && <SignOutStep onDone={() => { setLeaving(false); setOpen(false); }} onCancel={() => setLeaving(false)} />}
+          <div className="account-actions" hidden={leaving}>
+            <button className="btn" onClick={() => setLeaving(true)}>
               Sign out
             </button>
             <button
@@ -125,6 +127,61 @@ function SignInCard() {
           Forgot password?
         </button>
       </form>
+    </div>
+  );
+}
+
+/** Sign out: what leaves this device, and whether the assistant's key goes too. */
+function SignOutStep({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
+  const hasKey = (() => {
+    try {
+      return !!(localStorage.getItem("testimonia.ai.key") || sessionStorage.getItem("testimonia.ai.key"));
+    } catch {
+      return false;
+    }
+  })();
+  const [forgetKey, setForgetKey] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [unsynced, setUnsynced] = useState(false);
+  const go = async (force: boolean) => {
+    setBusy(true);
+    const ok = await signOut({ forgetKey, force });
+    setBusy(false);
+    if (ok) onDone();
+    else setUnsynced(true);
+  };
+  return (
+    <div className="account-leave">
+      <strong>Sign out of this device?</strong>
+      <p className="muted small">
+        Your notes, highlights, places, conversations, plans and reading position are saved to your account first, then removed from this
+        device. They come back when you sign in again. Theme and text size stay.
+      </p>
+      {hasKey && (
+        <label className="account-check">
+          <input type="checkbox" checked={forgetKey} onChange={(e) => setForgetKey(e.target.checked)} />
+          Also remove my assistant API key from this device
+        </label>
+      )}
+      {unsynced && (
+        <p className="account-error">
+          Some changes couldn’t be saved to your account (are you offline?). Signing out now would lose them from this device.
+        </p>
+      )}
+      <div className="account-actions">
+        {unsynced ? (
+          <button className="btn danger" disabled={busy} onClick={() => void go(true)}>
+            Sign out anyway
+          </button>
+        ) : (
+          <button className="btn primary" disabled={busy} onClick={() => void go(false)}>
+            {busy ? "Saving…" : "Sign out"}
+          </button>
+        )}
+        <button className="btn" disabled={busy} onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }

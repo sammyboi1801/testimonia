@@ -158,17 +158,19 @@ function writeLocal(key: Key, json: string) {
   window.dispatchEvent(new CustomEvent(REMOTE_EVENT, { detail: key }));
 }
 
-async function upload(key: Key) {
+async function upload(key: Key): Promise<boolean> {
   const f = await firebase();
-  if (!f || !uid) return;
+  if (!f || !uid) return false;
   setState({ status: "saving" });
   try {
     const value = parse(localStorage.getItem(key));
     const { doc, setDoc, serverTimestamp } = f.mod.store;
     await setDoc(doc(f.db, "users", uid, "blobs", SYNCED[key]), { json: fit(key, value), updated: serverTimestamp() });
     setState({ status: "synced" });
+    return true;
   } catch (e) {
     setState({ status: "error", error: String(e) });
+    return false;
   }
 }
 
@@ -291,9 +293,37 @@ export async function resetPassword(email: string): Promise<string | null> {
   }
 }
 
-export async function signOut(): Promise<void> {
+/** Send every waiting change to the account now. False if any did not get there (offline, error). */
+export async function flush(): Promise<boolean> {
+  timers.forEach((t) => window.clearTimeout(t));
+  timers.clear();
+  if (!uid) return true;
+  if (!navigator.onLine) return false;
+  const done = await Promise.all(KEYS.filter((k) => localStorage.getItem(k) !== null).map((k) => upload(k)));
+  return done.every(Boolean);
+}
+
+/** Sign out: everything kept with the account is first saved to it, then removed from this device (it comes back
+ *  on signing in). Display settings stay; the assistant's API key goes too only if asked. Returns false, doing
+ *  nothing, when changes could not be saved, unless `force`. */
+export async function signOut(opts: { forgetKey?: boolean; force?: boolean } = {}): Promise<boolean> {
   const f = await firebase();
-  if (f) await f.mod.auth.signOut(f.auth);
+  if (!f) return true;
+  if (!(await flush()) && !opts.force) return false;
+  unsubs.splice(0).forEach((u) => u());
+  await f.mod.auth.signOut(f.auth);
+  for (const key of KEYS) {
+    if (key === "testimonia.settings.v1") continue; // theme, text size, layout: the device's
+    localStorage.removeItem(key);
+    window.dispatchEvent(new CustomEvent(REMOTE_EVENT, { detail: key })); // the open pages empty themselves
+  }
+  localStorage.removeItem("testimonia.ai.chat.current");
+  localStorage.removeItem("testimonia.ai.current");
+  if (opts.forgetKey) {
+    localStorage.removeItem("testimonia.ai.key");
+    sessionStorage.removeItem("testimonia.ai.key");
+  }
+  return true;
 }
 
 /** Delete everything stored for this account, and the account. What is on this device stays. */

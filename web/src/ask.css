@@ -270,3 +270,7 @@ mark.phrase { color: inherit; padding: 0.04em 0; border-radius: 2px; background:
   }
   .topbar.menu-open .account-avatar { width: 34px; height: 34px; }
 }
+.account-leave { display: grid; gap: 8px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--rule); }
+.account-leave p { margin: 0; }
+.account-check { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; color: var(--ink); cursor: pointer; }
+.account-check input { margin-top: 3px; accent-color: var(--accent); }
