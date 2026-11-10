@@ -12,6 +12,12 @@
 
 <p align="center">
   <a href="https://testimonia.web.app"><strong>Open Testimonia → testimonia.web.app</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://youtu.be/h9i3pAjD67E">Watch the 1-minute demo</a>
+</p>
+
+<p align="center">
+  <a href="https://youtu.be/h9i3pAjD67E"><img src="https://img.youtube.com/vi/h9i3pAjD67E/maxresdefault.jpg" width="720" alt="Testimonia demo video"></a>
 </p>
 
 <p align="center">
