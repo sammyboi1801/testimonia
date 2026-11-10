@@ -5,9 +5,13 @@
 <h1 align="center">Testimonia</h1>
 
 <p align="center">
-  <strong>The Bible and its earliest witnesses.</strong><br>
-  An open-source study library for the Hebrew and Greek Scriptures, their translations, the manuscripts that
-  carry them, and the first Christian writers who quoted them. Built entirely on open data.
+  <strong>A free online study Bible.</strong><br>
+  Translations side by side with the Hebrew and Greek, manuscript differences, classic commentaries, and the
+  early Christian writers who quoted each verse. Open source, built entirely on open data.
+</p>
+
+<p align="center">
+  <a href="https://testimonia.web.app"><strong>Open Testimonia → testimonia.web.app</strong></a>
 </p>
 
 <p align="center">
