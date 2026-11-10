@@ -39,7 +39,7 @@ import "./rulers.css";
 import "./mobile.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { lazy, StrictMode, Suspense } from "react";
+import { lazy, StrictMode, Suspense, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -82,6 +82,12 @@ const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, ref
 
 function App() {
   const location = useLocation();
+  // one anonymous count per page: the path only (/read/John/3), never the verse, search or anything about the reader
+  useEffect(() => {
+    const gc = (window as Window & { goatcounter?: { count?: (o: { path: string }) => void } }).goatcounter;
+    const t = setTimeout(() => gc?.count?.({ path: location.pathname }), 1000);
+    return () => clearTimeout(t);
+  }, [location.pathname]);
   return (
     <div className="app">
       <TopBar />

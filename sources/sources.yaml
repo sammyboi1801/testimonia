@@ -933,9 +933,10 @@ sources:
   - id: helloao-commentaries
     name: HelloAO Free Use Bible API — public-domain commentaries
     url: https://bible.helloao.org/
-    download: "per-chapter JSON (api/c/{id}/{book}/{ch}.json)"
+    download: "per-chapter JSON (api/c/{id}/{book}/{ch}.json), downloaded by tools/fetch_helloao.py into raw/helloao-commentaries"
     license: PD (Henry, JFB, Clarke, Gill, Keil-Delitzsch, Calvin); Tyndale Open Study Notes CC-BY-SA-4.0
-    attribution: "Commentaries via the HelloAO Free Use Bible API"
+    attribution: "Matthew Henry, Jamieson-Fausset-Brown, John Gill, Adam Clarke, John Calvin and Keil & Delitzsch (public domain), and the Tyndale Open Study Notes (© Tyndale House Publishers, CC BY-SA 4.0), via the HelloAO Free Use Bible API"
+    share_alike: true
     feeds: [commentary, commentary_entry]
     phase: 4
 

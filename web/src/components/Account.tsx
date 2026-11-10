@@ -1,3 +1,4 @@
+import { InstallButton } from "./Install";
 import { useEffect, useRef, useState } from "react";
 import { deleteAccount, resetPassword, signIn, signInWithEmail, signOut, syncAvailable, useSync } from "../sync";
 
@@ -50,6 +51,7 @@ export function AccountButton() {
           </p>
           {leaving && <SignOutStep onDone={() => { setLeaving(false); setOpen(false); }} onCancel={() => setLeaving(false)} />}
           <div className="account-actions" hidden={leaving}>
+            <InstallButton />
             <button className="btn" onClick={() => setLeaving(true)}>
               Sign out
             </button>

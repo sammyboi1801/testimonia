@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getJson, useChapter, useMeta, useVerse } from "../api";
 import { openAsk } from "../components/AskDrawer";
+import { InstallCard } from "../components/Install";
 import { HIGHLIGHTS, useNotes } from "../notes";
 import { openMap, usePins } from "../pins";
 import { isoDate, loadProgress, usePlans, type PlanSummary } from "../readingApi";
@@ -366,6 +367,7 @@ export default function HomePage() {
         {plan && <PlanToday plans={plans.data ?? []} />}
         <ForYouCard path={lastReadingPath()} />
         <StreakCard />
+        <InstallCard />
       </section>
 
       <nav className="hm-go" aria-label="Go to">

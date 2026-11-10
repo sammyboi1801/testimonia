@@ -412,8 +412,8 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 ### HelloAO Free Use Bible API — public-domain commentaries
 
 - **Source:** <https://bible.helloao.org/>
-- **Licence:** PD (Henry, JFB, Clarke, Gill, Keil-Delitzsch, Calvin); Tyndale Open Study Notes CC-BY-SA-4.0
-- **Credit:** Commentaries via the HelloAO Free Use Bible API
+- **Licence:** PD (Henry, JFB, Clarke, Gill, Keil-Delitzsch, Calvin); Tyndale Open Study Notes CC-BY-SA-4.0 *(ShareAlike)*
+- **Credit:** Matthew Henry, Jamieson-Fausset-Brown, John Gill, Adam Clarke, John Calvin and Keil & Delitzsch (public domain), and the Tyndale Open Study Notes (© Tyndale House Publishers, CC BY-SA 4.0), via the HelloAO Free Use Bible API
 - **Used for:** `commentary`, `commentary_entry`
 
 ### Itiner-e — Roman road network

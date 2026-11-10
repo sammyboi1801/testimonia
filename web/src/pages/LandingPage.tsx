@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { InstallButton } from "../components/Install";
 import { Link, Navigate } from "react-router-dom";
 import { useChapter, useMeta } from "../api";
 import { openAsk } from "../components/AskDrawer";
@@ -25,7 +26,7 @@ const HISTORY: { year: string; title: string; text: string; img: string; to: str
 const FEATURES: { kicker: string; title: string; text: ReactNode; img: string; to: string; cta: string }[] = [
   {
     kicker: "Original languages",
-    title: "Every Greek and Hebrew word, under the text",
+    title: "Greek and Hebrew, word by word",
     text: "Read any chapter word by word: the Hebrew Bible, the Greek New Testament and the Greek Septuagint, each word with its gloss and parsing. Tap a word for its full study — what it means, how it is translated, every place it occurs.",
     img: "shot-interlinear.jpg",
     to: "/read/John/1",
@@ -33,7 +34,7 @@ const FEATURES: { kicker: string; title: string; text: ReactNode; img: string; t
   },
   {
     kicker: "Manuscripts",
-    title: "Where the copies differ, explained in plain words",
+    title: "Where the manuscripts differ",
     text: "Some 15,000 places where the printed editions or the manuscripts read differently — “God” or “Son” at John 1:18 — with the papyri and codices that read each way, and the text as the earliest manuscripts actually wrote it.",
     img: "shot-variants.jpg",
     to: "/read/John/1?v=John.1.18&t=text",
@@ -41,7 +42,7 @@ const FEATURES: { kicker: string; title: string; text: ReactNode; img: string; t
   },
   {
     kicker: "The church fathers",
-    title: "Who quoted each verse first, and when",
+    title: "Early quotations of each verse",
     text: "Tens of thousands of quotations from the early church — Ignatius, Justin, Irenaeus, Tertullian, Origen and the rest — linked to the verse they quote, dated, and opened in the full text of the work they wrote.",
     img: "shot-fathers.jpg",
     to: "/read/John/1?v=John.1.1&t=fathers",
@@ -49,7 +50,7 @@ const FEATURES: { kicker: string; title: string; text: ReactNode; img: string; t
   },
   {
     kicker: "The land",
-    title: "The places of a passage, on a map beside it",
+    title: "Maps",
     text: "Every place a chapter names, numbered in the order the text names them. Follow Paul through Acts, pin the places you are studying, save them as sets, and measure the walk from one town to the next.",
     img: "shot-map.jpg",
     to: "/read/Acts/13",
@@ -57,7 +58,7 @@ const FEATURES: { kicker: string; title: string; text: ReactNode; img: string; t
   },
   {
     kicker: "The times",
-    title: "Who ruled, what happened, who was writing",
+    title: "Timeline",
     text: "A timeline of kings, governors and emperors, events and writers from the monarchy of Israel to the Council of Chalcedon — and for any verse, who was ruling when it happened.",
     img: "shot-timeline.jpg",
     to: "/library?view=timeline",
@@ -65,7 +66,7 @@ const FEATURES: { kicker: string; title: string; text: ReactNode; img: string; t
   },
   {
     kicker: "The library",
-    title: "Read the early church in its own words",
+    title: "Early Christian writings",
     text: "The Apostolic Fathers, the apologists and the great teachers of the first centuries, with Josephus, Tacitus and Pliny — every work readable in full, every Scripture it quotes one tap away.",
     img: "shot-reader.jpg",
     to: "/library",
@@ -159,11 +160,11 @@ export default function LandingPage() {
       {/* ------------------------------------------------------------------ hero */}
       <section className="lp-hero">
         <div className="lp-hero-text">
-          <p className="lp-kicker">A free, open-source Bible study library</p>
-          <h1>The Bible and its earliest witnesses</h1>
+          <p className="lp-kicker">Free · Open source · No ads</p>
+          <h1>A free online study Bible</h1>
           <p className="lp-lede">
-            Read the Hebrew and Greek with the translations, see where the manuscripts differ, and find which early Christians quoted each verse —
-            with a map, a timeline and an assistant that knows the whole library.
+            Translations side by side with the Hebrew and Greek, notes on where the manuscripts differ, and the early Christian writers who
+            quoted each verse. Plus maps, a timeline and an optional AI assistant.
           </p>
           <div className="lp-actions">
             {returning ? (
@@ -178,13 +179,14 @@ export default function LandingPage() {
             <Link className="lp-btn" to="/library">
               Browse the library
             </Link>
+            <InstallButton className="lp-btn" label="Install app" />
             {syncAvailable && !sync.user && (
               <button className="lp-btn ghost" onClick={() => void signIn()}>
                 Sign in to sync
               </button>
             )}
           </div>
-          <p className="lp-note">Free · No ads, no tracking · Works on your phone · Install it like an app</p>
+          <p className="lp-note">Free · No ads, no tracking · Use it in your browser or install it as an app</p>
         </div>
         <div className="lp-columns" aria-hidden>
           {[HISTORY.slice(0, 5), HISTORY.slice(4)].map((col, i) => (
@@ -225,11 +227,10 @@ export default function LandingPage() {
       <section className="lp-section lp-split">
         <div>
           <p className="lp-kicker">Try it here</p>
-          <h2>One verse, everything behind it</h2>
+          <h2>Try a verse</h2>
           <p className="lp-body">
-            This is the library itself, not a picture of it. Every verse of the Bible opens like this: the text in your translations, the original
-            words, how the manuscripts read it, who in the early church quoted it, the places and people it names, and what was happening in the
-            world when it was written.
+            Tap a verse to see the original words, manuscript differences, early quotations, and the places and people it
+            mentions.
           </p>
           <Link className="lp-link" to="/read/John/1">
             Read John 1 →
@@ -249,7 +250,7 @@ export default function LandingPage() {
       {/* ------------------------------------------------------------------ features */}
       <section className="lp-section">
         <p className="lp-kicker center">What is inside</p>
-        <h2 className="center">A whole study library, in one place</h2>
+        <h2 className="center">What’s in it</h2>
         <div className="lp-features">
           {FEATURES.map((f, i) => (
             <article key={f.title} className={`lp-feature${i % 2 ? " flip" : ""}`}>
@@ -273,10 +274,9 @@ export default function LandingPage() {
       <section className="lp-section lp-ask">
         <div>
           <p className="lp-kicker">The study assistant</p>
-          <h2>Ask, and it reads the library for you</h2>
+          <h2>Ask questions about the text</h2>
           <p className="lp-body">
-            An assistant that searches the texts, reads the fathers in full, studies the Greek and Hebrew, opens the map and keeps your notes — and
-            tells you where every answer comes from. Use your own key for Claude, ChatGPT, Gemini, DeepSeek and others, or a model on your own
+            The assistant can search the texts, look up Greek and Hebrew words, open the map and save notes. It cites its sources. Use your own key for Claude, ChatGPT, Gemini, DeepSeek and others, or a model on your own
             computer. Your key never leaves your device.
           </p>
         </div>
@@ -310,28 +310,28 @@ export default function LandingPage() {
       {/* ------------------------------------------------------------------ yours */}
       <section className="lp-section lp-pillars">
         <div className="lp-pillar">
-          <h3>Your study, everywhere</h3>
+          <h3>Syncs across devices</h3>
           <p>
             Highlights, notes, pinned places, saved maps and your conversations. Sign in and they follow you between phone and computer — or use it
             without an account, and everything stays on your device.
           </p>
         </div>
         <div className="lp-pillar">
-          <h3>Open, and credited</h3>
+          <h3>Open source</h3>
           <p>
             Built on openly licensed texts and data — STEPBible, OpenBible, the Leningrad Codex, the Septuagint, CNTR, the Christian Classics Ethereal
             Library and more — every source named. The code is open source.
           </p>
         </div>
         <div className="lp-pillar">
-          <h3>Quiet by design</h3>
+          <h3>No ads</h3>
           <p>No ads, no tracking, no paywall. Large type, a calm reading page, light and dark themes, and an app you can install on your phone.</p>
         </div>
       </section>
 
       {/* ------------------------------------------------------------------ last call */}
       <section className="lp-final">
-        <h2>Open the Bible with the early church</h2>
+        <h2>Start reading</h2>
         <div className="lp-actions center">
           <Link className="lp-btn primary" to={returning ? reading : "/read/John/1"}>
             {returning ? `Continue reading ${where}` : "Start reading"}

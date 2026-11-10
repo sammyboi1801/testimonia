@@ -12,4 +12,6 @@ STATIC="${STATIC:-$HOME/TestimoniaData/build/static}"
 ( cd web && MSYS_NO_PATHCONV=1 VITE_API_BASE= VITE_AGENT_BASE="$SERVER" VITE_STATIC_DATA=/data npx vite build --outDir ../deploy/dist --emptyOutDir )
 grep -q '`/data`' deploy/dist/assets/index-*.js || { echo "static data path did not build as /data" >&2; exit 1; }
 cp -r "$STATIC" deploy/dist/data
+# a real page per chapter (title, description, text), a sitemap and robots.txt, for search engines
+py tools/prerender.py deploy/dist "$STATIC"
 ( cd deploy && firebase deploy --only hosting --project testimonia-35d9f )

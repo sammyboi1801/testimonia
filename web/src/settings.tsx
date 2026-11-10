@@ -5,7 +5,7 @@ export type Theme = "system" | "light" | "dark";
 export type FathersScope = "pre-nicene" | "to-451" | "all";
 export type Design = "vellum" | "folio" | "atelier" | "archive";
 export type ReadingMode = "parallel" | "interlinear" | "original" | "reading";
-export type PanelTab = "about" | "text" | "fathers" | "links" | "words";
+export type PanelTab = "about" | "text" | "fathers" | "commentary" | "links" | "words";
 export type MarkKind = "var" | "fat" | "quo";
 
 export const MODES: { id: ReadingMode; label: string; hint: string }[] = [

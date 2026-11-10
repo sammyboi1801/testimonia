@@ -10,7 +10,7 @@ import type { Book } from "../types";
 import { StudyPanel, type Tab } from "../components/StudyPanel";
 import { useSettings } from "../settings";
 
-const TABS: Tab[] = ["about", "text", "fathers", "links", "words"];
+const TABS: Tab[] = ["about", "text", "fathers", "commentary", "links", "words"];
 
 export function ReadPage() {
   const { book = "John", chapter = "1" } = useParams();
@@ -27,6 +27,15 @@ export function ReadPage() {
   const editions = [...new Set([...settings.editions, ...FALLBACK, ...(needsWords ? ["tagnt", "tahot", "lxx"] : [])])];
   const data = useChapter(book, ch, editions);
   const selected = params.get("v");
+  // each chapter (and verse) gets its own title, for bookmarks, history and search results
+  const bookName = data.data?.name ?? book;
+  useEffect(() => {
+    const at = selected ? `${bookName} ${selected.split(".").slice(1).join(":")}` : `${bookName} ${ch}`;
+    document.title = `${at} — Greek, Hebrew, Commentary | Testimonia`;
+    return () => {
+      document.title = "Testimonia — Free Online Study Bible with Greek, Hebrew and Commentary";
+    };
+  }, [bookName, ch, selected]);
   const drag = useRef<number | null>(null); // pull-down-to-close on phones
   // closing a verse picked on this page steps Back (the pick added that entry); otherwise it replaces
   const pickedHere = useRef(false);

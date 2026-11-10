@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useVerse } from "../api";
 import { formatYear, osisLabel, PRE_NICENE, verseUrl } from "../lib";
 import { useSettings, type FathersScope, type MarkKind, type PanelTab } from "../settings";
-import type { Book, VerseGuide } from "../types";
+import type { ClassicNote, Book, VerseGuide } from "../types";
 import { openAsk } from "./AskDrawer";
 import { CompareTranslations } from "./CompareTranslations";
 import { GospelParallels } from "./ReadingLinks";
@@ -24,6 +24,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "about", label: "Overview" },
   { id: "text", label: "Text" },
   { id: "fathers", label: "Fathers" },
+  { id: "commentary", label: "Commentary" },
   { id: "links", label: "Links" },
   { id: "words", label: "Words" },
 ];
@@ -123,6 +124,9 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
               {preNicene} pre-Nicene citation{preNicene === 1 ? "" : "s"} · {g.fathers.length} in all ·{" "}
               {g.commentary.length} comments
             </GlanceRow>
+            <GlanceRow kind="fat" on={(g.commentaries?.length ?? 0) > 0} onClick={() => onTab("commentary")}>
+              {g.commentaries?.length ? `${g.commentaries.length} classic commentar${g.commentaries.length > 1 ? "ies" : "y"}: ${g.commentaries.map((c) => c.author.split(/['’ ]/)[0]).join(", ")}` : "No classic commentary on this verse"}
+            </GlanceRow>
             <GlanceRow kind="quo" on={quotes.length > 0} onClick={() => onTab("links")}>
               {quotes.length ? `${quotes.length} Old ↔ New Testament link${quotes.length > 1 ? "s" : ""}` : "No OT ↔ NT quotation"} ·{" "}
               {g.crossrefs.length} cross references
@@ -134,6 +138,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
       )}
       {active === "text" && <TextTab g={g} />}
       {active === "fathers" && <FathersTab fathers={fathers} broad={(g.fathers_broad ?? []).filter((f) => inScope(f.year, f.era, scope))} commentary={commentary} onWord={onWord} />}
+      {active === "commentary" && <CommentaryTab notes={g.commentaries ?? []} verse={g.verse.verse} onWord={onWord} />}
       {active === "links" && <LinksTab g={g} books={books} onWord={onWord} />}
       {active === "words" &&
         (word ? <WordStudy strong={word} books={books} onBack={onCloseWord} onWord={onWord} /> : <WordsTab g={g} onWord={onWord} />)}
@@ -158,6 +163,7 @@ function tabCount(t: Tab, g: VerseGuide, fathers: number): string {
   if (t === "about") return "";
   if (t === "text") return String(g.variants.length);
   if (t === "fathers") return String(fathers);
+  if (t === "commentary") return String(g.commentaries?.length ?? 0);
   if (t === "links") return String(g.quotations.length + g.crossrefs.length + (g.witnesses?.length ?? 0));
   const w = g.words.tagnt?.length ? g.words.tagnt : g.words.tahot?.length ? g.words.tahot : g.words.lxx;
   return String(w?.length ?? 0);
@@ -291,6 +297,46 @@ function FathersTab({
         ))}
       </Block>
     </>
+  );
+}
+
+/** The classic commentaries, oldest first. Long notes start folded. */
+function CommentaryTab({ notes, verse, onWord }: { notes: ClassicNote[]; verse: number; onWord: (s: string) => void }) {
+  if (!notes.length) return <p className="muted">None of the classic commentaries has a note on this verse.</p>;
+  return (
+    <>
+      {notes.map((c) => (
+        <CommentaryNote key={c.id} c={c} verse={verse} onWord={onWord} />
+      ))}
+      <p className="muted small credit">
+        Matthew Henry, Jamieson-Fausset-Brown, John Gill, Adam Clarke, John Calvin and Keil &amp; Delitzsch are in the public domain. Tyndale Open Study
+        Notes © Tyndale House Publishers, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. Via the{" "}
+        <a href="https://bible.helloao.org">HelloAO Free Use Bible API</a>.
+      </p>
+    </>
+  );
+}
+
+function CommentaryNote({ c, verse, onWord }: { c: ClassicNote; verse: number; onWord: (s: string) => void }) {
+  const long = c.html.length > 1400;
+  const [open, setOpen] = useState(!long);
+  const from = c.start_vkey % 1000;
+  const to = c.end_vkey % 1000;
+  const range = from === to ? `v. ${from}` : to >= 999 ? `from v. ${from}` : `vv. ${from}–${to}`;
+  return (
+    <section className="block open comm-note">
+      <h3>
+        {c.author} <span className="muted small">{formatYear(c.year)} · {c.kind === "study-notes" ? "study notes" : "commentary"}{from !== verse || to !== verse ? ` · on ${range}` : ""}</span>
+      </h3>
+      <div className={open ? "" : "comm-clamp"}>
+        <Html html={c.html} className="comm-text" onWord={onWord} />
+      </div>
+      {long && (
+        <button className="btn ghost small" onClick={() => setOpen(!open)}>
+          {open ? "Show less" : "Read the whole note"}
+        </button>
+      )}
+    </section>
   );
 }
 

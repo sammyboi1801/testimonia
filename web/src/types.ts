@@ -153,6 +153,19 @@ export interface CommentaryEntry {
   author_id: string | null;
 }
 
+/** A classic commentary's note (Henry, Gill, Calvin…, or the Tyndale study notes) on a verse range. */
+export interface ClassicNote {
+  id: number;
+  start_vkey: number;
+  end_vkey: number;
+  html: string;
+  source_url: string | null;
+  commentary_id: string;
+  author: string;
+  year: number | null;
+  kind: string;
+}
+
 export interface VerseGuide {
   verse: { vkey: number; osis: string; book: string; chapter: number; verse: number; red_letter: number };
   texts: { edition_id: string; text: string; native_ref: string | null; abbrev: string | null; language: string; script_dir: string }[];
@@ -165,6 +178,7 @@ export interface VerseGuide {
   fathers_broad?: (FatherCitation & { scope: string })[]; // references to the whole chapter, not this verse
   witnesses?: FatherCitation[]; // Josephus, Tacitus… (Jewish & Roman writers)
   commentary: CommentaryEntry[];
+  commentaries?: ClassicNote[];
   notes: { n: number; kind: string | null; body: string }[];
   topics: { id: string; name: string }[];
   chronology: { label: string | null; start_year: number | null; end_year: number | null; chron_order: number | null } | null;

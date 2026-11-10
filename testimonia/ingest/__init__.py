@@ -28,6 +28,7 @@ MODULES = (
     "theographic",
     "rulers",
     "deuterocanon",
+    "helloao",
 )
 
 __all__ = ["MODULES", "STEPS", "Context", "IngestError", "Step", "load_all", "step"]

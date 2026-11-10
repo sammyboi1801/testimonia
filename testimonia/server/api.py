@@ -317,8 +317,17 @@ def verse(request: Request, osis: str, preview: str = "bsb", limit: int = Query(
     commentary = s.all(
         "SELECT e.id, e.start_vkey, e.end_vkey, e.work_title, e.html, e.source_url, c.title AS author, c.year, "
         "c.era, c.author_id FROM commentary_entry e JOIN commentary c ON c.id = e.commentary_id "
-        "WHERE e.start_vkey BETWEEN ? AND ? AND e.end_vkey >= ? ORDER BY c.year IS NULL, c.year LIMIT ?",
+        "WHERE e.start_vkey BETWEEN ? AND ? AND e.end_vkey >= ? AND c.source_id IS NOT 'helloao-commentaries' "
+        "ORDER BY c.year IS NULL, c.year LIMIT ?",
         (book_lo, k, k, limit * 4),
+    )
+    # the classic commentaries (Henry, Gill, Calvin…) and the Tyndale study notes: one note each, never across chapters
+    commentaries = s.all(
+        "SELECT e.id, e.start_vkey, e.end_vkey, e.html, e.source_url, c.id AS commentary_id, c.title AS author, "
+        "c.year, c.kind FROM commentary_entry e JOIN commentary c ON c.id = e.commentary_id "
+        "WHERE e.start_vkey BETWEEN ? AND ? AND e.end_vkey >= ? AND c.source_id = 'helloao-commentaries' "
+        "ORDER BY c.year",
+        (k // 1000 * 1000, k, k),
     )
     notes = s.all("SELECT n, kind, body FROM verse_note WHERE vkey = ? ORDER BY n", (k,))
     topics = s.all(
@@ -353,6 +362,7 @@ def verse(request: Request, osis: str, preview: str = "bsb", limit: int = Query(
         "fathers_broad": sorted(broad.values(), key=lambda f: (f["year"] is None, f["year"] or 0)),
         "witnesses": witnesses,
         "commentary": commentary,
+        "commentaries": commentaries,
         "notes": notes,
         "topics": topics,
         "chronology": chronology,
