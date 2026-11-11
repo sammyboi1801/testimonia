@@ -67,7 +67,21 @@ export async function getJson<T>(path: string, params?: Record<string, string | 
 
 const FOREVER = { staleTime: Infinity, gcTime: 30 * 60_000 } as const; // core.db is read-only
 
-export const useMeta = () => useQuery({ queryKey: ["meta"], queryFn: () => getJson<Meta>("/api/meta"), ...FOREVER });
+/** The library's own data (meta, works, timeline): the static copy from the CDN first (compressed, at every edge),
+ *  the API when there is none. */
+const libraryJson = <T,>(name: "meta" | "works" | "timeline") => async (): Promise<T> => {
+  if (STATIC) {
+    try {
+      const hit = await staticJson<T>(`lib/${name}.json`);
+      if (hit) return hit;
+    } catch {
+      /* not exported: ask the API */
+    }
+  }
+  return getJson<T>(`/api/${name}`);
+};
+
+export const useMeta = () => useQuery({ queryKey: ["meta"], queryFn: libraryJson<Meta>("meta"), ...FOREVER });
 
 export const useChapter = (book: string, chapter: number, editions: string[]) =>
   useQuery({
@@ -93,7 +107,7 @@ export const useWord = (strong: string | null) =>
     ...FOREVER,
   });
 
-export const useTimeline = () => useQuery({ queryKey: ["timeline"], queryFn: () => getJson<Timeline>("/api/timeline"), ...FOREVER });
+export const useTimeline = () => useQuery({ queryKey: ["timeline"], queryFn: libraryJson<Timeline>("timeline"), ...FOREVER });
 
 /** Wikipedia's page summary (CC BY-SA), fetched live from the public REST API and cached for the session. */
 export async function wikiSummary(title: string): Promise<WikiSummary> {
@@ -109,7 +123,7 @@ export const useWiki = (title: string | null | undefined, enabled = true) =>
 export const useBookGuide = (osis: string) =>
   useQuery({ queryKey: ["book", osis], queryFn: () => getJson<BookGuide>(`/api/book/${encodeURIComponent(osis)}`), ...FOREVER });
 
-export const useWorks = () => useQuery({ queryKey: ["works"], queryFn: () => getJson<WorkSummary[]>("/api/works"), ...FOREVER });
+export const useWorks = () => useQuery({ queryKey: ["works"], queryFn: libraryJson<WorkSummary[]>("works"), ...FOREVER });
 
 export const useToc = (edition: string | undefined) =>
   useQuery({

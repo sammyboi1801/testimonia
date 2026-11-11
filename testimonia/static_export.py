@@ -85,4 +85,23 @@ def export(db: Path, out: Path) -> dict[str, Any]:
         "chapters": len(chapters),
     }
     _write(out / "index.json", index)
-    return {"files": files + 1, "bytes": size, "seconds": round(time.time() - started, 1), "chapters": len(chapters)}
+    lib = export_library(db, out, store)
+    return {
+        "files": files + 1 + lib["files"],
+        "bytes": size + lib["bytes"],
+        "seconds": round(time.time() - started, 1),
+        "chapters": len(chapters),
+    }
+
+
+#: what the library pages load on opening, written as ``lib/{name}.json`` (same data as ``/api/{name}``)
+LIBRARY = ("meta", "works", "timeline")
+
+
+def export_library(db: Path, out: Path, store: Store | None = None) -> dict[str, Any]:
+    """The library's own data (summary, works, timeline) as static files, so the library opens from the CDN."""
+    req = _req(store or Store(db))
+    size = 0
+    for name in LIBRARY:
+        size += _write(out / "lib" / f"{name}.json", getattr(api, name)(req))
+    return {"files": len(LIBRARY), "bytes": size, "chapters": 0, "seconds": 0}

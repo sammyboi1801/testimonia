@@ -321,6 +321,8 @@ export function Chat({
     setBusy(true);
     const ctrl = new AbortController();
     abort.current = ctrl;
+    // text that resumes after a tool step is a new paragraph, not glued to the last sentence ("reported.There is…")
+    let afterTool = false;
     const on = (e: AgentEvent) => {
       // the assistant can open pages (the atlas at a place, a verse, a chapter of a work); the chat stays open
       if (e.type === "navigate" && e.link.startsWith("/")) {
@@ -353,10 +355,13 @@ export function Chat({
         e = { type: "tool", name: "notes", summary: `${verb} ${label}` };
       }
       const ev = e;
+      const gap = ev.type === "text" && afterTool;
+      if (ev.type === "tool") afterTool = true;
+      else if (ev.type === "text") afterTool = false;
       setMessages((all) => {
         const copy = [...all];
         const last = { ...copy[copy.length - 1]! };
-        if (ev.type === "text") last.content += ev.text;
+        if (ev.type === "text") last.content += gap && last.content && !/\n\s*$/.test(last.content) ? `\n\n${ev.text.replace(/^\s+/, "")}` : ev.text;
         else if (ev.type === "tool") last.steps = [...(last.steps ?? []), ev.summary];
         else if (ev.type === "notice") last.notice = ev.message;
         else if (ev.type === "error") last.error = ev.message;
