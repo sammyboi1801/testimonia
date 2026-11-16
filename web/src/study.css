@@ -223,3 +223,6 @@ mark.gr-mark { color: var(--ink); background: color-mix(in srgb, var(--accent) 1
 @media (max-width: 360px) {
   .panel-tabs .count { display: none; }
 }
+
+/* the tabs share the width everywhere; no fading edge (it dimmed the last tab even when all fit) */
+.panel-tabs { justify-content: space-between; -webkit-mask-image: none; mask-image: none; }

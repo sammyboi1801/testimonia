@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { openMap } from "../pins";
 import { useBackClose } from "../backClose";
 import { Link, useLocation } from "react-router-dom";
@@ -485,23 +485,72 @@ function EditionPicker({ editions, chosen, onChange, single }: { editions: Editi
           {single ? "Change" : "+ Add translation"}
         </button>
         {open && (
-          <ul className="menu" onMouseLeave={() => setOpen(false)}>
-            {add.map((e) => (
-              <li key={e.id}>
-                <button
-                  onClick={() => {
-                    onChange(single ? [e.id, ...chosen.filter((c) => c !== e.id)] : [...chosen, e.id].slice(0, 6));
-                    setOpen(false);
-                  }}
-                >
-                  <b>{e.abbrev ?? e.id}</b> {e.title}
-                  {e.year ? <span className="muted"> · {e.year}</span> : null}
-                </button>
-              </li>
-            ))}
-          </ul>
+          <EditionMenu
+            editions={add}
+            onPick={(id) => {
+              onChange(single ? [id, ...chosen.filter((c) => c !== id)] : [...chosen, id].slice(0, 6));
+              setOpen(false);
+            }}
+            onClose={() => setOpen(false)}
+          />
         )}
       </div>
     </div>
   );
 }
+
+const GROUPS: { label: string; test: (e: Edition) => boolean }[] = [
+  { label: "English", test: (e) => e.language === "eng" },
+  { label: "Greek & Hebrew", test: (e) => ["grc", "hbo", "arc"].includes(e.language) },
+  { label: "Latin", test: (e) => e.language === "lat" },
+];
+
+/** The translations to add or switch to: grouped, two lines each (nothing cut off), kept on screen, closed by a
+ *  click outside or Esc; a filter box finds one quickly. */
+function EditionMenu({ editions, onPick, onClose }: { editions: Edition[]; onPick: (id: string) => void; onClose: () => void }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [q, setQ] = useState("");
+  const [shift, setShift] = useState(0);
+  useLayoutEffect(() => {
+    const r = box.current?.getBoundingClientRect();
+    if (!r) return;
+    setShift(Math.min(0, window.innerWidth - 12 - r.right) + Math.max(0, 12 - r.left));
+  }, []);
+  useEffect(() => {
+    const away = (e: Event) => {
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !box.current?.parentElement?.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("keydown", away);
+    return () => {
+      document.removeEventListener("pointerdown", away);
+      document.removeEventListener("keydown", away);
+    };
+  }, [onClose]);
+  const needle = q.trim().toLowerCase();
+  const shown = editions.filter((e) => !needle || `${e.abbrev ?? ""} ${e.title} ${e.year ?? ""}`.toLowerCase().includes(needle));
+  const other = shown.filter((e) => !GROUPS.some((g) => g.test(e)));
+  const groups = [...GROUPS.map((g) => ({ label: g.label, items: shown.filter(g.test) })), { label: "Other", items: other }].filter((g) => g.items.length);
+  return (
+    <div className="menu edition-menu" ref={box} style={{ transform: shift ? `translateX(${shift}px)` : undefined }} role="dialog" aria-label="Choose a translation">
+      {editions.length > 8 && (
+        <input className="em-filter" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find a translation…" autoFocus={window.matchMedia("(pointer: fine)").matches} />
+      )}
+      {groups.map((g) => (
+        <section key={g.label}>
+          <h5>{g.label}</h5>
+          {g.items.map((e) => (
+            <button key={e.id} onClick={() => onPick(e.id)}>
+              <span className="em-name">
+                <b>{e.abbrev ?? e.id}</b> {e.title}
+              </span>
+              {e.year ? <span className="em-year">{e.year}</span> : null}
+            </button>
+          ))}
+        </section>
+      ))}
+      {!groups.length && <p className="muted small em-none">No translation matches “{q}”.</p>}
+    </div>
+  );
+}
+
