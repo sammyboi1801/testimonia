@@ -7,6 +7,7 @@ import { Html } from "./Html";
 import { Speak } from "./Speak";
 import { WordChart } from "./WordChart";
 import { WordDomains } from "./WordDomains";
+import { pronounce } from "../pronounce";
 
 export function WordStudy({ strong, books, onBack, onWord }: { strong: string; books: Book[]; onBack: () => void; onWord: (s: string) => void }) {
   const { data, isLoading, error } = useWord(strong);
@@ -27,10 +28,29 @@ export function WordStudy({ strong, books, onBack, onWord }: { strong: string; b
           {data.lemma?.lemma ?? strong}
         </span>
         {data.lemma?.lemma && <Speak text={data.lemma.lemma} lang={hebrew ? "hbo" : "grc"} />}
-        <span className="muted">{data.lemma?.translit}</span>
         <span className="tag">{strong}</span>
       </div>
-      {data.lemma?.gloss && <div className="ws-gloss">{data.lemma.gloss}</div>}
+      {/* how to say it, and what kind of word it is */}
+      <div className="ws-line">
+        {[hebrew ? data.lemma?.translit?.replaceAll(".", "·") : data.lemma?.lemma && pronounce(data.lemma.lemma), data.pos].filter(Boolean).join("  ·  ")}
+      </div>
+      {(data.brief?.short ?? data.lemma?.gloss) && <div className="ws-gloss">{data.brief?.short ?? data.lemma?.gloss}</div>}
+      {!!data.brief?.origin.length && (
+        <div className="ws-origin">
+          <span>from</span>
+          {data.brief.origin.map((o, i) =>
+            o.id ? (
+              <button key={i} className="origin-chip greek" onClick={() => onWord(o.id!)} title="Open this word">
+                {o.lemma}
+              </button>
+            ) : (
+              <span key={i} className="origin-chip greek static">
+                {o.lemma}
+              </span>
+            ),
+          )}
+        </div>
+      )}
       <p className="ws-summary">
         Appears <b>{data.total.toLocaleString()}</b> {data.total === 1 ? "time" : "times"} in the {hebrew ? "Hebrew Bible" : "New Testament"}
         {data.glosses.length > 0 && (

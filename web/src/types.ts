@@ -51,6 +51,14 @@ export interface Word {
   lemma?: string | null;
   lemma_gloss?: string | null;
   morph_text?: string | null;
+  /** the morphology in plain words ("verb, aorist active indicative, 3rd singular") */
+  parsing?: string | null;
+}
+
+/** A word at a glance: its short meaning and the words it is formed from. */
+export interface WordBrief {
+  short: string | null;
+  origin: { id: string | null; lemma: string }[];
 }
 
 export interface VerseMarks {
@@ -181,6 +189,7 @@ export interface VerseGuide {
   witnesses?: FatherCitation[]; // Josephus, Tacitus… (Jewish & Roman writers)
   commentary: CommentaryEntry[];
   commentaries?: ClassicNote[];
+  briefs?: Record<string, WordBrief>;
   notes: { n: number; kind: string | null; body: string }[];
   topics: { id: string; name: string }[];
   chronology: { label: string | null; start_year: number | null; end_year: number | null; chron_order: number | null } | null;
@@ -190,6 +199,8 @@ export interface VerseGuide {
 
 export interface WordStudy {
   lemma: { id: string; language: string; lemma: string; translit: string | null; gloss: string | null; definition: string | null } | null;
+  brief?: WordBrief | null;
+  pos?: string | null;
   lexicons: { lexicon_id: string; title: string; lemma_id: string; body: string }[];
   by_book: { book: string; name: string; n: number }[];
   occurrences: { vkey: number; osis: string; surface: string; gloss: string | null; morph: string | null; edition_id: string }[];

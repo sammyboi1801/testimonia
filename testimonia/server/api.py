@@ -14,7 +14,9 @@ from fastapi import APIRouter, HTTPException, Query, Request
 
 from ..books import BOOKS, BY_OSIS, fuzzy_books, norm_alias, resolve_book
 from ..ingest.stepbible import normalize
+from ..morphology import describe
 from ..refs import id_to_key, key_to_parts, parse_osis, parse_refs, vkey
+from .brief import briefs
 from .store import Store
 
 router = APIRouter(prefix="/api")
@@ -264,6 +266,11 @@ def verse(request: Request, osis: str, preview: str = "bsb", limit: int = Query(
         )
         for ed in WORD_EDITIONS
     }
+    # each word in plain grammar ("verb, aorist active indicative, 3rd singular"), and every lemma at a glance
+    for rows in words.values():
+        for r in rows:
+            r["parsing"] = readable_morph(r["morph"])
+    word_briefs = briefs(s, [r["lemma_id"] for rows in words.values() for r in rows])
     variants = []
     for u in s.all("SELECT id, label, significance, note, source_id FROM variant_unit WHERE start_vkey = ?", (k,)):
         readings = s.all(
@@ -355,6 +362,7 @@ def verse(request: Request, osis: str, preview: str = "bsb", limit: int = Query(
         "texts": texts,
         "footnotes": notes,
         "words": words,
+        "briefs": word_briefs,
         "variants": variants,
         "crossrefs": xrefs,
         "quotations": quotes,
@@ -406,14 +414,41 @@ def word(request: Request, strong: str, limit: int = Query(300, ge=1, le=2000)) 
         "ORDER BY n DESC LIMIT 25",
         (strong,),
     )
+    common = s.one(
+        "SELECT morph FROM token WHERE lemma_id = ? AND morph IS NOT NULL "
+        "GROUP BY morph ORDER BY count(*) DESC LIMIT 1",
+        (strong,),
+    )
     return {
         "lemma": lemma,
+        "brief": briefs(s, [strong]).get(strong),
+        "pos": part_of_speech(common["morph"]) if common else None,
         "lexicons": entries,
         "by_book": by_book,
         "occurrences": occurrences,
         "total": sum(b["n"] for b in by_book),
         "glosses": glosses,
     }
+
+
+def _is_verb(code: str) -> bool:
+    return code.startswith("V-") or (code.startswith(("H", "A")) and "V" in code.split("/")[-1][:2])
+
+
+def readable_morph(code: str | None) -> str | None:
+    """A morphology code in plain words, naming verbs as verbs ("verb, aorist active indicative, 3rd singular")."""
+    if not code:
+        return None
+    d = describe(code)
+    if not d:
+        return None
+    return f"verb, {d}" if _is_verb(code) and not d.startswith("verb") else d
+
+
+def part_of_speech(code: str | None) -> str | None:
+    """Just the kind of word: "verb", "noun", "demonstrative pronoun"."""
+    d = readable_morph(code)
+    return d.split(",")[0].strip() if d else None
 
 
 @router.get("/morph/{code}")

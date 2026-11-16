@@ -454,22 +454,31 @@ function WordsTab({ g, onWord }: { g: VerseGuide; onWord: (s: string) => void })
       </div>
       <table className="word-table">
         <tbody>
-          {words.map((w) => (
+          {words.map((w) => {
+            // the meaning at a glance, unless it only repeats the gloss
+            const brief = w.lemma_id ? g.briefs?.[w.lemma_id] : undefined;
+            const plain = (s?: string | null) => (s ?? "").toLowerCase().replace(/[^a-z]/g, "");
+            const meaning = brief?.short && plain(brief.short) !== plain(w.gloss) ? brief.short : null;
+            return (
             <tr key={w.pos} onClick={() => w.lemma_id && onWord(w.lemma_id)}>
-              <td className={nt ? "greek" : "hebrew"} dir={nt ? undefined : "rtl"}>
-                <span className="wt-surface">{w.surface}</span>
+              <td className={`wt-orig ${nt ? "greek" : "hebrew"}`}>
+                <span className="wt-surface" dir={nt ? undefined : "rtl"}>{w.surface}</span>
+                {w.translit && <span className="wt-translit">{w.translit}</span>}
               </td>
-              <td>
-                <div className="wt-gloss">{w.gloss}</div>
-                <div className="muted small">
-                  {w.lemma} {w.translit ? `· ${w.translit}` : ""} · {w.morph}
+              <td className="wt-body">
+                <div className="wt-gloss">{w.gloss?.replace(/[<>]/g, "")}</div>
+                <div className="wt-meta">
+                  {meaning && <span className="wt-meaning">{meaning}</span>}
+                  {meaning && (w.parsing ?? w.morph) && " · "}
+                  {w.parsing ?? w.morph}
                 </div>
               </td>
               <td className="wt-speak">
                 <Speak text={w.surface} lang={lang} />
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </>
