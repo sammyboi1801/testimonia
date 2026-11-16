@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { useVerse } from "../api";
+import { useAbsences, useVerse } from "../api";
+import { AbsenceNotice } from "./Absence";
 import { formatYear, osisLabel, PRE_NICENE, verseUrl } from "../lib";
 import { useSettings, type FathersScope, type MarkKind, type PanelTab } from "../settings";
 import type { ClassicNote, Book, VerseGuide } from "../types";
@@ -81,6 +82,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
   const period = g.periods.find((p) => p.parent_id)?.name;
   const quotes = g.quotations;
   const active: Tab = word ? "words" : tab === "fathers" ? "commentary" : tab;
+  const nt = books.find((b) => b.osis === g.verse.book)?.testament === "NT";
   const words = g.words.tagnt?.length ? g.words.tagnt : g.words.tahot?.length ? g.words.tahot : g.words.lxx;
   const original = g.words.tagnt?.length || (!g.words.tahot?.length && g.words.lxx?.length) ? "Greek" : "Hebrew";
   // the active tab is always in view (on a phone the tab strip scrolls)
@@ -117,6 +119,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
       <div className="tab-body" key={active} onClick={toggleSection}>
       {active === "about" && (
         <div className="about-tab">
+          <VerseAbsence osis={g.verse.osis} nt={nt} onMore={() => onTab("text")} />
           <div className="about-when">
             {g.chronology?.label && <span>{g.chronology.label}</span>}
             {era && <span>{era}</span>}
@@ -169,7 +172,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
           <PassageLink osis={g.verse.osis} title={g.heading?.title} />
         </div>
       )}
-      {active === "text" && <TextTab g={g} />}
+      {active === "text" && <TextTab g={g} nt={nt} />}
       {active === "commentary" && (
         <WrittenAbout
           initial={tab === "fathers" ? "early" : undefined}
@@ -263,18 +266,47 @@ function Block({ title, children, note }: { title: string; children: ReactNode; 
 
 // ----------------------------------------------------------------------------- tabs
 
-function TextTab({ g }: { g: VerseGuide }) {
+/** The manuscript facts for one verse, when some early manuscripts lack it. */
+function VerseAbsence({ osis, nt, onMore }: { osis: string; nt: boolean; onMore?: () => void }) {
+  const [book, ch, v] = osis.split(".");
+  const { data } = useAbsences(book!, Number(ch), nt);
+  const info = data?.[Number(v)];
+  return info ? <AbsenceNotice info={info} what="this verse" onMore={onMore} /> : null;
+}
+
+function TextTab({ g, nt }: { g: VerseGuide; nt: boolean }) {
   const hebrew = !g.words.tagnt?.length;
+  const groups = groupOmissions(g.variants);
   return (
     <>
+      <VerseAbsence osis={g.verse.osis} nt={nt} />
+      {/* what the translations' own footnotes say comes first: they explain in plain words */}
+      {(g.footnotes?.length ?? 0) > 0 && <TranslatorsNotes notes={g.footnotes!} texts={g.texts} osis={g.verse.osis} />}
       <Block title="Differences between the editions" note={g.variants.length}>
         {g.variants.length === 0 && <p className="muted">No differences recorded between the editions for this verse.</p>}
-        {g.variants.map((v) => (
-          <Variant key={v.id} v={v} hebrew={hebrew} />
-        ))}
+        {groups.map((x) =>
+          "words" in x ? (
+            <div key={`omit-${x.words[0]!.id}`} className="item variant">
+              <div className="v-head">
+                <span className="v-kind strong">Left out</span>
+                <span className="muted"> · {x.words.length} words, by the same editions</span>
+              </div>
+              <div className="v-run greek">{x.words.map((w) => w.readings.find((r) => r.text.trim() && r.text.trim() !== "—")?.text ?? "").join(" ")}</div>
+              <div className="v-who">
+                <span className="muted">Left out by</span> <Sigla witnesses={x.omittedBy} />
+              </div>
+              {x.keptBy && (
+                <div className="v-who">
+                  <span className="muted">Printed by</span> <Sigla witnesses={x.keptBy} />
+                </div>
+              )}
+            </div>
+          ) : (
+            <Variant key={x.id} v={x} hebrew={hebrew} />
+          ),
+        )}
       </Block>
       <VerseTranscriptions key={g.verse.osis} osis={g.verse.osis} />
-      {(g.footnotes?.length ?? 0) > 0 && <TranslatorsNotes notes={g.footnotes!} texts={g.texts} osis={g.verse.osis} />}
       <VerseManuscripts osis={g.verse.osis} />
       <CompareTranslations texts={g.texts} osis={g.verse.osis} />
     </>
@@ -604,6 +636,33 @@ function DiffText({ text, other }: { text: string; other: string }) {
       {a.slice(a.length - q).join("")}
     </>
   );
+}
+
+type Group = VerseGuide["variants"][number] | { words: VerseGuide["variants"]; omittedBy: string | null; keptBy: string | null };
+
+/** Many one-word omissions by the same editions are one fact: those editions leave the words out together. */
+function groupOmissions(variants: VerseGuide["variants"]): Group[] {
+  const empty = (t: string) => !t.trim() || t.trim() === "—";
+  const out: Group[] = [];
+  const byWho = new Map<string, { words: VerseGuide["variants"]; omittedBy: string | null; keptBy: string | null }>();
+  for (const v of variants) {
+    const gone = v.significance === "omission" ? v.readings.find((r) => empty(r.text)) : undefined;
+    const kept = v.readings.find((r) => !empty(r.text));
+    if (!gone) {
+      out.push(v);
+      continue;
+    }
+    const key = gone.witnesses ?? "";
+    let grp = byWho.get(key);
+    if (!grp) {
+      grp = { words: [], omittedBy: gone.witnesses, keptBy: kept?.witnesses ?? null };
+      byWho.set(key, grp);
+      out.push(grp);
+    }
+    grp.words.push(v);
+  }
+  // a lone omission stays a variant of its own
+  return out.map((x) => ("words" in x && x.words.length < 3 ? x.words : [x])).flat() as Group[];
 }
 
 function Sigla({ witnesses }: { witnesses: string | null }) {

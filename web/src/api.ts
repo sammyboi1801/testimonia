@@ -81,6 +81,31 @@ const libraryJson = <T,>(name: "meta" | "works" | "timeline") => async (): Promi
   return getJson<T>(`/api/${name}`);
 };
 
+export interface AbsentInfo {
+  lacking: { sigla: string; name: string; date: string | null }[];
+  first: { sigla: string; name: string; date: string | null } | null;
+  checked: number;
+}
+
+/** The verses of a chapter that some early manuscripts do not contain (New Testament; from the transcriptions). */
+export const useAbsences = (book: string, chapter: number, enabled = true) =>
+  useQuery({
+    queryKey: ["absent", book, chapter],
+    queryFn: async (): Promise<Record<number, AbsentInfo>> => {
+      if (STATIC) {
+        try {
+          const c = await staticJson<{ absent?: Record<number, AbsentInfo> }>(`chapter/${book}/${chapter}.json`);
+          if (c?.absent) return c.absent;
+        } catch {
+          /* not exported: ask the server */
+        }
+      }
+      return (await getJson<{ verses: Record<number, AbsentInfo> }>(`/api/chapter/${book}/${chapter}/absences`)).verses;
+    },
+    enabled,
+    ...FOREVER,
+  });
+
 export const useMeta = () => useQuery({ queryKey: ["meta"], queryFn: libraryJson<Meta>("meta"), ...FOREVER });
 
 /** One chapter in the given editions: the same request whether it is read now or loaded ahead (the next chapter). */

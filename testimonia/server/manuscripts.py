@@ -297,6 +297,40 @@ def verse_readings(s: Any, k: int, limit: int | None = None) -> tuple[list[dict[
     return out, printed
 
 
+def _ms_brief(r: dict[str, Any]) -> dict[str, Any]:
+    return {"sigla": r["sigla"], "name": r["name"], "date": r["date_label"]}
+
+
+def chapter_absences(s: Any, lo: int, hi: int) -> dict[int, dict[str, Any]]:
+    """Verses that the earliest transcribed manuscripts do not contain (not lost to damage: the manuscript has the
+    text around them), as plain facts: which manuscripts lack each verse, and the earliest one that has it.
+    A verse is listed when the earliest transcribed manuscript lacks it and at least one other does too."""
+    out: dict[int, dict[str, Any]] = {}
+    for (k,) in s.con().execute(
+        "SELECT vkey FROM verse WHERE vkey BETWEEN ? AND ? AND verse > 0 ORDER BY vkey", (lo, hi)
+    ):
+        rows, _ = verse_readings(s, k)
+        if not rows:
+            continue
+        lacking = [r for r in rows if r["absent"]]
+        if not rows[0]["absent"] or len(lacking) < 2:  # one early copy skipping a line is not listed
+            continue
+        first = next((r for r in rows if not r["absent"]), None)
+        out[k % 1000] = {
+            "lacking": [_ms_brief(r) for r in lacking[:6]],
+            "first": _ms_brief(first) if first else None,
+            "checked": len(rows),
+        }
+    return out
+
+
+@router.get("/chapter/{book}/{chapter}/absences")
+def chapter_absences_api(request: Request, book: str, chapter: int) -> dict[str, Any]:
+    """The verses of a chapter that the earliest manuscripts do not contain (see chapter_absences)."""
+    lo = _verse_key(f"{book}.{chapter}.1")
+    return {"verses": chapter_absences(store(request), lo, lo + 998)}
+
+
 @router.get("/verse/{osis}/transcriptions")
 def verse_transcriptions(request: Request, osis: str, limit: int = Query(3, ge=1, le=50)) -> dict[str, Any]:
     """The verse as written in the earliest transcribed manuscripts that have it."""

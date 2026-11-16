@@ -27,6 +27,31 @@ def _attr(page: str, start: str, value: str) -> str:
     return page[: i + len(start)] + value + page[j:]
 
 
+GROUPS = (("OT", "Old Testament"), ("NT", "New Testament"), ("DC", "Deuterocanon"))
+
+
+def _home(dist: Path, static: Path, template: str) -> None:
+    """The home page with real content inside #root: what the site is, and a link to every book, so a search engine
+    finds every chapter from the front page (the app replaces this when it starts)."""
+    meta = json.loads((static / "lib" / "meta.json").read_text(encoding="utf-8"))
+    parts = [
+        '<main class="prerender"><h1>Testimonia: a free online study Bible</h1>',
+        "<p>Translations side by side with the Hebrew and Greek, where the manuscripts differ, the early Christian "
+        "writers who quoted each verse, classic commentaries, maps and a timeline. Free, open source, no ads.</p>",
+    ]
+    for code, label in GROUPS:
+        books = [b for b in meta["books"] if b.get("testament") == code]
+        if not books:
+            continue
+        links = " · ".join(
+            f'<a href="/read/{b["osis"]}/{b.get("first_chapter") or 1}">{html.escape(b["name"])}</a>' for b in books
+        )
+        parts.append(f"<h2>{label}</h2><p>{links}</p>")
+    parts.append('<p><a href="/library">The library of early Christian writings</a></p></main>')
+    page = template.replace('<div id="root"></div>', f'<div id="root">{"".join(parts)}</div>', 1)
+    (dist / "index.html").write_text(page, encoding="utf-8")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("dist", type=Path)
@@ -88,7 +113,8 @@ def main() -> int:
     (a.dist / "robots.txt").write_text(
         f"User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: {site}/sitemap.xml\n", encoding="utf-8"
     )
-    print(f"pre-rendered {len(urls) - 1} chapters; sitemap with {len(urls)} pages")
+    _home(a.dist, a.static, template)
+    print(f"pre-rendered {len(urls) - 1} chapters and the home page; sitemap with {len(urls)} pages")
     return 0
 
 

@@ -18,6 +18,7 @@ from typing import Any
 from .books import BY_OSIS
 from .refs import vkey
 from .server import api, geography
+from .server.manuscripts import chapter_absences
 from .server.store import Store
 
 
@@ -65,6 +66,7 @@ def export(db: Path, out: Path) -> dict[str, Any]:
                 **{k: base[k] for k in ("book", "chapter", "name", "verses", "headings", "prev", "next")},
                 "present": sorted(present),
                 "places": geography.chapter_places(req, book, ch)["verses"],
+                "absent": chapter_absences(store, lo, hi) if BY_OSIS[book].testament == "NT" else {},
             },
         )
         files += 1

@@ -226,3 +226,16 @@ mark.gr-mark { color: var(--ink); background: color-mix(in srgb, var(--accent) 1
 
 /* the tabs share the width everywhere; no fading edge (it dimmed the last tab even when all fit) */
 .panel-tabs { justify-content: space-between; -webkit-mask-image: none; mask-image: none; }
+
+/* missing from some early manuscripts: a quiet, factual notice */
+.absence {
+  margin: 10px 0 12px; padding: 10px 14px; border-left: 3px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  border-radius: 0 10px 10px 0; background: color-mix(in srgb, var(--accent) 7%, var(--panel));
+  font-family: var(--font-ui); font-size: 13.5px; line-height: 1.5; color: var(--ink-soft);
+}
+.absence strong { display: block; margin-bottom: 2px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.absence p { margin: 0; }
+.absence .link-btn { font-size: 13px; }
+.reading-view .absence, .verses .absence { max-width: 46rem; margin: 18px 0 10px; }
+.v-run { margin: 4px 0; font-size: 17px; line-height: 1.5; }
+.v-who { font-size: 12.5px; }

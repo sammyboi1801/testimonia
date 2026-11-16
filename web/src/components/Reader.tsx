@@ -6,7 +6,8 @@ import { isRtl, langClass, nativeLabel } from "../lib";
 import { MODES, useSettings } from "../settings";
 import type { Book, Chapter, ChapterVerse, Edition, VerseMarks, Word } from "../types";
 import { useQuery } from "@tanstack/react-query";
-import { getJson } from "../api";
+import { getJson, useAbsences } from "../api";
+import { AbsenceNotice, absenceRuns } from "./Absence";
 import { markNav } from "../chapterNav";
 import { TextWithNotes, type TextMark } from "./Footnotes";
 import { placeMarks, type PlaceInText } from "./PlaceName";
@@ -101,6 +102,16 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
     enabled: !data.places, // the static chapter files carry them
   });
   const places = data.places ?? placesQuery.data?.verses ?? {};
+  // passages some early manuscripts do not contain: one notice before each (New Testament)
+  const absences = useAbsences(data.book, data.chapter, isNT);
+  const runs = useMemo(() => new Map(absenceRuns(absences.data).map(([a, b]) => [a, b])), [absences.data]);
+  const noticeAt = (verse: number) => {
+    const end = runs.get(verse);
+    if (end === undefined) return null;
+    const info = absences.data![verse]!;
+    const what = end > verse ? `${data.name} ${data.chapter}:${verse}–${end}` : `${data.name} ${data.chapter}:${verse}`;
+    return <AbsenceNotice info={info} what={what} onMore={() => onSelect(`${data.book}.${data.chapter}.${verse}`)} />;
+  };
   const ctx: RowCtx = { byId, wordEd, isNT, hasWords, onSelect, onWord, selected, span, footnotes: settings.display.footnotes, speaking, notes, places };
 
   return (
@@ -168,7 +179,7 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
       )}
 
       {mode === "reading" ? (
-        <ReadingView data={data} edition={primary} headings={headings} ctx={ctx} />
+        <ReadingView data={data} edition={primary} headings={headings} ctx={ctx} noticeAt={noticeAt} />
       ) : (
         <div className="verses">
           <ColumnHeads mode={view} textEds={textEds} primary={primary} ctx={ctx} />
@@ -179,6 +190,7 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
                   {headings.get(v.vkey)} <PassageLink osis={v.osis} title={headings.get(v.vkey)} variant="heading" />
                 </h2>
               )}
+              {noticeAt(v.verse)}
               <VerseRow v={v} mode={view} textEds={textEds} primary={primary} ctx={ctx} />
             </Fragment>
           ))}
@@ -414,12 +426,14 @@ function HoverWord({ w, lang, onWord, children }: { w: Word; lang: "grc" | "hbo"
 }
 
 /** Book-like reading: one text in paragraphs that break at section headings. */
-function ReadingView({ data, edition, headings, ctx }: { data: Chapter; edition?: string; headings: Map<number, string>; ctx: RowCtx }) {
+function ReadingView({ data, edition, headings, ctx, noticeAt }: { data: Chapter; edition?: string; headings: Map<number, string>; ctx: RowCtx; noticeAt: (verse: number) => React.ReactNode }) {
   const ed = edition ? ctx.byId.get(edition) : undefined;
-  const paragraphs: { title?: string; verses: ChapterVerse[] }[] = [];
+  // paragraphs break at headings, and before a passage with a manuscript notice
+  const paragraphs: { title?: string; notice?: React.ReactNode; verses: ChapterVerse[] }[] = [];
   for (const v of data.verses) {
     const title = headings.get(v.vkey);
-    if (title || !paragraphs.length) paragraphs.push({ title, verses: [] });
+    const notice = noticeAt(v.verse);
+    if (title || notice || !paragraphs.length) paragraphs.push({ title, notice: notice ?? undefined, verses: [] });
     paragraphs[paragraphs.length - 1]!.verses.push(v);
   }
   return (
@@ -431,6 +445,7 @@ function ReadingView({ data, edition, headings, ctx }: { data: Chapter; edition?
               {p.title} <PassageLink osis={p.verses[0]!.osis} title={p.title} variant="heading" />
             </h2>
           )}
+          {p.notice}
           <p>
             {p.verses.map((v) => {
               const t = edition ? v.texts[edition] : undefined;
