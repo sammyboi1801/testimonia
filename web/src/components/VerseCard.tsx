@@ -10,12 +10,27 @@ export interface CardVerse {
   url: string; // where it opens in the app
 }
 
-const SIZES = { post: { w: 1080, h: 1350, label: "Post" }, story: { w: 1080, h: 1920, label: "Story" } } as const;
+const SIZES = { square: { w: 1080, h: 1080, label: "Square" }, post: { w: 1080, h: 1350, label: "Post" }, story: { w: 1080, h: 1920, label: "Story" } } as const;
 type Size = keyof typeof SIZES;
 
-const INK = "#2a2118";
-const ACCENT = "#9a5b2e";
-const MUTED = "#8a7660";
+/** The card's looks: same layout, five palettes. Parchment matches the app (and the shared link previews). */
+export const THEMES = {
+  parchment: { label: "Parchment", stops: ["#fdf8ee", "#f4e9d5", "#e4cfac"], ink: "#2a2118", accent: "#9a5b2e", muted: "#8a7660", rule: "rgba(154, 91, 46, 0.28)" },
+  stone: { label: "Stone", stops: ["#f6f8fa", "#e6ebf0", "#cdd6df"], ink: "#1f2933", accent: "#4a6178", muted: "#6b7c8c", rule: "rgba(74, 97, 120, 0.26)" },
+  sage: { label: "Sage", stops: ["#f4f6ef", "#e2e8d8", "#c7d2b8"], ink: "#22291e", accent: "#4f6b3a", muted: "#6d7a62", rule: "rgba(79, 107, 58, 0.26)" },
+  midnight: { label: "Midnight", stops: ["#2a3450", "#1b2236", "#11162a"], ink: "#f3ead8", accent: "#d9b46a", muted: "#a9a189", rule: "rgba(217, 180, 106, 0.3)" },
+  dusk: { label: "Dusk", stops: ["#f1edf4", "#ddd5e6", "#c3b6d3"], ink: "#251f2d", accent: "#6a4f86", muted: "#7a7088", rule: "rgba(106, 79, 134, 0.26)" },
+} as const;
+export type Theme = keyof typeof THEMES;
+const STYLE_KEY = "testimonia.card.style";
+export function savedTheme(): Theme {
+  try {
+    const t = localStorage.getItem(STYLE_KEY);
+    return t && t in THEMES ? (t as Theme) : "parchment";
+  } catch {
+    return "parchment";
+  }
+}
 
 let logo: Promise<HTMLImageElement | null> | null = null;
 const loadLogo = () =>
@@ -41,8 +56,12 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, width: number): strin
   return lines;
 }
 
-async function draw(canvas: HTMLCanvasElement, v: CardVerse, size: Size) {
+async function draw(canvas: HTMLCanvasElement, v: CardVerse, size: Size, theme: Theme = "parchment") {
   const { w, h } = SIZES[size];
+  const T = THEMES[theme];
+  const INK = T.ink;
+  const ACCENT = T.accent;
+  const MUTED = T.muted;
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d")!;
@@ -54,13 +73,13 @@ async function draw(canvas: HTMLCanvasElement, v: CardVerse, size: Size) {
 
   // parchment: a warm light from the top left, deepening to the edges
   const bg = ctx.createRadialGradient(w * 0.25, h * 0.05, 0, w * 0.4, h * 0.3, h * 1.05);
-  bg.addColorStop(0, "#fdf8ee");
-  bg.addColorStop(0.55, "#f4e9d5");
-  bg.addColorStop(1, "#e4cfac");
+  bg.addColorStop(0, T.stops[0]);
+  bg.addColorStop(0.55, T.stops[1]);
+  bg.addColorStop(1, T.stops[2]);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, w, h);
   // a fine inner rule, like a printed page
-  ctx.strokeStyle = "rgba(154, 91, 46, 0.28)";
+  ctx.strokeStyle = T.rule;
   ctx.lineWidth = 2;
   ctx.strokeRect(48, 48, w - 96, h - 96);
 
@@ -79,7 +98,7 @@ async function draw(canvas: HTMLCanvasElement, v: CardVerse, size: Size) {
   const text = `“${v.text.trim().replace(/^[“"]|[”"]$/g, "")}”`;
   const boxW = w - 220;
   const boxTop = top + 200;
-  const boxH = h - boxTop - 300;
+  const boxH = h - boxTop - (size === "square" ? 360 : 300); // the square has less height: more room kept below
   let px = size === "story" ? 92 : 76;
   let lines: string[] = [];
   for (; px >= 34; px -= 2) {
@@ -118,12 +137,30 @@ async function draw(canvas: HTMLCanvasElement, v: CardVerse, size: Size) {
   // where to read more
   ctx.fillStyle = MUTED;
   ctx.font = '400 28px "EB Garamond", Georgia, serif';
-  ctx.fillText("testimonia.web.app", w / 2, h - 108);
+  ctx.fillText("testimonia.web.app", w / 2, Math.max(h - 108, y + 78 + 64)); // never on top of the reference
+}
+
+/** The card as a PNG file (the post size), for sending straight from the share sheet. */
+export async function cardFile(v: CardVerse): Promise<File> {
+  const canvas = document.createElement("canvas");
+  await draw(canvas, v, "post", savedTheme());
+  const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/png"));
+  if (!blob) throw new Error("no image");
+  return new File([blob], `${v.label.replace(/[^\w]+/g, "-").replace(/-+$/, "").toLowerCase()}.png`, { type: "image/png" });
 }
 
 export function VerseCard({ verse, onClose }: { verse: CardVerse; onClose: () => void }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<Size>("post");
+  const [theme, setThemeState] = useState<Theme>(savedTheme);
+  const setTheme = (t: Theme) => {
+    setThemeState(t);
+    try {
+      localStorage.setItem(STYLE_KEY, t);
+    } catch {
+      /* private mode: remembered for now only */
+    }
+  };
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   useBackClose(true, onClose);
@@ -132,13 +169,13 @@ export function VerseCard({ verse, onClose }: { verse: CardVerse; onClose: () =>
     let alive = true;
     const c = canvas.current;
     if (!c) return;
-    void draw(c, verse, size).then(() => {
+    void draw(c, verse, size, theme).then(() => {
       if (alive) setPreview(c.toDataURL("image/png"));
     });
     return () => {
       alive = false;
     };
-  }, [verse, size]);
+  }, [verse, size, theme]);
 
   const fileName = `${verse.label.replace(/[^\w]+/g, "-").replace(/-+$/, "").toLowerCase()}.png`;
   const blob = () => new Promise<Blob | null>((res) => canvas.current?.toBlob(res, "image/png") ?? res(null));
@@ -179,6 +216,22 @@ export function VerseCard({ verse, onClose }: { verse: CardVerse; onClose: () =>
           <button className="icon-btn" onClick={onClose} aria-label="Close">
             ✕
           </button>
+        </div>
+        <div className="vcard-themes" role="radiogroup" aria-label="Style">
+          {(Object.keys(THEMES) as Theme[]).map((t) => (
+            <button
+              key={t}
+              role="radio"
+              aria-checked={theme === t}
+              className={theme === t ? "on" : ""}
+              title={THEMES[t].label}
+              aria-label={THEMES[t].label}
+              style={{ background: `radial-gradient(circle at 30% 25%, ${THEMES[t].stops[0]}, ${THEMES[t].stops[2]})`, color: THEMES[t].accent }}
+              onClick={() => setTheme(t)}
+            >
+              <span aria-hidden>Aa</span>
+            </button>
+          ))}
         </div>
         <div className={`vcard-preview ${size}`}>{preview ? <img src={preview} alt={`${verse.label}: ${verse.text}`} /> : <div className="skel" />}</div>
         <canvas ref={canvas} hidden />

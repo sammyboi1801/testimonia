@@ -37,3 +37,14 @@ exports.api = onRequest({ region: "us-central1", memory: "256MiB", timeoutSecond
     res.status(502).send("the library server did not answer");
   }
 });
+
+// Shared verse links: /v/John.3.16 (a page with preview tags) and /og/John.3.16.png (its picture). See share.js.
+const share = require("./share");
+exports.share = onRequest({ region: "us-central1", memory: "512MiB", timeoutSeconds: 30, maxInstances: 5, concurrency: 8 }, async (req, res) => {
+  try {
+    await share.handle(req, res);
+  } catch (e) {
+    res.set("cache-control", "no-store");
+    res.status(500).send("could not make this preview");
+  }
+});

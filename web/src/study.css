@@ -239,3 +239,13 @@ mark.gr-mark { color: var(--ink); background: color-mix(in srgb, var(--accent) 1
 .reading-view .absence, .verses .absence { max-width: 46rem; margin: 18px 0 10px; }
 .v-run { margin: 4px 0; font-size: 17px; line-height: 1.5; }
 .v-who { font-size: 12.5px; }
+
+/* the card's five styles as round swatches */
+.vcard-themes { display: flex; justify-content: center; gap: 10px; }
+.vcard-themes button {
+  width: 38px; height: 38px; padding: 0; border: 1px solid var(--rule); border-radius: 50%;
+  font-family: var(--font-display); font-size: 14px; font-style: italic; transition: transform 0.15s, box-shadow 0.15s;
+}
+.vcard-themes button:hover { transform: scale(1.06); }
+.vcard-themes button.on { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent); }
+.vcard-preview.square .skel { aspect-ratio: 1 / 1; }

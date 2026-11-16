@@ -15,6 +15,14 @@
         }
       },
       {
+        "source": "/v/**",
+        "function": { "functionId": "share", "region": "us-central1" }
+      },
+      {
+        "source": "/og/**",
+        "function": { "functionId": "share", "region": "us-central1" }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

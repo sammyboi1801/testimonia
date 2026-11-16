@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useMeta, useVerse } from "../api";
 import { useSettings } from "../settings";
 import { citeBlock, citeInline, copyText } from "../studyLib";
-import { VerseCard } from "./VerseCard";
+import { cardFile, VerseCard } from "./VerseCard";
 
 /** "Copied" for a moment after a successful copy. */
 function useCopied(): [boolean | null, (text: string) => Promise<boolean>] {
@@ -101,14 +101,17 @@ export function CopyMenu({ passage, editions, onEdition, className = "va-btn", s
                   onClick={async () => {
                     setOpen(false);
                     try {
-                      await navigator.share({ title: passage.label, text: inline, url: shareUrl });
+                      // with the picture when the phone can send a file and text together, else the text and link
+                      const file = await cardFile({ text, label: passage.label, edition: passage.edition, url: shareUrl }).catch(() => null);
+                      const withPicture = file && navigator.canShare?.({ files: [file], text: inline });
+                      await navigator.share(withPicture ? { files: [file], text: `${inline}\n${shareUrl}` } : { title: passage.label, text: inline, url: shareUrl });
                     } catch {
                       /* closed */
                     }
                   }}
                 >
                   <span className="cm-label">Send…</span>
-                  <span className="cm-sample">The verse and a link, through your phone's share sheet</span>
+                  <span className="cm-sample">The verse, its picture and a link, through your phone's share sheet</span>
                 </button>
               )}
               <button
@@ -155,8 +158,8 @@ export function CopyVerse({ osis, label }: { osis: string; label: string }) {
   const texts = (data?.texts ?? []).filter((t) => t.language === "eng" || t.language === "lat");
   const t = texts.find((x) => x.edition_id === chosen) ?? texts.find((x) => x.edition_id === settings.editions[0]) ?? texts[0];
   const passage = t && data ? { label, edition: t.abbrev ?? t.edition_id, verses: [{ verse: data.verse.verse, text: t.text }] } : null;
-  const [book, ch] = osis.split(".");
-  const shareUrl = `https://testimonia.web.app/read/${book}/${ch}?v=${encodeURIComponent(osis)}`;
+  // the short link: pasted anywhere, its preview shows the verse as a picture (deploy/functions/share.js)
+  const shareUrl = `https://testimonia.web.app/v/${encodeURIComponent(osis)}`;
   return <CopyMenu passage={passage} editions={texts.map((x) => ({ id: x.edition_id, abbrev: x.abbrev ?? x.edition_id }))} onEdition={setChosen} shareUrl={shareUrl} />;
 }
 
