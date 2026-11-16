@@ -1,13 +1,128 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useChapter, useMeta } from "../api";
+import { useChapter, useMeta, useSection } from "../api";
+import { Html } from "./Html";
 import { useSettings } from "../settings";
 
 /** A verse (or a few) in a small box beside the chat, so a reference can be read without leaving the conversation. */
 
 export interface PeekTarget {
-  href: string; // /read/John/3?v=John.3.16&to=18
+  href: string; // /read/John/3?v=John.3.16&to=18, or /library/{edition}/{section}
   rect: DOMRect; // the link that was tapped
+  quote?: string; // for a work: the words quoted, marked in the section
+  label?: string; // for a work: its title as the link showed it
+}
+
+/** Links that open in a box rather than a page: a verse, or a section of a work. */
+export const peekable = (href: string | null | undefined): href is string => !!href && (/^\/read\//.test(href) || /^\/library\/[^/?#]+\/\d+/.test(href));
+
+export function Peek({ target, onClose }: { target: PeekTarget; onClose: () => void }) {
+  return target.href.startsWith("/library/") ? <WorkPeek target={target} onClose={onClose} /> : <VersePeek target={target} onClose={onClose} />;
+}
+
+/** Where the box sits: beside the link, below it if there is room, else above; always inside the window. */
+function usePlace(box: React.RefObject<HTMLDivElement | null>, rect: DOMRect, deps: unknown[]) {
+  const [pos, setPos] = useState<{ left: number; top: number; above: boolean }>({ left: 12, top: 0, above: false });
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    const left = Math.max(12, Math.min(window.innerWidth - w - 12, rect.left + rect.width / 2 - w / 2));
+    const below = rect.bottom + 10 + h < window.innerHeight - 12;
+    setPos({ left, top: below ? rect.bottom + 10 : Math.max(12, rect.top - h - 10), above: !below });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rect, ...deps]);
+  return pos;
+}
+
+/** Closes on a tap outside, Esc, or when the page under it scrolls. */
+function useDismiss(box: React.RefObject<HTMLDivElement | null>, onClose: () => void) {
+  useEffect(() => {
+    const away = (e: Event) => {
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !box.current?.contains(e.target as Node)) onClose();
+    };
+    const scroll = (e: Event) => {
+      if (!box.current?.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener("pointerdown", away, true);
+    document.addEventListener("keydown", away);
+    document.addEventListener("scroll", scroll, true);
+    return () => {
+      document.removeEventListener("pointerdown", away, true);
+      document.removeEventListener("keydown", away);
+      document.removeEventListener("scroll", scroll, true);
+    };
+  }, [box, onClose]);
+}
+
+/** A section of an early Christian work in a box, scrolled to the words quoted and marked. */
+function WorkPeek({ target, onClose }: { target: PeekTarget; onClose: () => void }) {
+  const navigate = useNavigate();
+  const m = target.href.match(/^\/library\/([^/?#]+)\/(\d+)/)!;
+  const edition = decodeURIComponent(m[1]!);
+  const data = useSection(edition, Number(m[2]));
+  const box = useRef<HTMLDivElement>(null);
+  const body = useRef<HTMLDivElement>(null);
+  const pos = usePlace(box, target.rect, [data.data]);
+  useDismiss(box, onClose);
+  // find the quoted words in the section and mark them
+  useEffect(() => {
+    const root = body.current;
+    if (!root || !data.data || !target.quote) return;
+    const words = target.quote.replace(/\.{3}|…/g, " ").replace(/\s+/g, " ").trim().split(" ");
+    const probe = words.slice(Math.min(3, Math.max(0, words.length - 8)), Math.min(3, Math.max(0, words.length - 8)) + 6).join(" ");
+    if (probe.length < 12) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const text = (n.textContent ?? "").replace(/\s+/g, " ");
+      const i = text.indexOf(probe);
+      if (i < 0) continue;
+      try {
+        const range = document.createRange();
+        range.setStart(n, i);
+        range.setEnd(n, Math.min((n.textContent ?? "").length, i + probe.length));
+        const mark = document.createElement("mark");
+        range.surroundContents(mark);
+        mark.scrollIntoView({ block: "center" });
+      } catch {
+        /* the quote crosses markup: leave it unmarked */
+      }
+      break;
+    }
+  }, [data.data, target.quote]);
+  const s = data.data?.section;
+  const label = [target.label, s?.cite && !target.label?.includes(s.cite) ? s.cite : ""].filter(Boolean).join(" ") || s?.title || "From the library";
+  return (
+    <div ref={box} className={`verse-peek work-peek${pos.above ? " above" : ""}`} style={{ left: pos.left, top: pos.top }} role="dialog" aria-label={label}>
+      <div className="vp-head">
+        <strong>{label}</strong>
+        <button className="vp-close" onClick={onClose} aria-label="Close">
+          ✕
+        </button>
+      </div>
+      <div className="vp-text wp-text" ref={body}>
+        {data.isLoading && (
+          <>
+            <div className="skel" style={{ height: 14, width: "95%", marginBottom: 10 }} />
+            <div className="skel" style={{ height: 14, width: "80%", marginBottom: 10 }} />
+            <div className="skel" style={{ height: 14, width: "60%" }} />
+          </>
+        )}
+        {s && <Html html={s.html} />}
+        {data.error && <span className="muted">This section could not be loaded.</span>}
+      </div>
+      <button
+        className="vp-open"
+        onClick={() => {
+          onClose();
+          navigate(target.href);
+        }}
+      >
+        Read the whole work →
+      </button>
+    </div>
+  );
 }
 
 const FALLBACK = ["web", "kjva", "bsb"];
@@ -30,36 +145,8 @@ export function VersePeek({ target, onClose }: { target: PeekTarget; onClose: ()
   const editions = [...new Set([settings.editions[0] ?? "bsb", ...FALLBACK])];
   const data = useChapter(ref?.book ?? "John", ref?.chapter ?? 1, editions);
   const box = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ left: number; top: number; above: boolean }>({ left: 12, top: 0, above: false });
-
-  // beside the link: below it if there is room, else above; always inside the window
-  useLayoutEffect(() => {
-    const el = box.current;
-    if (!el) return;
-    const w = el.offsetWidth;
-    const h = el.offsetHeight;
-    const r = target.rect;
-    const left = Math.max(12, Math.min(window.innerWidth - w - 12, r.left + r.width / 2 - w / 2));
-    const below = r.bottom + 10 + h < window.innerHeight - 12;
-    setPos({ left, top: below ? r.bottom + 10 : Math.max(12, r.top - h - 10), above: !below });
-  }, [target, data.data]);
-
-  useEffect(() => {
-    const away = (e: Event) => {
-      if (e instanceof KeyboardEvent ? e.key === "Escape" : !box.current?.contains(e.target as Node)) onClose();
-    };
-    const scroll = (e: Event) => {
-      if (!box.current?.contains(e.target as Node)) onClose(); // the chat moved: the box would be adrift
-    };
-    document.addEventListener("pointerdown", away, true);
-    document.addEventListener("keydown", away);
-    document.addEventListener("scroll", scroll, true);
-    return () => {
-      document.removeEventListener("pointerdown", away, true);
-      document.removeEventListener("keydown", away);
-      document.removeEventListener("scroll", scroll, true);
-    };
-  }, [onClose]);
+  const pos = usePlace(box, target.rect, [data.data]);
+  useDismiss(box, onClose);
 
   if (!ref) return null;
   const bookName = meta.data?.books.find((b) => b.osis === ref.book)?.name ?? ref.book;

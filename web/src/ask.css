@@ -362,3 +362,9 @@ mark.phrase { color: inherit; padding: 0.04em 0; border-radius: 2px; background:
 .vp-text sup { margin-right: 2px; color: var(--accent); font-size: 0.65em; }
 .vp-open { display: block; margin-top: 8px; padding: 4px 0; border: 0; background: transparent; color: var(--accent); font-size: 13.5px; }
 .ask-md a[href^="/read/"] { border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent); }
+
+/* a passage of a work in the same kind of box: a little wider, the quoted words marked */
+.work-peek { width: min(440px, calc(100vw - 24px)); }
+.wp-text { max-height: 46vh; font-size: 15.5px; }
+.wp-text p { margin: 0 0 0.6em; }
+.wp-text mark { padding: 0 2px; border-radius: 3px; background: color-mix(in srgb, var(--accent) 22%, transparent); color: inherit; }

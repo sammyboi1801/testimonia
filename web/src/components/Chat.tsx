@@ -10,7 +10,7 @@ import { onRemoteChange } from "../sync";
 import { screenContext } from "./AskDrawer";
 import { copyText } from "../studyLib";
 import { useMeta } from "../api";
-import { linkRefs, VersePeek, type PeekTarget } from "./VersePeek";
+import { linkRefs, Peek, peekable, type PeekTarget } from "./VersePeek";
 
 interface Message {
   role: "user" | "assistant";
@@ -408,7 +408,7 @@ export function Chat({
     const href = a?.getAttribute("href");
     if (!a || !href?.startsWith("/")) return;
     e.preventDefault();
-    if (href.startsWith("/read/")) setPeek({ href, rect: a.getBoundingClientRect() });
+    if (peekable(href)) setPeek({ href, rect: a.getBoundingClientRect(), label: a.textContent ?? undefined });
     else navigate(href);
   }
 
@@ -621,7 +621,7 @@ export function Chat({
         </div>
       </form>
       <p className="ask-foot">AI can be wrong — check the linked sources.</p>
-      {peek && <VersePeek target={peek} onClose={() => setPeek(null)} />}
+      {peek && <Peek target={peek} onClose={() => setPeek(null)} />}
     </div>
   );
 }

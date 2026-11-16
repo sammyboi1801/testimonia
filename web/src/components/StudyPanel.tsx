@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useAbsences, useVerse } from "../api";
 import { AbsenceNotice } from "./Absence";
+import { Peek, peekable, type PeekTarget } from "./VersePeek";
 import { formatYear, osisLabel, PRE_NICENE, verseUrl } from "../lib";
 import { useSettings, type FathersScope, type MarkKind, type PanelTab } from "../settings";
 import type { ClassicNote, Book, VerseGuide } from "../types";
@@ -87,6 +88,16 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
   const original = g.words.tagnt?.length || (!g.words.tahot?.length && g.words.lxx?.length) ? "Greek" : "Hebrew";
   // the active tab is always in view (on a phone the tab strip scrolls)
   const tabs = useRef<HTMLElement>(null);
+  // a verse or a passage of a work opens in a small box over the sheet, so it can be read without leaving
+  const [peek, setPeek] = useState<PeekTarget | null>(null);
+  const onLinkCapture = (e: React.MouseEvent) => {
+    const a = (e.target as HTMLElement).closest("a");
+    const href = a?.getAttribute("href");
+    if (!a || !peekable(href) || e.metaKey || e.ctrlKey) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setPeek({ href, rect: a.getBoundingClientRect(), quote: a.dataset.quote, label: a.dataset.label ?? a.textContent ?? undefined });
+  };
   useEffect(() => {
     tabs.current?.querySelector<HTMLElement>("[aria-selected=true]")?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }, [active]);
@@ -116,7 +127,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
         ))}
       </nav>
 
-      <div className="tab-body" key={active} onClick={toggleSection}>
+      <div className="tab-body" key={active} onClick={toggleSection} onClickCapture={onLinkCapture}>
       {active === "about" && (
         <div className="about-tab">
           <VerseAbsence osis={g.verse.osis} nt={nt} onMore={() => onTab("text")} />
@@ -186,6 +197,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
       {active === "words" &&
         (word ? <WordStudy strong={word} books={books} onBack={onCloseWord} onWord={onWord} /> : <WordsTab g={g} onWord={onWord} />)}
       </div>
+      {peek && <Peek target={peek} onClose={() => setPeek(null)} />}
     </div>
   );
 }
@@ -343,7 +355,7 @@ function FathersTab({
               <span className="who">
                 {f.author ?? "Anonymous"},{" "}
                 {f.edition_id && f.section_ord ? (
-                  <Link to={`/library/${encodeURIComponent(f.edition_id)}/${f.section_ord}`}>
+                  <Link to={`/library/${encodeURIComponent(f.edition_id)}/${f.section_ord}`} data-quote={f.snippet ?? undefined} data-label={`${f.author ?? ""}, ${f.work_title} ${f.cite ?? ""}`.replace(/^, /, "")}>
                     <i>{f.work_title}</i> {f.cite}
                   </Link>
                 ) : (
