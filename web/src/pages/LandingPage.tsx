@@ -342,6 +342,29 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* every book, one tap away (and a path for search engines to every chapter) */}
+      {meta.data && (
+        <nav className="lp-books" aria-label="Browse the Bible">
+          <h2>Browse the Bible</h2>
+          {([["OT", "Old Testament"], ["NT", "New Testament"], ["DC", "Deuterocanon"]] as const).map(([code, label]) => {
+            const books = meta.data!.books.filter((b) => b.testament === code);
+            return books.length ? (
+              <section key={code}>
+                <h3>{label}</h3>
+                <p>
+                  {books.map((b, i) => (
+                    <span key={b.osis}>
+                      {i > 0 && " · "}
+                      <Link to={`/read/${b.osis}/${b.first_chapter ?? 1}`}>{b.name}</Link>
+                    </span>
+                  ))}
+                </p>
+              </section>
+            ) : null;
+          })}
+        </nav>
+      )}
+
       <footer className="lp-foot">
         <p>
           Texts and data from openly licensed sources, <a href="https://github.com/sammyboi1801/testimonia/blob/main/CREDITS.md">credited in full</a>. The
