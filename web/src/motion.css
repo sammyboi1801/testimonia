@@ -93,3 +93,15 @@
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
   .skel { animation: none; }
 }
+
+/* a verse chosen in the passage picker glows for a moment */
+.verse-flash { animation: verse-flash 2.2s ease-out; border-radius: 6px; }
+@keyframes verse-flash { 0%, 25% { background-color: color-mix(in srgb, var(--accent) 26%, transparent); } 100% { background-color: transparent; } }
+
+/* the passage picker's verse step */
+.picker-verses .pv-whole {
+  display: block; width: 100%; margin: 4px 0 10px; padding: 9px 12px; border: 1px solid var(--rule); border-radius: 10px;
+  background: var(--accent-soft); color: var(--accent); font-size: 14px; text-align: center;
+}
+.picker-verses .pv-back { padding: 0; font-size: 13px; }
+.picker-verses .pv-skel { display: block; height: 26px; border-radius: 6px; }

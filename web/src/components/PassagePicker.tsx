@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { chapterQuery } from "../api";
 import type { Book } from "../types";
 import { useBackClose } from "../backClose";
 
@@ -18,7 +20,9 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
   const [picked, setPicked] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
   // phones show one step at a time: this book's chapters first (the usual move), or the book list
-  const [stage, setStage] = useState<"chapters" | "books">("chapters");
+  const [stage, setStage] = useState<"chapters" | "books" | "verses">("chapters");
+  // after a chapter, its verses: jump straight to one, or read the whole chapter
+  const [verseCh, setVerseCh] = useState<number | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const pop = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -54,22 +58,33 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
     pop.current?.scrollTo({ top: 0 });
   }, [stage, picked]);
 
-  function go(osis: string, ch: number) {
+  function go(osis: string, ch: number, verse?: number) {
     setOpen(false);
     setPicked(null);
     setFilter("");
-    navigate(`/read/${osis}/${ch}`, { replace: (window.history.state as { sheet?: string } | null)?.sheet !== undefined });
+    setVerseCh(null);
+    // a verse is scrolled to and marked (#v16), without opening the study panel
+    navigate(`/read/${osis}/${ch}${verse ? `#v${verse}` : ""}`, { replace: (window.history.state as { sheet?: string } | null)?.sheet !== undefined });
+  }
+  function chooseChapter(ch: number) {
+    setVerseCh(ch);
+    setStage("verses");
   }
 
   function pick(osis: string) {
     setPicked(osis);
+    setVerseCh(null);
     setStage("chapters");
   }
 
   function toggle() {
     setStage("chapters");
+    setVerseCh(null);
     setOpen(!open);
   }
+  // the chosen chapter's verse numbers (a tiny file, usually already loaded)
+  const versesOf = useQuery({ ...chapterQuery(chosen?.osis ?? book, verseCh ?? 1, []), enabled: open && verseCh !== null });
+  const verseNumbers = (versesOf.data?.verses ?? []).map((v) => v.verse).filter((n) => n > 0);
 
   return (
     <div className="picker" ref={ref}>
@@ -82,7 +97,11 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
       {open && (
         <div ref={pop} className={`picker-pop stage-${stage}`} role="dialog" aria-label="Choose a passage">
           <div className="picker-sheet-head">
-            {stage === "chapters" ? (
+            {stage === "verses" ? (
+              <button className="link-btn" onClick={() => setStage("chapters")}>
+                ‹ Chapters
+              </button>
+            ) : stage === "chapters" ? (
               <button className="link-btn" onClick={() => setStage("books")}>
                 ‹ All books
               </button>
@@ -133,7 +152,29 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
               </section>
             ))}
           </div>
-          {chosen && (
+          {chosen && stage === "verses" && verseCh !== null ? (
+            <div className="picker-chapters picker-verses">
+              <h4>
+                {chosen.name} {verseCh}
+              </h4>
+              <p className="pc-sub">
+                <button className="link-btn pv-back" onClick={() => setStage("chapters")}>
+                  ‹ Chapters
+                </button>
+              </p>
+              <button className="pv-whole" onClick={() => go(chosen.osis, verseCh)}>
+                Whole chapter
+              </button>
+              <div className="chapter-grid">
+                {verseNumbers.map((n) => (
+                  <button key={n} onClick={() => go(chosen.osis, verseCh, n)}>
+                    {n}
+                  </button>
+                ))}
+                {versesOf.isLoading && Array.from({ length: 15 }, (_, i) => <span key={i} className="skel pv-skel" />)}
+              </div>
+            </div>
+          ) : chosen && (
             <div className="picker-chapters">
               <h4>{chosen.name}</h4>
               <p className="pc-sub">
@@ -144,7 +185,7 @@ export function PassagePicker({ books, book, chapter }: { books: Book[]; book: s
                   <button
                     key={c}
                     className={`${chosen.osis === book && c === chapter ? "on" : ""}${wantCh === c && shown[0]?.osis === chosen.osis ? " hint" : ""}`}
-                    onClick={() => go(chosen.osis, c)}
+                    onClick={() => chooseChapter(c)}
                   >
                     {c}
                   </button>

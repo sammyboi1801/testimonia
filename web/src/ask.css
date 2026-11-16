@@ -344,3 +344,21 @@ mark.phrase { color: inherit; padding: 0.04em 0; border-radius: 2px; background:
   box-shadow: 0 4px 14px -4px rgb(0 0 0 / 0.25); font-size: 16px; animation: msg-in 0.25s ease-out;
 }
 @media (prefers-reduced-motion: reduce) { .ask-a.streaming .ask-md > :last-child::after, .ac-send.stop { animation: none; } }
+
+/* a verse in a small box beside the chat */
+.verse-peek {
+  position: fixed; z-index: 130; width: min(360px, calc(100vw - 24px)); padding: 12px 14px 10px;
+  border: 1px solid var(--rule); border-radius: 16px; background: var(--panel);
+  box-shadow: 0 18px 50px -14px rgb(40 22 6 / 0.45); transform-origin: 50% 0;
+  animation: peek-in 0.26s var(--ease-spring, ease-out);
+}
+.verse-peek.above { transform-origin: 50% 100%; }
+@keyframes peek-in { from { opacity: 0; transform: scale(0.94) translateY(-4px); } to { opacity: 1; transform: none; } }
+.vp-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.vp-head strong { font-family: var(--font-display); font-size: 19px; font-weight: var(--display-weight); color: var(--ink); }
+.vp-ed { font-size: 11px; letter-spacing: 0.08em; color: var(--muted); }
+.vp-close { margin-left: auto; padding: 2px 6px; border: 0; background: transparent; color: var(--muted); font-size: 14px; }
+.vp-text { max-height: 40vh; overflow-y: auto; font-family: var(--font-text); font-size: 16.5px; line-height: 1.55; color: var(--ink); }
+.vp-text sup { margin-right: 2px; color: var(--accent); font-size: 0.65em; }
+.vp-open { display: block; margin-top: 8px; padding: 4px 0; border: 0; background: transparent; color: var(--accent); font-size: 13.5px; }
+.ask-md a[href^="/read/"] { border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent); }

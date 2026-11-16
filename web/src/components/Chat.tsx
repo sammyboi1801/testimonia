@@ -9,6 +9,8 @@ import { openMap, pins } from "../pins";
 import { onRemoteChange } from "../sync";
 import { screenContext } from "./AskDrawer";
 import { copyText } from "../studyLib";
+import { useMeta } from "../api";
+import { linkRefs, VersePeek, type PeekTarget } from "./VersePeek";
 
 interface Message {
   role: "user" | "assistant";
@@ -109,13 +111,16 @@ function History({ chats, current, onOpen, onNew, onDelete, onClose }: { chats: 
   );
 }
 
+const NO_BOOKS: { osis: string; name: string }[] = [];
+
 function markdown(text: string): string {
   return DOMPurify.sanitize(marked.parse(text, { async: false }) as string);
 }
 
 /** One answer, rendered from markdown; memoised so earlier answers are not re-parsed on every streamed word. */
-const Answer = memo(function Answer({ text }: { text: string }) {
-  const html = useMemo(() => markdown(text), [text]);
+const Answer = memo(function Answer({ text, books }: { text: string; books: { osis: string; name: string }[] }) {
+  // plain references ("John 3:16") become links too, so every verse can be peeked at
+  const html = useMemo(() => markdown(linkRefs(text, books)), [text, books]);
   return <div className="ask-md" dangerouslySetInnerHTML={{ __html: html }} />;
 });
 
@@ -395,14 +400,16 @@ export function Chat({
     void ask(input);
   }
 
-  // links in answers are app links (/read/…, /library/…): follow them inside the app
+  // links in answers are app links: a verse opens in a small box beside the chat; anything else opens its page
+  const [peek, setPeek] = useState<PeekTarget | null>(null);
+  const books = useMeta().data?.books ?? NO_BOOKS;
   function onAnswerClick(e: MouseEvent) {
     const a = (e.target as HTMLElement).closest("a");
     const href = a?.getAttribute("href");
-    if (a && href?.startsWith("/")) {
-      e.preventDefault();
-      navigate(href);
-    }
+    if (!a || !href?.startsWith("/")) return;
+    e.preventDefault();
+    if (href.startsWith("/read/")) setPeek({ href, rect: a.getBoundingClientRect() });
+    else navigate(href);
   }
 
   // Retry: ask the last question again, from just before it
@@ -553,7 +560,7 @@ export function Chat({
             <div key={i} className={`ask-a${live ? " streaming" : ""}`}>
               {((m.steps?.length ?? 0) > 0 || live) && <Activity steps={m.steps ?? []} live={live} />}
               {m.notice && <p className="muted small">{m.notice}</p>}
-              {m.content && <Answer text={m.content} />}
+              {m.content && <Answer text={m.content} books={books} />}
               {m.error && (
                 <p className="ask-error">
                   {/fetch|network|load failed|connection/i.test(m.error) ? "The connection dropped." : m.error}
@@ -614,6 +621,7 @@ export function Chat({
         </div>
       </form>
       <p className="ask-foot">AI can be wrong — check the linked sources.</p>
+      {peek && <VersePeek target={peek} onClose={() => setPeek(null)} />}
     </div>
   );
 }

@@ -163,7 +163,8 @@
   }
   .picker-sheet-head .link-btn { font-size: 15px; font-weight: 600; padding: 6px 0; }
   .picker-sheet-head .icon-btn { font-size: 18px; min-width: 40px; min-height: 40px; }
-  .picker-pop.stage-chapters .picker-books, .picker-pop.stage-books .picker-chapters { display: none; }
+  .picker-pop.stage-chapters .picker-books, .picker-pop.stage-verses .picker-books, .picker-pop.stage-books .picker-chapters { display: none; }
+  .picker-verses .pc-sub .pv-back { display: none; } /* the sheet header has its own ‹ Chapters */
   .picker-pop .picker-chapters { border: 0; padding: 8px 2px 0; background: transparent; overflow: visible; }
   .picker-pop .picker-chapters h4 { font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(28px * var(--display-size)); text-transform: none; font-variant: normal; letter-spacing: 0; color: var(--ink); margin: 8px 0 2px; border: 0; }
   .picker-pop .pc-sub { margin: 0 0 16px; font-size: 13px; color: var(--muted); }

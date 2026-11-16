@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { openMap } from "../pins";
 import { useBackClose } from "../backClose";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { isRtl, langClass, nativeLabel } from "../lib";
 import { MODES, useSettings } from "../settings";
 import type { Book, Chapter, ChapterVerse, Edition, VerseMarks, Word } from "../types";
@@ -73,14 +73,25 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
     container.current?.querySelector<HTMLElement>(`[data-osis="${CSS.escape(speaking)}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [speaking]);
 
+  const location = useLocation();
   useEffect(() => {
     if (!selected) {
+      // #v16 (from the passage picker): bring that verse to the middle and mark it for a moment
+      const n = /^#v(\d+)$/.exec(location.hash)?.[1];
+      const target = n ? container.current?.querySelector<HTMLElement>(`[data-osis="${CSS.escape(`${data.book}.${data.chapter}.${n}`)}"]`) : null;
+      if (target) {
+        target.scrollIntoView({ block: "center" });
+        target.classList.remove("verse-flash");
+        void target.offsetWidth;
+        target.classList.add("verse-flash");
+        return;
+      }
       container.current?.scrollTo({ top: 0 });
       return;
     }
     const el = container.current?.querySelector<HTMLElement>(`[data-osis="${CSS.escape(selected)}"]`);
     el?.scrollIntoView({ block: "center" });
-  }, [selected, data.book, data.chapter]);
+  }, [selected, data.book, data.chapter, location.hash]);
 
   const { notes } = useNotes();
   const placesQuery = useQuery({
