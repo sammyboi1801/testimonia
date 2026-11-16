@@ -76,7 +76,7 @@ def main() -> int:
         verses = [(n, t) for n, t in verses if t]
         if not verses:
             continue
-        title = f"{name} {ch} — Greek, Hebrew, Commentary | Testimonia"
+        title = f"{name} {ch}: Greek, Hebrew and Commentary | Testimonia"
         first = verses[0][1]
         desc = (
             f"Read {name} {ch} with the Greek and Hebrew, classic commentaries, early church fathers and maps. "

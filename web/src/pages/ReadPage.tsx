@@ -134,9 +134,9 @@ export function ReadPage() {
   const bookName = data.data?.name ?? book;
   useEffect(() => {
     const at = selected ? `${bookName} ${selected.split(".").slice(1).join(":")}` : `${bookName} ${ch}`;
-    document.title = `${at} — Greek, Hebrew, Commentary | Testimonia`;
+    document.title = `${at}: Greek, Hebrew and Commentary | Testimonia`;
     return () => {
-      document.title = "Testimonia — Free Online Study Bible with Greek, Hebrew and Commentary";
+      document.title = "Testimonia | Free Online Study Bible with Greek, Hebrew and Commentary";
     };
   }, [bookName, ch, selected]);
   // closing a verse picked on this page steps Back (the pick added that entry); otherwise it replaces

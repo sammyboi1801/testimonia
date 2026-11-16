@@ -578,7 +578,7 @@ export function Chat({
             )}
           </div>
         </form>
-        <p className="ask-foot">AI can be wrong — check the linked sources.</p>
+        <p className="ask-foot">AI can be wrong. Check the linked sources.</p>
       </section>
       {setup && (
         // the model and key in a dialog of their own, over a dimmed page
