@@ -442,29 +442,154 @@ export function Chat({
   }, [input]);
   const shortLabel = preset.label.replace(/\s*\(.*\)\s*$/, "");
 
+  const title = messages.length > 0 ? titleOf(messages) : "New conversation";
   return (
-    <div className={compact ? "ask-chat compact" : "ask-chat"}>
-      <div className="ask-top">{/* pinned: history and a new chat stay in reach in a long conversation */}
-      <header className="ask-head">
-        {!compact && <h1>Ask</h1>}
-        <span className="ah-title">{messages.length > 0 ? titleOf(messages) : ""}</span>
-        <span className="ah-actions">
-          <button className={`ah-icon${showHistory ? " on" : ""}`} onClick={() => setShowHistory(!showHistory)} aria-expanded={showHistory} title="Past conversations" aria-label="Past conversations">
+    <div className={compact ? "ask-chat compact" : "ask-chat wide"}>
+      {!compact && (
+        // the conversations down the side, as in other chat apps (wide screens)
+        <aside className="ask-side" aria-label="Conversations">
+          <button className="as-new" onClick={newChat} disabled={busy}>
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            New chat
+          </button>
+          <div className="as-list">
+            {chats.length === 0 && <p className="muted small as-empty">Your conversations appear here.</p>}
+            {chats.map((c) => (
+              <div key={c.id} className={`as-item${c.id === chatId ? " on" : ""}`}>
+                <button className="as-open" onClick={() => openChat(c.id)} title={c.title}>
+                  <span className="as-title">{c.title}</span>
+                  <span className="as-when">{when(c.updated)}</span>
+                </button>
+                <button className="as-del" onClick={() => deleteChat(c.id)} aria-label={`Delete “${c.title}”`} title="Delete">
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        </aside>
+      )}
+      <section className="ask-main">
+        {/* always in sight: which conversation, which model, history and a new chat */}
+        <header className="ask-head">
+          <button className={`ah-icon ah-history${showHistory ? " on" : ""}`} onClick={() => setShowHistory(!showHistory)} aria-expanded={showHistory} title="Past conversations" aria-label="Past conversations">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l3 2" />
             </svg>
             {chats.length > 0 && <span className="ah-count">{chats.length}</span>}
+          </button>
+          <span className="ah-title" title={title}>
+            {title}
+          </span>
+          <button className={`ac-chip ah-model${setup ? " on" : ""}`} onClick={() => setSetup(!setup)} title={`${preset.label}${config.model ? ` · ${config.model}` : ""} — change the model or key`}>
+            {shortLabel}
+            {config.model && <span className="ah-model-name"> · {config.model}</span>} ▾
           </button>
           <button className="ah-icon" onClick={newChat} disabled={busy || messages.length === 0} title="New conversation" aria-label="New conversation">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
             </svg>
           </button>
-        </span>
-      </header>
-      {showHistory && <History chats={chats} current={chatId} onOpen={openChat} onNew={newChat} onDelete={deleteChat} onClose={() => setShowHistory(false)} />}
+        </header>
+        {showHistory && <History chats={chats} current={chatId} onOpen={openChat} onNew={newChat} onDelete={deleteChat} onClose={() => setShowHistory(false)} />}
+        <div className="ask-thread" onClick={onAnswerClick}>
+          {messages.length === 0 && (
+            <div className="ask-empty">
+              <p className="muted">
+                Ask about any passage, word, writer or event. Answers are grounded in the library — translations, manuscripts, the fathers, Josephus — and link to
+                their sources.
+              </p>
+              {context && <p className="ask-context">About {context}</p>}
+              <div className="search-examples">
+                {SUGGESTIONS.map((s) => (
+                  <button key={s} className="chip" onClick={() => void ask(s)}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {messages.map((m, i) => {
+            const last = i === messages.length - 1;
+            const live = busy && last;
+            return m.role === "user" ? (
+              <div key={i} className="ask-q">
+                {m.content}
+              </div>
+            ) : (
+              <div key={i} className={`ask-a${live ? " streaming" : ""}`}>
+                {((m.steps?.length ?? 0) > 0 || live) && <Activity steps={m.steps ?? []} live={live} />}
+                {m.notice && <p className="muted small">{m.notice}</p>}
+                {m.content && <Answer text={m.content} books={books} />}
+                {m.error && (
+                  <p className="ask-error">
+                    {/fetch|network|load failed|connection/i.test(m.error) ? "The connection dropped." : m.error}
+                    {last && !busy && (
+                      <button className="link-btn" onClick={retry}>
+                        Retry
+                      </button>
+                    )}
+                  </p>
+                )}
+                {!live && m.content && (
+                  <div className="ask-actions">
+                    <button onClick={() => void copyAnswer(i)}>{copied === i ? "✓ Copied" : "Copy"}</button>
+                    {last && !m.error && <button onClick={retry}>Retry</button>}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          <div ref={end} />
+          {!atBottom && messages.length > 0 && (
+            <button className="ask-jump" onClick={jumpDown} aria-label="Jump to the latest">
+              ↓
+            </button>
+          )}
+        </div>
+
+        <form className="ask-composer" onSubmit={submit}>
+          <textarea
+            ref={box}
+            value={input}
+            rows={1}
+            placeholder="Ask a question…"
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && !window.matchMedia("(pointer: coarse)").matches) {
+                e.preventDefault();
+                void ask(input);
+              }
+            }}
+          />
+          <div className="ac-row">
+            <span className="ac-spacer" />
+            {busy ? (
+              <button type="button" className="ac-send stop" onClick={() => abort.current?.abort()} aria-label="Stop">
+                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden><rect x="5" y="5" width="14" height="14" rx="2.5" fill="currentColor" /></svg>
+              </button>
+            ) : (
+              <button type="submit" className="ac-send" disabled={!input.trim()} aria-label="Ask">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 19V5" /><path d="m5 12 7-7 7 7" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </form>
+        <p className="ask-foot">AI can be wrong — check the linked sources.</p>
+      </section>
       {setup && (
-        <section className="ask-setup">
+        // the model and key in a dialog of their own, over a dimmed page
+        <div className="ask-modal-layer" onPointerDown={(e) => e.target === e.currentTarget && setSetup(false)}>
+          <section className="ask-modal ask-setup" role="dialog" aria-label="Assistant settings">
+            <header className="am-head">
+              <strong>Assistant settings</strong>
+              <button className="icon-btn" onClick={() => setSetup(false)} aria-label="Close">
+                ✕
+              </button>
+            </header>
           <div className="ask-grid">
             <label>
               Provider
@@ -528,99 +653,9 @@ export function Chat({
           <button className="btn" onClick={() => setSetup(false)}>
             Done
           </button>
-        </section>
-      )}
-      </div>
-
-      <div className="ask-thread" onClick={onAnswerClick}>
-        {messages.length === 0 && (
-          <div className="ask-empty">
-            <p className="muted">
-              Ask about any passage, word, writer or event. Answers are grounded in the library — translations, manuscripts, the fathers, Josephus — and link to
-              their sources.
-            </p>
-            {context && <p className="ask-context">About {context}</p>}
-            <div className="search-examples">
-              {SUGGESTIONS.map((s) => (
-                <button key={s} className="chip" onClick={() => void ask(s)}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {messages.map((m, i) => {
-          const last = i === messages.length - 1;
-          const live = busy && last;
-          return m.role === "user" ? (
-            <div key={i} className="ask-q">
-              {m.content}
-            </div>
-          ) : (
-            <div key={i} className={`ask-a${live ? " streaming" : ""}`}>
-              {((m.steps?.length ?? 0) > 0 || live) && <Activity steps={m.steps ?? []} live={live} />}
-              {m.notice && <p className="muted small">{m.notice}</p>}
-              {m.content && <Answer text={m.content} books={books} />}
-              {m.error && (
-                <p className="ask-error">
-                  {/fetch|network|load failed|connection/i.test(m.error) ? "The connection dropped." : m.error}
-                  {last && !busy && (
-                    <button className="link-btn" onClick={retry}>
-                      Retry
-                    </button>
-                  )}
-                </p>
-              )}
-              {!live && m.content && (
-                <div className="ask-actions">
-                  <button onClick={() => void copyAnswer(i)}>{copied === i ? "✓ Copied" : "Copy"}</button>
-                  {last && !m.error && <button onClick={retry}>Retry</button>}
-                </div>
-              )}
-            </div>
-          );
-        })}
-        <div ref={end} />
-        {!atBottom && messages.length > 0 && (
-          <button className="ask-jump" onClick={jumpDown} aria-label="Jump to the latest">
-            ↓
-          </button>
-        )}
-      </div>
-
-      <form className="ask-composer" onSubmit={submit}>
-        <textarea
-          ref={box}
-          value={input}
-          rows={1}
-          placeholder="Ask a question…"
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey && !window.matchMedia("(pointer: coarse)").matches) {
-              e.preventDefault();
-              void ask(input);
-            }
-          }}
-        />
-        <div className="ac-row">
-          <button type="button" className={`ac-chip${setup ? " on" : ""}`} onClick={() => setSetup(!setup)} title={`${preset.label}${config.model ? ` · ${config.model}` : ""} — change the model or key`}>
-            {shortLabel} ▾
-          </button>
-          <span className="ac-spacer" />
-          {busy ? (
-            <button type="button" className="ac-send stop" onClick={() => abort.current?.abort()} aria-label="Stop">
-              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden><rect x="5" y="5" width="14" height="14" rx="2.5" fill="currentColor" /></svg>
-            </button>
-          ) : (
-            <button type="submit" className="ac-send" disabled={!input.trim()} aria-label="Ask">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M12 19V5" /><path d="m5 12 7-7 7 7" />
-              </svg>
-            </button>
-          )}
+                  </section>
         </div>
-      </form>
-      <p className="ask-foot">AI can be wrong — check the linked sources.</p>
+      )}
       {peek && <Peek target={peek} onClose={() => setPeek(null)} />}
     </div>
   );
