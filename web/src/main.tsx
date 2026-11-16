@@ -37,6 +37,7 @@ import "./manuscripts.css";
 import "./geo.css";
 import "./rulers.css";
 import "./mobile.css";
+import "./motion.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lazy, StrictMode, Suspense, useEffect } from "react";

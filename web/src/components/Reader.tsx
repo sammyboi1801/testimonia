@@ -7,6 +7,7 @@ import { MODES, useSettings } from "../settings";
 import type { Book, Chapter, ChapterVerse, Edition, VerseMarks, Word } from "../types";
 import { useQuery } from "@tanstack/react-query";
 import { getJson } from "../api";
+import { markNav } from "../chapterNav";
 import { TextWithNotes, type TextMark } from "./Footnotes";
 import { placeMarks, type PlaceInText } from "./PlaceName";
 import { Marks } from "./Marks";
@@ -203,7 +204,7 @@ function verseMarks(ctx: RowCtx, v: ChapterVerse, ed: string, text: string): Tex
 function NavArrow({ to, dir }: { to: Chapter["prev"]; dir: string }) {
   if (!to) return <span className="nav-arrow disabled">{dir}</span>;
   return (
-    <Link className="nav-arrow" to={`/read/${to.book}/${to.chapter}`} title={`${to.name} ${to.chapter}`}>
+    <Link className="nav-arrow" to={`/read/${to.book}/${to.chapter}`} title={`${to.name} ${to.chapter}`} onClick={() => markNav(dir.startsWith("‹") ? "prev" : "next")}>
       {dir}
     </Link>
   );

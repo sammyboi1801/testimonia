@@ -1,0 +1,95 @@
+/* Motion: how things move. Springy but quick; everything stops for "reduce motion". */
+:root {
+  --ease-out: cubic-bezier(0.2, 0.9, 0.25, 1);
+  --ease-spring: cubic-bezier(0.2, 1.3, 0.35, 1);
+}
+
+/* ---- pages: each new page rises in softly (opacity only where fixed sheets live inside) ---- */
+.app > :nth-child(2) { animation: route-fade 0.3s var(--ease-out) both; }
+.app > .page:nth-child(2) { animation: route-in 0.38s var(--ease-out) both; }
+@keyframes route-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes route-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ---- chapters slide in from the side the reader is heading ---- */
+.workspace > main { will-change: auto; transform-origin: 50% 30%; }
+.workspace > main.ch-in-next { animation: ch-in-next 0.42s var(--ease-out) both; }
+.workspace > main.ch-in-prev { animation: ch-in-prev 0.42s var(--ease-out) both; }
+@keyframes ch-in-next { from { opacity: 0; transform: translateX(14%) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes ch-in-prev { from { opacity: 0; transform: translateX(-14%) scale(0.985); } to { opacity: 1; transform: none; } }
+
+/* ---- a chosen verse glows in, then settles to its selected colour ---- */
+.verse-row.selected, .rv.selected { animation: verse-glow 0.6s ease-out; }
+@keyframes verse-glow {
+  0% { background-color: color-mix(in srgb, var(--accent) 34%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+}
+
+/* ---- study panel: tab content fades up; tabs press in ---- */
+.tab-body { animation: tab-in 0.26s var(--ease-out); }
+@keyframes tab-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.panel-tabs button { transition: color 0.18s, transform 0.12s; }
+.panel-tabs button:active { transform: scale(0.95); }
+.tab-body .block { transition: background-color 0.2s; }
+
+/* ---- buttons and chips give a little under the finger ---- */
+.btn, .chip, .nav-arrow, .icon-btn, .lp-btn, .glance-row { transition: transform 0.12s var(--ease-out), background-color 0.18s, border-color 0.18s, color 0.18s; }
+.btn:active, .chip:active, .nav-arrow:active, .icon-btn:active, .lp-btn:active, .glance-row:active { transform: scale(0.96); }
+
+/* ---- placeholders that shimmer while things load ---- */
+.skel {
+  border-radius: 7px;
+  background: linear-gradient(90deg, var(--rule) 0%, color-mix(in srgb, var(--rule) 35%, transparent) 50%, var(--rule) 100%);
+  background-size: 220% 100%;
+  animation: skel-shimmer 1.25s linear infinite;
+  opacity: 0.7;
+}
+@keyframes skel-shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+.skel-reader { max-width: 760px; margin: 0 auto; padding: 28px 24px; }
+.skel-reader .skel-head { width: 180px; height: 34px; margin-bottom: 30px; }
+.skel-reader .skel-line { height: 16px; margin: 0 0 18px; }
+.skel-panel { padding: 22px 18px; }
+.skel-panel .skel-title { width: 46%; height: 30px; margin-bottom: 10px; }
+.skel-panel .skel-sub { width: 30%; height: 14px; margin-bottom: 22px; }
+.skel-panel .skel-tabs { display: flex; gap: 10px; margin-bottom: 22px; }
+.skel-panel .skel-tab { flex: 1; height: 22px; }
+.skel-panel .skel-line { height: 13px; margin: 0 0 14px; }
+
+/* ---- phones: the study panel is a sheet that springs up, follows the finger and snaps ---- */
+@media (max-width: 760px) {
+  .workspace.has-verse:not(.panel-closed) .guide {
+    max-height: none;
+    height: 62dvh;
+    transition: height 0.38s var(--ease-spring), transform 0.24s cubic-bezier(0.4, 0, 1, 1);
+    animation: sheet-up 0.46s var(--ease-spring);
+    overscroll-behavior: contain;
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -12px 40px rgb(0 0 0 / 0.22);
+  }
+  .workspace.has-verse:not(.panel-closed) .guide.sheet-full { height: 92dvh; }
+  .workspace.has-verse:not(.panel-closed) .guide.dragging { transition: none; }
+  .workspace.has-verse:not(.panel-closed) .guide.sheet-out { transform: translateY(105%); }
+  .workspace.has-verse .guide::before { width: 44px; height: 5px; margin: 10px auto 2px; border-radius: 3px; transition: background-color 0.2s, width 0.2s; }
+  .workspace.has-verse .guide.dragging::before { width: 56px; background: var(--accent); }
+  .sheet-scrim {
+    position: fixed; inset: 0; z-index: 69;
+    background: rgb(20 12 4 / 0.28);
+    backdrop-filter: blur(1.5px);
+    animation: scrim-in 0.35s ease-out;
+    transition: opacity 0.22s ease-in;
+  }
+  .sheet-scrim.out { opacity: 0; }
+  /* while a chapter is being swiped, the text lifts slightly */
+  .workspace > main { touch-action: pan-y; }
+}
+@media (min-width: 761px) { .sheet-scrim { display: none; } }
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---- sheets elsewhere (view options, passage picker, library) rise with the same spring ---- */
+@media (max-width: 760px) {
+  .reader-tools.open, .wm-sheet { animation: sheet-up 0.42s var(--ease-spring); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  .skel { animation: none; }
+}

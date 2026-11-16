@@ -83,12 +83,14 @@ const libraryJson = <T,>(name: "meta" | "works" | "timeline") => async (): Promi
 
 export const useMeta = () => useQuery({ queryKey: ["meta"], queryFn: libraryJson<Meta>("meta"), ...FOREVER });
 
-export const useChapter = (book: string, chapter: number, editions: string[]) =>
-  useQuery({
-    queryKey: ["chapter", book, chapter, editions.join(",")],
-    queryFn: () => staticChapter(book, chapter, editions).catch(() => getJson<Chapter>(`/api/chapter/${book}/${chapter}`, { editions: editions.join(",") })),
-    ...FOREVER,
-  });
+/** One chapter in the given editions: the same request whether it is read now or loaded ahead (the next chapter). */
+export const chapterQuery = (book: string, chapter: number, editions: string[]) => ({
+  queryKey: ["chapter", book, chapter, editions.join(",")],
+  queryFn: () => staticChapter(book, chapter, editions).catch(() => getJson<Chapter>(`/api/chapter/${book}/${chapter}`, { editions: editions.join(",") })),
+  ...FOREVER,
+});
+
+export const useChapter = (book: string, chapter: number, editions: string[]) => useQuery(chapterQuery(book, chapter, editions));
 
 export const useVerse = (osis: string | null) =>
   useQuery({

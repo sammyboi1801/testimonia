@@ -53,7 +53,15 @@ interface Props {
 
 export function StudyPanel(props: Props) {
   const { data, isLoading, error } = useVerse(props.osis);
-  if (isLoading) return <div className="loading">Loading {osisLabel(props.osis, props.books)}…</div>;
+  if (isLoading)
+    return (
+      <div className="skel-panel" aria-busy="true" aria-label={`Loading ${osisLabel(props.osis, props.books)}`}>
+        <div className="skel skel-title" />
+        <div className="skel skel-sub" />
+        <div className="skel-tabs">{[0, 1, 2, 3, 4].map((i) => <div key={i} className="skel skel-tab" />)}</div>
+        {[92, 78, 85, 60, 88, 70].map((w, i) => <div key={i} className="skel skel-line" style={{ width: `${w}%` }} />)}
+      </div>
+    );
   if (error || !data) return <div className="error">Could not load {props.osis}: {String(error)}</div>;
   return <Panel g={data} {...props} />;
 }
