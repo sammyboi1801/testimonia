@@ -87,8 +87,9 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
     queryKey: ["chapter-places", data.book, data.chapter],
     queryFn: () => getJson<{ verses: Record<number, PlaceInText[]> }>(`/api/chapter/${data.book}/${data.chapter}/places`),
     staleTime: Infinity,
+    enabled: !data.places, // the static chapter files carry them
   });
-  const places = placesQuery.data?.verses ?? {};
+  const places = data.places ?? placesQuery.data?.verses ?? {};
   const ctx: RowCtx = { byId, wordEd, isNT, hasWords, onSelect, onWord, selected, span, footnotes: settings.display.footnotes, speaking, notes, places };
 
   return (

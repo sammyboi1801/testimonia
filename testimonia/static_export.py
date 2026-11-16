@@ -17,7 +17,7 @@ from typing import Any
 
 from .books import BY_OSIS
 from .refs import vkey
-from .server import api
+from .server import api, geography
 from .server.store import Store
 
 
@@ -64,6 +64,7 @@ def export(db: Path, out: Path) -> dict[str, Any]:
             {
                 **{k: base[k] for k in ("book", "chapter", "name", "verses", "headings", "prev", "next")},
                 "present": sorted(present),
+                "places": geography.chapter_places(req, book, ch)["verses"],
             },
         )
         files += 1

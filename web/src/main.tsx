@@ -44,11 +44,11 @@ import { lazy, StrictMode, Suspense, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { lastReadingPath } from "./lib";
+import { hasReading, lastReadAt, lastReadingPath } from "./lib";
 import { AskDrawer } from "./components/AskDrawer";
 import { TopBar } from "./components/TopBar";
 import { TabBar } from "./components/TabBar";
-import { startSync } from "./sync";
+import { startSync, useSync } from "./sync";
 import { MapHost } from "./components/MapHost";
 import { TimelineLab } from "./pages/TimelineLab";
 const LandingPage = lazy(() => import("./pages/LandingPage"));
@@ -81,6 +81,16 @@ const loading = <div className="loading">Loading…</div>;
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } });
 
+/** Opening the installed app: back to the chapter if you were reading a moment ago, otherwise your home desk
+ *  (signed in) or your last chapter (signed out); the welcome page the very first time. */
+function AppStart() {
+  const sync = useSync();
+  if (!sync.ready) return loading;
+  if (hasReading() && Date.now() - lastReadAt() < 30 * 60_000) return <Navigate to={lastReadingPath()} replace />;
+  if (sync.user) return <Navigate to="/home" replace />;
+  return <Navigate to={hasReading() ? lastReadingPath() : "/"} replace />;
+}
+
 function App() {
   const location = useLocation();
   // one anonymous count per page: the path only (/read/John/3), never the verse, search or anything about the reader
@@ -96,7 +106,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Suspense fallback={loading}><LandingPage /></Suspense>} />
           {/* the installed app opens here: straight back to the reading */}
-          <Route path="/app" element={<Navigate to={lastReadingPath()} replace />} />
+          <Route path="/app" element={<AppStart />} />
           <Route path="/home" element={<Suspense fallback={loading}><HomePage /></Suspense>} />
           <Route path="/read/:book/:chapter" element={<ReadPage />} />
           <Route path="/library" element={<LibraryPage />} />

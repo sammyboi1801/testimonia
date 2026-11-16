@@ -267,3 +267,18 @@
   .back-btn { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 36px; height: 40px; margin-right: -4px; font-size: 30px; line-height: 1; color: var(--ink); }
   .brand.has-back .brand-mark { width: 26px; height: 26px; }
 }
+
+/* phones: the chapter title stays on one line (shrinking for long names) and the view button gives it room */
+@media (max-width: 760px) {
+  .reader-head .chapter-title { gap: 2px; min-width: 0; }
+  .reader-head .chapter-title .picker-btn { min-width: 0; flex: 0 1 auto; padding-left: 2px; padding-right: 2px; }
+  .reader-head .picker-title {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; display: block;
+    font-size: clamp(22px, 7.4vw, calc(30px * var(--display-size)));
+  }
+  .reader-head .view-btn { padding: 7px 10px; flex: none; }
+}
+@media (max-width: 420px) {
+  .reader-head .view-btn { font-size: 0; gap: 0; } /* just "Aa" */
+  .reader-head .view-btn span { font-size: 17px; }
+}

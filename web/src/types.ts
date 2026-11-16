@@ -87,6 +87,8 @@ export interface Chapter {
   headings: { vkey: number; title: string }[];
   prev: ChapterRef | null;
   next: ChapterRef | null;
+  /** place names in each verse, from the static files (else asked of the API) */
+  places?: Record<number, import("./components/PlaceName").PlaceInText[]>;
 }
 
 export interface Reading {

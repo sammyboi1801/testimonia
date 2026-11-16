@@ -99,7 +99,7 @@ export const PROFILE = "testimonia.profile"; // { name } the reader chose
 /** Remember the chapter being read, so opening the app returns to it. */
 export function rememberReading(book: string, chapter: number): void {
   try {
-    localStorage.setItem(LAST_READ, JSON.stringify({ book, chapter }));
+    localStorage.setItem(LAST_READ, JSON.stringify({ book, chapter, at: Date.now() }));
     // the days you read, for the reading streak on the home desk
     const d = new Date();
     const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -111,6 +111,25 @@ export function rememberReading(book: string, chapter: number): void {
 }
 
 /** Where to open the reader: the last chapter read, or John 1. */
+/** When the reader last had a chapter open (ms since 1970; 0 if never). */
+export function lastReadAt(): number {
+  try {
+    const v = JSON.parse(localStorage.getItem(LAST_READ) ?? "null") as { at?: number } | null;
+    return typeof v?.at === "number" ? v.at : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** Has this device ever opened a chapter? */
+export function hasReading(): boolean {
+  try {
+    return !!localStorage.getItem(LAST_READ);
+  } catch {
+    return false;
+  }
+}
+
 export function lastReadingPath(): string {
   try {
     const v = JSON.parse(localStorage.getItem(LAST_READ) ?? "null") as { book?: string; chapter?: number } | null;
