@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useMeta, useVerse } from "../api";
 import { useSettings } from "../settings";
 import { citeBlock, citeInline, copyText } from "../studyLib";
+import { VerseCard } from "./VerseCard";
 
 /** "Copied" for a moment after a successful copy. */
 function useCopied(): [boolean | null, (text: string) => Promise<boolean>] {
@@ -27,8 +28,10 @@ interface Passage {
 }
 
 /** A "Copy" button with a small menu: as a quotation, or as a block with a reference line. */
-export function CopyMenu({ passage, editions, onEdition, className = "va-btn" }: { passage: Passage | null; editions?: { id: string; abbrev: string }[]; onEdition?: (id: string) => void; className?: string }) {
+/** With `shareUrl`, the button is "Share": the copy choices, plus the phone's share sheet and an image card. */
+export function CopyMenu({ passage, editions, onEdition, className = "va-btn", shareUrl }: { passage: Passage | null; editions?: { id: string; abbrev: string }[]; onEdition?: (id: string) => void; className?: string; shareUrl?: string }) {
   const [open, setOpen] = useState(false);
+  const [card, setCard] = useState(false);
   const [copied, copy] = useCopied();
   const wrap = useRef<HTMLSpanElement>(null);
   const menu = useRef<HTMLDivElement>(null);
@@ -70,7 +73,7 @@ export function CopyMenu({ passage, editions, onEdition, className = "va-btn" }:
   return (
     <span className="copy-wrap" ref={wrap}>
       <button className={`${className}${open ? " on" : ""}`} onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="menu" disabled={!passage} title="Copy with the reference">
-        {copied ? "✓ Copied" : copied === false ? "Copy failed" : "⧉ Copy"}
+        {copied ? "✓ Copied" : copied === false ? "Copy failed" : shareUrl ? "↗ Share" : "⧉ Copy"}
       </button>
       {open && passage && (
         <div className="copy-menu" role="menu" ref={menu} style={{ transform: `translateX(${shift}px)` }}>
@@ -89,6 +92,37 @@ export function CopyMenu({ passage, editions, onEdition, className = "va-btn" }:
               {passage.edition ? ` (${passage.edition})` : ""}
             </span>
           </button>
+          {shareUrl && (
+            <>
+              <div className="cm-rule" />
+              {typeof navigator.share === "function" && (
+                <button
+                  role="menuitem"
+                  onClick={async () => {
+                    setOpen(false);
+                    try {
+                      await navigator.share({ title: passage.label, text: inline, url: shareUrl });
+                    } catch {
+                      /* closed */
+                    }
+                  }}
+                >
+                  <span className="cm-label">Send…</span>
+                  <span className="cm-sample">The verse and a link, through your phone's share sheet</span>
+                </button>
+              )}
+              <button
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  setCard(true);
+                }}
+              >
+                <span className="cm-label">Image card</span>
+                <span className="cm-sample">The verse set as a picture, for WhatsApp or Instagram</span>
+              </button>
+            </>
+          )}
           {editions && editions.length > 1 && onEdition && (
             <label className="cm-edition">
               Translation
@@ -106,6 +140,9 @@ export function CopyMenu({ passage, editions, onEdition, className = "va-btn" }:
       <span className="st-sr-only" aria-live="polite">
         {copied ? "Copied to the clipboard" : ""}
       </span>
+      {card && passage && shareUrl && (
+        <VerseCard verse={{ text, label: passage.label, edition: passage.edition, url: shareUrl }} onClose={() => setCard(false)} />
+      )}
     </span>
   );
 }
@@ -118,7 +155,9 @@ export function CopyVerse({ osis, label }: { osis: string; label: string }) {
   const texts = (data?.texts ?? []).filter((t) => t.language === "eng" || t.language === "lat");
   const t = texts.find((x) => x.edition_id === chosen) ?? texts.find((x) => x.edition_id === settings.editions[0]) ?? texts[0];
   const passage = t && data ? { label, edition: t.abbrev ?? t.edition_id, verses: [{ verse: data.verse.verse, text: t.text }] } : null;
-  return <CopyMenu passage={passage} editions={texts.map((x) => ({ id: x.edition_id, abbrev: x.abbrev ?? x.edition_id }))} onEdition={setChosen} />;
+  const [book, ch] = osis.split(".");
+  const shareUrl = `https://testimonia.web.app/read/${book}/${ch}?v=${encodeURIComponent(osis)}`;
+  return <CopyMenu passage={passage} editions={texts.map((x) => ({ id: x.edition_id, abbrev: x.abbrev ?? x.edition_id }))} onEdition={setChosen} shareUrl={shareUrl} />;
 }
 
 /** Selection toolbar: copy the selected words as “…” (John 1:1, KJV). */
