@@ -19,6 +19,8 @@ import asyncio
 import ipaddress
 import json
 import socket
+import time
+from collections import deque
 from collections.abc import AsyncIterator
 from contextvars import ContextVar
 from typing import Any, Literal
@@ -37,6 +39,11 @@ from .store import Store
 router = APIRouter(prefix="/api/agent")
 
 MAX_ROUNDS = 30  # tool round-trips per question (several tools can run in one round)
+TOOL_TIMEOUT = 30  # seconds one tool may take before the model is told to try something narrower
+HEARTBEAT = 15  # seconds of silence before a keep-alive line (phones and proxies drop quiet streams)
+MAX_TURNS = 40  # earlier messages beyond these are dropped before asking the model
+MAX_CHARS = 120_000  # and the conversation is trimmed to about this much text
+RATE = (40, 600)  # questions per visitor per window (seconds): protects the small server
 DEFAULT_CLAUDE = "claude-opus-5-5"
 #: Claude models that accept server-side refusal fallbacks in the "default" form (the API picks the fallback).
 FALLBACK_DEFAULT = {"claude-opus-5-5", "claude-sonnet-5-5", "claude-opus-5", "claude-fable-5-1"}
@@ -210,12 +217,13 @@ async def chat(request: Request, body: ChatRequest, x_api_key: str | None = Head
         base, pin = await asyncio.to_thread(resolve_base_url, body.base_url, allow_private)
     elif not x_api_key:
         raise HTTPException(401, "an Anthropic API key is required (X-Api-Key header)")
+    _rate_limit(request)
     s = store(request)
     system = SYSTEM + (f"\n\nOn the reader's screen now: {body.context}." if body.context else "")
     if body.notes is not None:
         system += f"\nThe reader has {len(body.notes)} notes and highlights; the notes tool reads and changes them."
-    turns = [t.model_dump() for t in body.messages]
-    if turns[-1]["role"] != "user":
+    turns = _trim([t.model_dump() for t in body.messages])
+    if not turns or turns[-1]["role"] != "user":
         raise HTTPException(400, "the last message must be the user's question")
 
     async def events() -> AsyncIterator[str]:
@@ -226,8 +234,32 @@ async def chat(request: Request, body: ChatRequest, x_api_key: str | None = Head
                 gen = _claude(s, x_api_key or "", body.model or DEFAULT_CLAUDE, system, turns)
             else:
                 gen = _openai(s, x_api_key, base, body.model, system, turns, pin=pin)
-            async for event in gen:
-                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+            queue: asyncio.Queue[tuple[str, Any]] = asyncio.Queue()
+
+            async def pump() -> None:
+                try:
+                    async for event in gen:
+                        await queue.put(("event", event))
+                except Exception as e:  # handed to the handlers below
+                    await queue.put(("error", e))
+                finally:
+                    await queue.put(("done", None))
+
+            task = asyncio.create_task(pump())
+            try:
+                while True:
+                    try:
+                        kind, value = await asyncio.wait_for(queue.get(), HEARTBEAT)
+                    except TimeoutError:
+                        yield ": keep-alive\n\n"  # a comment line: readers ignore it, connections stay open
+                        continue
+                    if kind == "done":
+                        break
+                    if kind == "error":
+                        raise value
+                    yield f"data: {json.dumps(value, ensure_ascii=False)}\n\n"
+            finally:
+                task.cancel()
         except anthropic.AuthenticationError:
             yield _sse({"type": "error", "message": "The API key was not accepted."})
         except anthropic.PermissionDeniedError:
@@ -275,6 +307,59 @@ async def _tool(s: Store, name: str, args: Any) -> tuple[str, bool]:
     text, is_error, action = await asyncio.to_thread(_run_with_action, s, name, args)
     agent_tools.ACTION.set(None if is_error else action)
     return text, is_error
+
+
+async def _one_tool(s: Store, name: str, args: Any) -> tuple[str, bool, dict[str, Any] | None]:
+    """Run one tool call: (result text, failed, the action for the browser if any)."""
+    if args is None:
+        return "Error: arguments were not valid JSON", True, None
+    try:
+        if name == "notes":
+            text, failed = await _tool(s, name, args)
+            action = None
+        else:
+            text, failed, action = await asyncio.wait_for(
+                asyncio.to_thread(_run_with_action, s, name, args), TOOL_TIMEOUT
+            )
+    except TimeoutError:
+        return f"Error: {name} took too long. Try a narrower request.", True, None
+    except Exception as e:  # a tool's own failure is reported to the model, not to the reader
+        return f"Error: {name} failed ({type(e).__name__}).", True, None
+    return text, failed, _navigation(name, args, failed, None if failed else action)
+
+
+async def _run_tools(s: Store, calls: list[tuple[str, Any]]) -> list[tuple[str, bool, dict[str, Any] | None]]:
+    """All the tool calls of one round at once (the model often asks for several lookups together)."""
+    return list(await asyncio.gather(*(_one_tool(s, n, a) for n, a in calls)))
+
+
+_HITS: dict[str, deque[float]] = {}
+
+
+def _rate_limit(request: Request) -> None:
+    """At most RATE questions per visitor per window; the window slides."""
+    ip = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+    ip = ip or (request.client.host if request.client else "?")
+    now = time.monotonic()
+    hits = _HITS.setdefault(ip, deque())
+    while hits and now - hits[0] > RATE[1]:
+        hits.popleft()
+    if len(hits) >= RATE[0]:
+        raise HTTPException(429, "Too many questions in a short time — please wait a few minutes.")
+    hits.append(now)
+    if len(_HITS) > 10_000:  # forget visitors who have gone quiet
+        for k in [k for k, v in _HITS.items() if not v or now - v[-1] > RATE[1]]:
+            del _HITS[k]
+
+
+def _trim(turns: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep the conversation to a sensible size, oldest messages first to go; it must start with the reader."""
+    turns = turns[-MAX_TURNS:]
+    while len(turns) > 1 and sum(len(str(t.get("content", ""))) for t in turns) > MAX_CHARS:
+        turns.pop(0)
+    while turns and turns[0]["role"] != "user":
+        turns.pop(0)
+    return turns
 
 
 def _run_with_action(s: Store, name: str, args: Any) -> tuple[str, bool, dict[str, Any] | None]:
@@ -352,22 +437,23 @@ async def _claude(
         results: list[BetaToolResultBlockParam] = []
         for block in tool_uses:
             yield {"type": "tool", "name": block.name, "summary": _summary(block.name, block.input)}
-            text, is_error = await _tool(s, block.name, block.input)
-            if nav := _navigation(block.name, block.input, is_error):
+        done = await _run_tools(s, [(b.name, b.input) for b in tool_uses])
+        for block, (text, is_error, nav) in zip(tool_uses, done, strict=True):
+            if nav:
                 yield nav
             results.append({"type": "tool_result", "tool_use_id": block.id, "content": text, "is_error": is_error})
         messages.append({"role": "user", "content": results})  # all results of one turn in a single message
     yield {"type": "error", "message": f"Stopped after {MAX_ROUNDS} tool rounds."}
 
 
-def _navigation(name: str, args: Any, failed: bool) -> dict[str, Any] | None:
+def _navigation(name: str, args: Any, failed: bool, action: dict[str, Any] | None = None) -> dict[str, Any] | None:
     """Actions the browser carries out: show_in_app opens a page; notes changes are applied to the reader's notes."""
     if failed or not isinstance(args, dict):
         return None
     if name == "show_in_app":
         return {"type": "navigate", "link": str(args.get("link", ""))}
     if name in ("map", "pins"):
-        return agent_tools.ACTION.get()  # what the tool resolved: a map to open, pins to change
+        return action  # what the tool resolved: a map to open, pins to change
     if name == "notes" and args.get("action") in ("add", "replace", "remove", "highlight"):
         osis = agent_tools.note_osis(str(args.get("verse", "")))
         return {
@@ -468,18 +554,16 @@ async def _openai(
                     ],
                 }
             )
-            for i, c in enumerate(ordered):
+            parsed: list[Any] = []
+            for c in ordered:
                 try:
-                    args = json.loads(c["arguments"] or "{}")
+                    parsed.append(json.loads(c["arguments"] or "{}"))
                 except ValueError:
-                    args = None
-                yield {"type": "tool", "name": c["name"], "summary": _summary(c["name"], args)}
-                text, failed = (
-                    await _tool(s, c["name"], args)
-                    if args is not None
-                    else ("Error: arguments were not valid JSON", True)
-                )
-                if nav := _navigation(c["name"], args, failed):
+                    parsed.append(None)
+                yield {"type": "tool", "name": c["name"], "summary": _summary(c["name"], parsed[-1])}
+            done = await _run_tools(s, [(c["name"], a) for c, a in zip(ordered, parsed, strict=True)])
+            for i, (c, (text, _failed, nav)) in enumerate(zip(ordered, done, strict=True)):
+                if nav:
                     yield nav
                 messages.append({"role": "tool", "tool_call_id": c["id"] or f"call_{i}", "content": text})
     yield {"type": "error", "message": f"Stopped after {MAX_ROUNDS} tool rounds."}

@@ -1,6 +1,6 @@
 import DOMPurify from "dompurify";
 import { marked } from "marked";
-import { memo, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { CONFIG_KEY, PRESETS, loadConfig, loadKey, runsInBrowser, saveConfig, saveKey, type AiConfig } from "../agent/providers";
 import { runInBrowser, runOnServer, type AgentEvent, type Turn } from "../agent/run";
@@ -8,6 +8,7 @@ import { HIGHLIGHTS, useNotes, type Highlight } from "../notes";
 import { openMap, pins } from "../pins";
 import { onRemoteChange } from "../sync";
 import { screenContext } from "./AskDrawer";
+import { copyText } from "../studyLib";
 
 interface Message {
   role: "user" | "assistant";
@@ -271,11 +272,13 @@ export function Chat({
   // Follow the answer while it streams, but only while the reader is at the bottom, and only by scrolling the
   // chat's own scroller: scrollIntoView would also scroll the page, which made the screen jump on phones.
   const follow = useRef(true);
+  const [atBottom, setAtBottom] = useState(true);
   useEffect(() => {
     const box = scroller(end.current);
     if (!box) return;
     const onScroll = () => {
       follow.current = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+      setAtBottom(follow.current);
     };
     box.addEventListener("scroll", onScroll, { passive: true });
     return () => box.removeEventListener("scroll", onScroll);
@@ -302,7 +305,7 @@ export function Chat({
     if ("remember" in patch) saveKey(key, next.remember);
   }
 
-  async function ask(question: string) {
+  async function ask(question: string, base?: Message[]) {
     const q = question.trim();
     if (!q || busy) return;
     if (preset.needsKey && !key) {
@@ -313,10 +316,12 @@ export function Chat({
       setSetup(true);
       return;
     }
-    const history: Turn[] = messages.filter((m) => m.content && !m.error).map((m) => ({ role: m.role, content: m.content }));
+    const prior = base ?? messages;
+    // the last 30 messages are plenty of context; older ones only make each request slower and dearer
+    const history: Turn[] = prior.filter((m) => m.content && !m.error).slice(-30).map((m) => ({ role: m.role, content: m.content }));
     const turns: Turn[] = [...history, { role: "user", content: q }];
     follow.current = true; // a new question always scrolls into view
-    setMessages((m) => [...m, { role: "user", content: q }, { role: "assistant", content: "", steps: [] }]);
+    setMessages([...prior, { role: "user", content: q }, { role: "assistant", content: "", steps: [] }]);
     setInput("");
     setBusy(true);
     const ctrl = new AbortController();
@@ -400,35 +405,57 @@ export function Chat({
     }
   }
 
+  // Retry: ask the last question again, from just before it
+  function retry() {
+    if (busy) return;
+    const i = messages.map((m) => m.role).lastIndexOf("user");
+    if (i < 0) return;
+    void ask(messages[i]!.content, messages.slice(0, i));
+  }
+  const [copied, setCopied] = useState<number | null>(null);
+  async function copyAnswer(i: number) {
+    if (await copyText(messages[i]!.content)) {
+      setCopied(i);
+      window.setTimeout(() => setCopied((c) => (c === i ? null : c)), 1500);
+    }
+  }
+  function jumpDown() {
+    const box = scroller(end.current);
+    follow.current = true;
+    setAtBottom(true);
+    box?.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
+  }
+  // the composer grows with what is typed, up to a few lines
+  const box = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const t = box.current;
+    if (!t) return;
+    t.style.height = "auto";
+    t.style.height = `${Math.min(t.scrollHeight, 168)}px`;
+  }, [input]);
+  const shortLabel = preset.label.replace(/\s*\(.*\)\s*$/, "");
+
   return (
     <div className={compact ? "ask-chat compact" : "ask-chat"}>
-      <div className="ask-top">{/* pinned: model, history and settings stay in reach in a long chat */}
+      <div className="ask-top">{/* pinned: history and a new chat stay in reach in a long conversation */}
       <header className="ask-head">
         {!compact && <h1>Ask</h1>}
-        <button
-          className="ask-model"
-          onClick={() => {
-            const next = !setup;
-            setSetup(next);
-          }}
-          title="Choose the model and API key"
-        >
-          <span className="muted small">Model</span> {preset.label}
-          {config.model && <span className="muted"> · {config.model}</span>} ▾
-        </button>
+        <span className="ah-title">{messages.length > 0 ? titleOf(messages) : ""}</span>
         <span className="ah-actions">
-          <button className="chip" onClick={() => setShowHistory(!showHistory)} aria-expanded={showHistory} title="Past conversations">
-            ☰ History{chats.length ? ` · ${chats.length}` : ""}
+          <button className={`ah-icon${showHistory ? " on" : ""}`} onClick={() => setShowHistory(!showHistory)} aria-expanded={showHistory} title="Past conversations" aria-label="Past conversations">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l3 2" />
+            </svg>
+            {chats.length > 0 && <span className="ah-count">{chats.length}</span>}
           </button>
-          {messages.length > 0 && (
-            <button className="chip" onClick={newChat} disabled={busy} title="Start a new conversation">
-              + New
-            </button>
-          )}
+          <button className="ah-icon" onClick={newChat} disabled={busy || messages.length === 0} title="New conversation" aria-label="New conversation">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+          </button>
         </span>
       </header>
       {showHistory && <History chats={chats} current={chatId} onOpen={openChat} onNew={newChat} onDelete={deleteChat} onClose={() => setShowHistory(false)} />}
-
       {setup && (
         <section className="ask-setup">
           <div className="ask-grid">
@@ -515,51 +542,78 @@ export function Chat({
             </div>
           </div>
         )}
-        {messages.map((m, i) =>
-          m.role === "user" ? (
+        {messages.map((m, i) => {
+          const last = i === messages.length - 1;
+          const live = busy && last;
+          return m.role === "user" ? (
             <div key={i} className="ask-q">
               {m.content}
             </div>
           ) : (
-            <div key={i} className="ask-a">
-              {((m.steps?.length ?? 0) > 0 || (busy && i === messages.length - 1)) && (
-                <Activity steps={m.steps ?? []} live={busy && i === messages.length - 1} />
-              )}
+            <div key={i} className={`ask-a${live ? " streaming" : ""}`}>
+              {((m.steps?.length ?? 0) > 0 || live) && <Activity steps={m.steps ?? []} live={live} />}
               {m.notice && <p className="muted small">{m.notice}</p>}
               {m.content && <Answer text={m.content} />}
-              {m.error && <p className="error">{m.error}</p>}
+              {m.error && (
+                <p className="ask-error">
+                  {/fetch|network|load failed|connection/i.test(m.error) ? "The connection dropped." : m.error}
+                  {last && !busy && (
+                    <button className="link-btn" onClick={retry}>
+                      Retry
+                    </button>
+                  )}
+                </p>
+              )}
+              {!live && m.content && (
+                <div className="ask-actions">
+                  <button onClick={() => void copyAnswer(i)}>{copied === i ? "✓ Copied" : "Copy"}</button>
+                  {last && !m.error && <button onClick={retry}>Retry</button>}
+                </div>
+              )}
             </div>
-          ),
-        )}
+          );
+        })}
         <div ref={end} />
+        {!atBottom && messages.length > 0 && (
+          <button className="ask-jump" onClick={jumpDown} aria-label="Jump to the latest">
+            ↓
+          </button>
+        )}
       </div>
 
-      <form className="ask-input" onSubmit={submit}>
+      <form className="ask-composer" onSubmit={submit}>
         <textarea
+          ref={box}
           value={input}
-          rows={2}
+          rows={1}
           placeholder="Ask a question…"
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+            if (e.key === "Enter" && !e.shiftKey && !window.matchMedia("(pointer: coarse)").matches) {
               e.preventDefault();
               void ask(input);
             }
           }}
         />
-        {busy ? (
-          <button type="button" className="btn" onClick={() => abort.current?.abort()}>
-            Stop
+        <div className="ac-row">
+          <button type="button" className={`ac-chip${setup ? " on" : ""}`} onClick={() => setSetup(!setup)} title={`${preset.label}${config.model ? ` · ${config.model}` : ""} — change the model or key`}>
+            {shortLabel} ▾
           </button>
-        ) : (
-          <button type="submit" className="btn primary" disabled={!input.trim()}>
-            Ask
-          </button>
-        )}
+          <span className="ac-spacer" />
+          {busy ? (
+            <button type="button" className="ac-send stop" onClick={() => abort.current?.abort()} aria-label="Stop">
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden><rect x="5" y="5" width="14" height="14" rx="2.5" fill="currentColor" /></svg>
+            </button>
+          ) : (
+            <button type="submit" className="ac-send" disabled={!input.trim()} aria-label="Ask">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M12 19V5" /><path d="m5 12 7-7 7 7" />
+              </svg>
+            </button>
+          )}
+        </div>
       </form>
-      <p className="muted small ask-foot">
-        AI answers can be wrong. Check the linked sources. {inBrowser ? "Running in your browser." : "Runs through the Testimonia server with your key."}
-      </p>
+      <p className="ask-foot">AI can be wrong — check the linked sources.</p>
     </div>
   );
 }

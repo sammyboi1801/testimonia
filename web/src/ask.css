@@ -277,3 +277,70 @@ mark.phrase { color: inherit; padding: 0.04em 0; border-radius: 2px; background:
 /* the chat's top row (model · history · new) stays in reach however long the conversation grows */
 .ask-top { position: sticky; top: 0; z-index: 5; flex: none; background: var(--bg); padding-block: 4px; box-shadow: 0 8px 12px -10px rgb(0 0 0 / 0.3); max-height: 70dvh; overflow-y: auto; overscroll-behavior: contain; }
 .ask-top .ask-head { padding-block: 6px; }
+
+/* ---- the assistant, refined: a slim header, one rounded composer, quiet actions under answers ---- */
+.ask-chat .ask-head { gap: 8px; min-height: 40px; }
+.ask-head .ah-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; color: var(--ink-soft); }
+.ask-chat:not(.compact) .ask-head h1 { margin: 0; }
+.ah-icon {
+  position: relative; display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0;
+  border: 0; border-radius: 50%; background: transparent; color: var(--ink-soft);
+  transition: background-color 0.18s, color 0.18s, transform 0.12s;
+}
+.ah-icon:hover, .ah-icon.on { background: var(--panel-2); color: var(--accent); }
+.ah-icon:active { transform: scale(0.92); }
+.ah-icon:disabled { opacity: 0.35; }
+.ah-count { position: absolute; top: 3px; right: 1px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 8px; background: var(--accent); color: var(--panel); font-size: 9.5px; line-height: 15px; text-align: center; }
+
+.ask-composer {
+  position: sticky; bottom: 6px; margin-top: 6px; padding: 10px 10px 8px 14px;
+  border: 1px solid var(--rule); border-radius: 22px; background: var(--panel);
+  box-shadow: 0 6px 24px -10px rgb(60 35 10 / 0.28);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ask-composer:focus-within { border-color: color-mix(in srgb, var(--accent) 55%, var(--rule)); box-shadow: 0 8px 28px -10px rgb(154 91 46 / 0.35); }
+.ask-composer textarea {
+  display: block; width: 100%; min-height: 26px; max-height: 168px; padding: 2px 0; resize: none; overflow-y: auto;
+  border: 0; outline: none; background: transparent; color: var(--ink);
+  font: inherit; font-family: var(--font-text); font-size: 16.5px; line-height: 1.5;
+}
+.ac-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.ac-spacer { flex: 1; }
+.ac-chip {
+  max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 4px 11px; border: 1px solid var(--rule); border-radius: 999px; background: var(--panel-2);
+  color: var(--ink-soft); font-size: 12.5px; transition: border-color 0.18s, color 0.18s;
+}
+.ac-chip:hover, .ac-chip.on { border-color: var(--accent); color: var(--accent); }
+.ac-send {
+  display: grid; place-items: center; width: 36px; height: 36px; flex: none; padding: 0;
+  border: 0; border-radius: 50%; background: var(--accent); color: var(--panel);
+  transition: transform 0.12s, opacity 0.2s, background-color 0.2s;
+}
+.ac-send:active { transform: scale(0.9); }
+.ac-send:disabled { opacity: 0.3; }
+.ac-send.stop { background: var(--ink); animation: send-pulse 1.6s ease-in-out infinite; }
+@keyframes send-pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--ink) 12%, transparent); } }
+.ask-foot { margin: 6px 0 8px; text-align: center; font-size: 11.5px; color: var(--muted); }
+
+/* answers: a cursor while they stream; Copy and Retry once they are done */
+.ask-a.streaming .ask-md > :last-child::after {
+  content: ""; display: inline-block; width: 0.5em; height: 1.05em; margin-left: 2px; vertical-align: -0.15em;
+  border-radius: 2px; background: var(--accent); animation: caret-blink 1s steps(1) infinite;
+}
+@keyframes caret-blink { 50% { opacity: 0; } }
+.ask-actions { display: flex; gap: 2px; margin-top: 4px; animation: route-fade 0.3s ease-out; }
+.ask-actions button { padding: 4px 9px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 12.5px; transition: background-color 0.15s, color 0.15s; }
+.ask-actions button:hover { background: var(--panel-2); color: var(--accent); }
+.ask-error { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; color: var(--danger, #a33); font-size: 14px; }
+.ask-error .link-btn { font-size: 14px; }
+.ask-q, .ask-a { animation: msg-in 0.32s var(--ease-out, ease-out); }
+@keyframes msg-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* back to the latest, when the reader has scrolled up */
+.ask-jump {
+  position: sticky; bottom: 10px; display: grid; place-items: center; width: 36px; height: 36px; margin: 0 auto; padding: 0;
+  border: 1px solid var(--rule); border-radius: 50%; background: var(--panel); color: var(--ink-soft);
+  box-shadow: 0 4px 14px -4px rgb(0 0 0 / 0.25); font-size: 16px; animation: msg-in 0.25s ease-out;
+}
+@media (prefers-reduced-motion: reduce) { .ask-a.streaming .ask-md > :last-child::after, .ac-send.stop { animation: none; } }
