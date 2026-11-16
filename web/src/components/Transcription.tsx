@@ -307,7 +307,7 @@ export function VerseTranscriptions({ osis }: { osis: string }) {
   return (
     <section className="block mst-block">
       <h3>
-        As the manuscripts read it <span className="count">{data.total}</span>
+        In the manuscripts themselves <span className="count">{data.total}</span>
         <button
           className="mst-case"
           onClick={() => setOpts({ uncial: !opts.uncial })}

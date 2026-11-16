@@ -45,7 +45,7 @@ export function CompareTranslations({ texts, osis }: { texts: Text[]; osis: stri
     <section className="block">
       <h3 className="cmp-head">
         <span>
-          Translations <span className="count">{texts.length}</span>
+          All translations <span className="count">{texts.length}</span>
         </span>
         {comparable.length > 1 && (
           <button className={`cmp-toggle${on ? " on" : ""}`} aria-pressed={on} onClick={() => update({ on: !state.on })} title="Mark the words where each translation differs">

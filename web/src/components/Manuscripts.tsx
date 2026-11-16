@@ -29,7 +29,7 @@ export function VerseManuscripts({ osis }: { osis: string }) {
   return (
     <section className="block ms-verse">
       <h3>
-        Manuscripts <span className="count">{data.total + scrolls.length}</span>
+        Manuscripts with this verse <span className="count">{data.total + scrolls.length}</span>
       </h3>
       {scrolls.length > 0 && (
         <p className="ms-qumran">

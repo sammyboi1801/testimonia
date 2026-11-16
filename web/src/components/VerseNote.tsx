@@ -25,20 +25,46 @@ export function VerseNote({ osis, label }: { osis: string; label: string }) {
     timer.current = window.setTimeout(() => set(osis, { text: value }), 400);
   }
 
+  // the five colours wait behind one button, so the row stays calm
+  const [colours, setColours] = useState(false);
+  const wrap = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!colours) return;
+    const away = (e: PointerEvent) => !wrap.current?.contains(e.target as Node) && setColours(false);
+    document.addEventListener("pointerdown", away);
+    return () => document.removeEventListener("pointerdown", away);
+  }, [colours]);
+  const current = HIGHLIGHTS.find((h) => h.id === note?.highlight);
+
   return (
     <section className="verse-actions">
       <div className="va-row">
-        <span className="hl-swatches" role="radiogroup" aria-label="Highlight this verse">
-          {HIGHLIGHTS.map((h) => (
-            <button
-              key={h.id}
-              role="radio"
-              aria-checked={note?.highlight === h.id}
-              className={`hl-swatch hl-${h.id}${note?.highlight === h.id ? " on" : ""}`}
-              title={`Highlight ${h.label.toLowerCase()}`}
-              onClick={() => set(osis, { highlight: note?.highlight === h.id ? null : h.id })}
-            />
-          ))}
+        <span className="hl-wrap" ref={wrap}>
+          <button className={`va-btn${colours ? " on" : ""}`} onClick={() => setColours(!colours)} aria-expanded={colours} title="Highlight this verse">
+            <span className={`hl-dot${current ? ` hl-${current.id}` : ""}`} aria-hidden /> Highlight
+          </button>
+          {colours && (
+            <span className="hl-pop" role="radiogroup" aria-label="Highlight colour">
+              {HIGHLIGHTS.map((h) => (
+                <button
+                  key={h.id}
+                  role="radio"
+                  aria-checked={note?.highlight === h.id}
+                  className={`hl-swatch hl-${h.id}${note?.highlight === h.id ? " on" : ""}`}
+                  title={h.label}
+                  onClick={() => {
+                    set(osis, { highlight: note?.highlight === h.id ? null : h.id });
+                    setColours(false);
+                  }}
+                />
+              ))}
+              {current && (
+                <button className="hl-none" onClick={() => { set(osis, { highlight: null }); setColours(false); }} title="Remove the highlight">
+                  ✕
+                </button>
+              )}
+            </span>
+          )}
         </span>
         <button className={`va-btn${open ? " on" : ""}`} onClick={() => setOpen(!open)} title="My note on this verse">
           ✎ {note?.text ? "My note" : "Note"}

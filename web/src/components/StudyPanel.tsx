@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useVerse } from "../api";
 import { formatYear, osisLabel, PRE_NICENE, verseUrl } from "../lib";
@@ -20,13 +20,14 @@ import { UnderRulers } from "./UnderRulers";
 import { WordStudy } from "./WordStudy";
 
 export type Tab = PanelTab;
+// five tabs, the most used first; the church fathers live in Commentary ("Early church"), so there is one home for
+// everything written about a verse ("fathers" in old links still opens it)
 const TABS: { id: Tab; label: string }[] = [
   { id: "about", label: "Overview" },
-  { id: "text", label: "Text" },
-  { id: "fathers", label: "Fathers" },
-  { id: "commentary", label: "Commentary" },
-  { id: "links", label: "Links" },
   { id: "words", label: "Words" },
+  { id: "commentary", label: "Commentary" },
+  { id: "text", label: "Text" },
+  { id: "links", label: "Links" },
 ];
 const SCOPES: { id: FathersScope; label: string }[] = [
   { id: "pre-nicene", label: "Pre-Nicene" },
@@ -79,7 +80,14 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
   const era = g.periods.find((p) => !p.parent_id)?.name;
   const period = g.periods.find((p) => p.parent_id)?.name;
   const quotes = g.quotations;
-  const active: Tab = word ? "words" : tab;
+  const active: Tab = word ? "words" : tab === "fathers" ? "commentary" : tab;
+  const words = g.words.tagnt?.length ? g.words.tagnt : g.words.tahot?.length ? g.words.tahot : g.words.lxx;
+  const original = g.words.tagnt?.length || (!g.words.tahot?.length && g.words.lxx?.length) ? "Greek" : "Hebrew";
+  // the active tab is always in view (on a phone the tab strip scrolls)
+  const tabs = useRef<HTMLElement>(null);
+  useEffect(() => {
+    tabs.current?.querySelector<HTMLElement>("[aria-selected=true]")?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [active]);
 
   return (
     <div className="guide-inner">
@@ -93,14 +101,15 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
           )}
         </div>
         {g.heading?.title && <div className="sub">{g.heading.title}</div>}
+        <VerseText g={g} />
       </header>
       <VerseNote osis={g.verse.osis} label={osisLabel(g.verse.osis, books)} />
 
-      <nav className="tabs panel-tabs" role="tablist">
+      <nav className="tabs panel-tabs" role="tablist" ref={tabs}>
         {TABS.map((t) => (
           <button key={t.id} role="tab" aria-selected={active === t.id} className={active === t.id ? "on" : ""} onClick={() => (t.id === "words" && word ? undefined : onTab(t.id))}>
             {t.label}
-            <span className="count">{tabCount(t.id, g, fathers.length)}</span>
+            <span className="count">{tabCount(t.id, g, fathers.length + commentary.length)}</span>
           </button>
         ))}
       </nav>
@@ -116,37 +125,60 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
           <UnderRulers osis={g.verse.osis} />
           {(
           <div className="glance">
-            <GlanceRow kind="var" on={major.length > 0} onClick={() => onTab("text")}>
-              {major.length ? (
-                <>
-                  {major.length} significant variant{major.length > 1 ? "s" : ""}:{" "}
-                  <span className="greek">{major[0]!.label}</span>
-                </>
-              ) : g.variants.length ? (
-                `${g.variants.length} minor edition difference${g.variants.length > 1 ? "s" : ""}`
-              ) : (
-                "The printed editions agree here"
-              )}
-            </GlanceRow>
-            <GlanceRow kind="fat" on={preNicene > 0} onClick={() => onTab("fathers")}>
-              {preNicene} pre-Nicene citation{preNicene === 1 ? "" : "s"} · {g.fathers.length} in all ·{" "}
-              {g.commentary.length} comments
-            </GlanceRow>
-            <GlanceRow kind="fat" on={(g.commentaries?.length ?? 0) > 0} onClick={() => onTab("commentary")}>
-              {g.commentaries?.length ? `${g.commentaries.length} classic commentar${g.commentaries.length > 1 ? "ies" : "y"}: ${g.commentaries.map((c) => SHORT_NAMES[c.commentary_id] ?? c.author).join(", ")}` : "No classic commentary on this verse"}
-            </GlanceRow>
-            <GlanceRow kind="quo" on={quotes.length > 0} onClick={() => onTab("links")}>
-              {quotes.length ? `${quotes.length} Old ↔ New Testament link${quotes.length > 1 ? "s" : ""}` : "No OT ↔ NT quotation"} ·{" "}
-              {g.crossrefs.length} cross references
-            </GlanceRow>
+            {/* what this verse has, in plain words; nothing is listed for what it lacks */}
+            {g.fathers.length > 0 && (
+              <GlanceRow kind="fat" on={preNicene > 0} onClick={() => onTab("fathers")}>
+                {preNicene > 0
+                  ? `Quoted by ${preNicene} early Christian${preNicene === 1 ? "" : "s"} before AD 325${g.fathers.length > preNicene ? ` · ${g.fathers.length} in all` : ""}`
+                  : `Quoted by ${g.fathers.length} church father${g.fathers.length === 1 ? "" : "s"}`}
+              </GlanceRow>
+            )}
+            {(g.commentaries?.length ?? 0) > 0 && (
+              <GlanceRow kind="fat" on onClick={() => onTab("commentary")}>
+                {g.commentaries!.length} classic commentar{g.commentaries!.length > 1 ? "ies" : "y"}: {g.commentaries!.map((c) => SHORT_NAMES[c.commentary_id] ?? c.author).join(", ")}
+              </GlanceRow>
+            )}
+            {g.variants.length > 0 && (
+              <GlanceRow kind="var" on={major.length > 0} onClick={() => onTab("text")}>
+                {major.length ? (
+                  <>
+                    The manuscripts differ here: <span className="greek">{major[0]!.label}</span>
+                  </>
+                ) : (
+                  `${g.variants.length} small spelling difference${g.variants.length > 1 ? "s" : ""} between editions`
+                )}
+              </GlanceRow>
+            )}
+            {(words?.length ?? 0) > 0 && (
+              <GlanceRow kind="var" on onClick={() => onTab("words")}>
+                {words!.length} {original} words, each with its meaning
+              </GlanceRow>
+            )}
+            {quotes.length > 0 && (
+              <GlanceRow kind="quo" on onClick={() => onTab("links")}>
+                {quotes.length} Old ↔ New Testament quotation{quotes.length > 1 ? "s" : ""}
+              </GlanceRow>
+            )}
+            {g.crossrefs.length > 0 && (
+              <GlanceRow kind="quo" on={false} onClick={() => onTab("links")}>
+                {g.crossrefs.length} related verse{g.crossrefs.length > 1 ? "s" : ""}
+              </GlanceRow>
+            )}
           </div>
           )}
           <PassageLink osis={g.verse.osis} title={g.heading?.title} />
         </div>
       )}
       {active === "text" && <TextTab g={g} />}
-      {active === "fathers" && <FathersTab fathers={fathers} broad={(g.fathers_broad ?? []).filter((f) => inScope(f.year, f.era, scope))} commentary={commentary} onWord={onWord} />}
-      {active === "commentary" && <CommentaryTab notes={g.commentaries ?? []} verse={g.verse.verse} onWord={onWord} />}
+      {active === "commentary" && (
+        <WrittenAbout
+          initial={tab === "fathers" ? "early" : undefined}
+          early={fathers.length + commentary.length}
+          classic={g.commentaries?.length ?? 0}
+          earlyView={<FathersTab fathers={fathers} broad={(g.fathers_broad ?? []).filter((f) => inScope(f.year, f.era, scope))} commentary={commentary} onWord={onWord} />}
+          classicView={<CommentaryTab notes={g.commentaries ?? []} verse={g.verse.verse} onWord={onWord} />}
+        />
+      )}
       {active === "links" && <LinksTab g={g} books={books} onWord={onWord} />}
       {active === "words" &&
         (word ? <WordStudy strong={word} books={books} onBack={onCloseWord} onWord={onWord} /> : <WordsTab g={g} onWord={onWord} />)}
@@ -167,11 +199,41 @@ function toggleSection(e: React.MouseEvent) {
   block.classList.toggle(first ? "closed" : "open");
 }
 
-function tabCount(t: Tab, g: VerseGuide, fathers: number): string {
+/** The verse itself, in the reader's translation, under its reference: what everything below is about. */
+function VerseText({ g }: { g: VerseGuide }) {
+  const { settings } = useSettings();
+  const [full, setFull] = useState(false);
+  const t = g.texts.find((x) => x.edition_id === settings.editions[0]) ?? g.texts.find((x) => x.language === "eng") ?? g.texts[0];
+  if (!t?.text) return null;
+  return (
+    <p className={`ph-verse${full ? " full" : ""}`} onClick={() => setFull(!full)} dir={t.script_dir === "rtl" ? "rtl" : undefined}>
+      {t.text} <span className="ph-ed">{t.abbrev ?? t.edition_id}</span>
+    </p>
+  );
+}
+
+/** Commentary: the early church's words and the classic commentaries, one switch between them. */
+function WrittenAbout({ initial, early, classic, earlyView, classicView }: { initial?: "early" | "classic"; early: number; classic: number; earlyView: ReactNode; classicView: ReactNode }) {
+  const [view, setView] = useState<"early" | "classic">(initial ?? (early > 0 || classic === 0 ? "early" : "classic"));
+  return (
+    <>
+      <div className="seg seg-wide" role="tablist">
+        <button role="tab" aria-selected={view === "early"} className={view === "early" ? "on" : ""} onClick={() => setView("early")}>
+          Early church <span className="count">{early}</span>
+        </button>
+        <button role="tab" aria-selected={view === "classic"} className={view === "classic" ? "on" : ""} onClick={() => setView("classic")}>
+          Classic <span className="count">{classic}</span>
+        </button>
+      </div>
+      {view === "early" ? earlyView : classicView}
+    </>
+  );
+}
+
+function tabCount(t: Tab, g: VerseGuide, early: number): string {
   if (t === "about") return "";
   if (t === "text") return String(g.variants.length);
-  if (t === "fathers") return String(fathers);
-  if (t === "commentary") return String(g.commentaries?.length ?? 0);
+  if (t === "commentary") return String(early + (g.commentaries?.length ?? 0));
   if (t === "links") return String(g.quotations.length + g.crossrefs.length + (g.witnesses?.length ?? 0));
   const w = g.words.tagnt?.length ? g.words.tagnt : g.words.tahot?.length ? g.words.tahot : g.words.lxx;
   return String(w?.length ?? 0);
@@ -205,7 +267,7 @@ function TextTab({ g }: { g: VerseGuide }) {
   const hebrew = !g.words.tagnt?.length;
   return (
     <>
-      <Block title="Variants" note={g.variants.length}>
+      <Block title="Differences between the editions" note={g.variants.length}>
         {g.variants.length === 0 && <p className="muted">No differences recorded between the editions for this verse.</p>}
         {g.variants.map((v) => (
           <Variant key={v.id} v={v} hebrew={hebrew} />
@@ -234,7 +296,7 @@ function FathersTab({
   const [more, setMore] = useState(40);
   return (
     <>
-      <div className="seg">
+      <div className="seg seg-small" aria-label="Which period">
         {SCOPES.map((s) => (
           <button key={s.id} className={settings.fathers === s.id ? "on" : ""} onClick={() => update({ fathers: s.id })}>
             {s.label}
@@ -292,7 +354,8 @@ function FathersTab({
           </details>
         )}
       </Block>
-      <Block title="Commentary" note={commentary.length}>
+      {commentary.length > 0 && (
+      <Block title="Early commentary" note={commentary.length}>
         {commentary.slice(0, 30).map((c) => (
           <div key={c.id} className="item">
             <div className="item-head">
@@ -304,6 +367,7 @@ function FathersTab({
           </div>
         ))}
       </Block>
+      )}
     </>
   );
 }
@@ -544,14 +608,19 @@ function DiffText({ text, other }: { text: string; other: string }) {
 
 function Sigla({ witnesses }: { witnesses: string | null }) {
   const list = formatWitnesses(witnesses).split(" · ").filter(Boolean);
+  const [open, setOpen] = useState<string | null>(null);
+  const name = (w: string) => EDITION_NAME[w] ?? (/^\d/.test(w) ? `Manuscript ${w}` : w);
   return (
     <span className="r-wit">
       {list.map((w, i) => (
         <span key={w}>
           {i > 0 && " · "}
-          <abbr title={EDITION_NAME[w] ?? (/^\d/.test(w) ? `Manuscript ${w}` : w)}>{w}</abbr>
+          <button type="button" className={`sig${open === w ? " on" : ""}`} title={name(w)} onClick={() => setOpen(open === w ? null : w)}>
+            {w}
+          </button>
         </span>
       ))}
+      {open && <span className="sig-tip">{name(open)}</span>}
     </span>
   );
 }
