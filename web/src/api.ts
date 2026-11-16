@@ -96,7 +96,18 @@ export const useVerse = (osis: string | null) =>
   useQuery({
     queryKey: ["verse", osis],
     // ?r= changes whenever the verse data does, so the CDN's cached copies are not served after an update
-    queryFn: () => getJson<VerseGuide>(`/api/verse/${osis}`, { r: 2 }),
+    // the static copy from the CDN first; the server when there is none
+    queryFn: async () => {
+      if (STATIC) {
+        try {
+          const hit = await staticJson<VerseGuide>(`verse/${encodeURIComponent(osis!)}.json`);
+          if (hit) return hit;
+        } catch {
+          /* not exported: ask the server */
+        }
+      }
+      return getJson<VerseGuide>(`/api/verse/${osis}`, { r: 2 });
+    },
     enabled: !!osis,
     ...FOREVER,
   });

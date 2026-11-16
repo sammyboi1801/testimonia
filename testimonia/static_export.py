@@ -87,9 +87,10 @@ def export(db: Path, out: Path) -> dict[str, Any]:
     }
     _write(out / "index.json", index)
     lib = export_library(db, out, store)
+    vs = export_verses(db, out, store)
     return {
-        "files": files + 1 + lib["files"],
-        "bytes": size + lib["bytes"],
+        "files": files + 1 + lib["files"] + vs["files"],
+        "bytes": size + lib["bytes"] + vs["bytes"],
         "seconds": round(time.time() - started, 1),
         "chapters": len(chapters),
     }
@@ -106,3 +107,16 @@ def export_library(db: Path, out: Path, store: Store | None = None) -> dict[str,
     for name in LIBRARY:
         size += _write(out / "lib" / f"{name}.json", getattr(api, name)(req))
     return {"files": len(LIBRARY), "bytes": size, "chapters": 0, "seconds": 0}
+
+
+def export_verses(db: Path, out: Path, store: Store | None = None) -> dict[str, Any]:
+    """Every verse's study guide (what the study panel shows) as ``verse/{osis}.json``: the same answer as
+    ``/api/verse/{osis}``, so a verse opens from the CDN instead of waiting on the server."""
+    store = store or Store(db)
+    req = _req(store)
+    started = time.time()
+    files = size = 0
+    for r in store.all("SELECT osis FROM verse WHERE verse > 0 ORDER BY vkey"):
+        size += _write(out / "verse" / f"{r['osis']}.json", api.verse(req, r["osis"], preview="bsb", limit=60))
+        files += 1
+    return {"files": files, "bytes": size, "chapters": 0, "seconds": round(time.time() - started, 1)}

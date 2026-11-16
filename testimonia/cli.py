@@ -124,10 +124,15 @@ def cmd_serve(args: argparse.Namespace) -> int:
 
 
 def cmd_export_static(args: argparse.Namespace) -> int:
-    from .static_export import export, export_library
+    from .static_export import export, export_library, export_verses
 
     db = Path(args.db) if args.db else config.CORE_DB
-    r = export_library(db, Path(args.out)) if args.library_only else export(db, Path(args.out))
+    if args.library_only:
+        r = export_library(db, Path(args.out))
+    elif args.verses_only:
+        r = export_verses(db, Path(args.out))
+    else:
+        r = export(db, Path(args.out))
     mb = r["bytes"] / 1e6
     print(f"wrote {r['files']:,} files ({mb:.0f} MB) for {r['chapters']:,} chapters in {r['seconds']}s to {args.out}")
     return 0
@@ -203,6 +208,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument("--out", required=True, help="folder to write (e.g. deploy/dist/data)")
     p.add_argument("--db", help="database (default: core.db)")
     p.add_argument("--library-only", action="store_true", help="only the library files (lib/meta, works, timeline)")
+    p.add_argument("--verses-only", action="store_true", help="only the verse study guides (verse/{osis}.json)")
     p.set_defaults(func=cmd_export_static)
 
     args = parser.parse_args(argv)
