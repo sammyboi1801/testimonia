@@ -82,6 +82,7 @@ def checks(site: str, server: str | None) -> list[tuple[str, str, Check]]:
         ("server via the site", f"{site}/api/health?t={t}", json_with("status")),
         ("share link", f"{site}/v/John.3.16", has("og:image")),
         ("share picture", f"{site}/og/John.3.16.png", image),
+        ("share link (passage)", f"{site}/v/John.3.16-John.3.18", has("John 3:16–18")),
         ("sitemap", f"{site}/sitemap.xml", has("<urlset")),
     ]
     if server:
