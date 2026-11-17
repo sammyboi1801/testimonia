@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getJson, useChapter, useMeta, useVerse } from "../api";
 import { openAsk } from "../components/AskDrawer";
 import { InstallCard } from "../components/Install";
+import { studyProgress } from "../components/StudyStart";
+import { currentStudy, useStudies } from "../studies";
 import { HIGHLIGHTS, useNotes } from "../notes";
 import { openMap, usePins } from "../pins";
 import { isoDate, loadProgress, usePlans, type PlanSummary } from "../readingApi";
@@ -215,6 +217,26 @@ function ContinueCard({ path }: { path: string }) {
   );
 }
 
+/** The Bible study in progress, if there is one. */
+function StudyCard() {
+  const s = currentStudy(useStudies());
+  if (!s) return null;
+  const p = studyProgress(s);
+  return (
+    <Link className="hm-card hm-study" to={`/study/${s.id}`}>
+      <span className="hm-eyebrow accent">Continue your study</span>
+      <strong className="hm-title small">{s.label}</strong>
+      {s.title && <span className="hm-sub">{s.title}</span>}
+      <div className="hm-progress">
+        <div className="hm-bar">
+          <i style={{ width: `${Math.round(p.value * 100)}%` }} />
+        </div>
+        <span>{p.text}</span>
+      </div>
+    </Link>
+  );
+}
+
 function StreakCard() {
   const { count, week } = streak(read<string[]>(ACTIVITY, []));
   const labels = Array.from({ length: 7 }, (_, i) => {
@@ -365,6 +387,7 @@ export default function HomePage() {
       <section className={`hm-today${plan ? " with-plan" : ""}`}>
         <ContinueCard path={lastReadingPath()} />
         {plan && <PlanToday plans={plans.data ?? []} />}
+        <StudyCard />
         <ForYouCard path={lastReadingPath()} />
         <StreakCard />
         <InstallCard />

@@ -6,7 +6,7 @@
 
 /* ---- pages: each new page rises in softly (opacity only where fixed sheets live inside) ---- */
 .app > :nth-child(2) { animation: route-fade 0.3s var(--ease-out) both; }
-.app > .page:nth-child(2) { animation: route-in 0.38s var(--ease-out) both; }
+.app > .page:nth-child(2) { animation: route-in 0.38s var(--ease-out) backwards; /* not "both": a kept transform would trap fixed pop-ups inside the page */ }
 @keyframes route-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes route-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 

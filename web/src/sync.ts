@@ -17,6 +17,7 @@ const SYNCED = {
   "testimonia.lastRead": "reading", // where you were reading
   "testimonia.activity": "activity", // days with reading (streak)
   "testimonia.profile": "profile", // the name you chose
+  "testimonia.studies.v1": "studies", // Bible studies and their answers
 } as const;
 type Key = keyof typeof SYNCED;
 const KEYS = Object.keys(SYNCED) as Key[];
@@ -80,7 +81,7 @@ const parse = (raw: string | null): unknown => {
 export function merge(key: Key, local: unknown, remote: unknown): unknown {
   if (local == null) return remote;
   if (remote == null) return local;
-  if (key === "testimonia.notes.v1") {
+  if (key === "testimonia.notes.v1" || key === "testimonia.studies.v1") {
     const out: Json = { ...(remote as Json) };
     for (const [osis, n] of Object.entries(local as Record<string, { updated?: string }>)) {
       const r = out[osis] as { updated?: string } | undefined;
@@ -161,7 +162,7 @@ const later = <T extends { updated?: string }>(l: T, r: T) => ((l.updated ?? "")
  */
 export function merge3(key: Key, base: unknown, local: unknown, remote: unknown): unknown {
   if (base == null || local == null || remote == null) return merge(key, local, remote);
-  if (key === "testimonia.notes.v1") return merge3Map(base as Json, local as Json, remote as Json, (l, r) => later(l as { updated?: string }, r as { updated?: string }));
+  if (key === "testimonia.notes.v1" || key === "testimonia.studies.v1") return merge3Map(base as Json, local as Json, remote as Json, (l, r) => later(l as { updated?: string }, r as { updated?: string }));
   if (key === "testimonia.pins.v1") {
     type Pins = { pinned: string[]; sets: { id: string; created?: string }[] };
     const [b, l, r] = [base, local, remote] as Pins[];

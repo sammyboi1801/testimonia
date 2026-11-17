@@ -20,6 +20,7 @@ import { PassageLink } from "./PassageLink";
 import { Speak } from "./Speak";
 import { UnderRulers } from "./UnderRulers";
 import { WordStudy } from "./WordStudy";
+import { covers, sortedStudies, useStudies } from "../studies";
 
 export type Tab = PanelTab;
 // five tabs, the most used first; the church fathers live in Commentary ("Early church"), so there is one home for
@@ -181,6 +182,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
           </div>
           )}
           <PassageLink osis={g.verse.osis} title={g.heading?.title} />
+          <StudyHere osis={g.verse.osis} />
         </div>
       )}
       {active === "text" && <TextTab g={g} nt={nt} />}
@@ -255,6 +257,17 @@ function tabCount(t: Tab, g: VerseGuide, early: number): string {
 }
 
 const RANK: Record<string, number> = { meaning: 0, "ketiv-qere": 1, omission: 2 };
+
+/** A Bible study of the reader's that includes this verse: back to it in one tap. */
+function StudyHere({ osis }: { osis: string }) {
+  const s = sortedStudies(useStudies()).find((x) => covers(x.ref, osis));
+  if (!s) return null;
+  return (
+    <Link className="passage-link study-here" to={`/study/${s.id}`} onClick={(e) => e.stopPropagation()}>
+      Your study of {s.label} →
+    </Link>
+  );
+}
 
 function GlanceRow({ kind, on, onClick, children }: { kind: MarkKind; on: boolean; onClick: () => void; children: ReactNode }) {
   return (

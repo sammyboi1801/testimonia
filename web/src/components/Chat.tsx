@@ -118,7 +118,7 @@ function markdown(text: string): string {
 }
 
 /** One answer, rendered from markdown; memoised so earlier answers are not re-parsed on every streamed word. */
-const Answer = memo(function Answer({ text, books }: { text: string; books: { osis: string; name: string }[] }) {
+export const Answer = memo(function Answer({ text, books }: { text: string; books: { osis: string; name: string }[] }) {
   // plain references ("John 3:16") become links too, so every verse can be peeked at
   const html = useMemo(() => markdown(linkRefs(text, books)), [text, books]);
   return <div className="ask-md" dangerouslySetInnerHTML={{ __html: html }} />;

@@ -31,6 +31,7 @@ import "./timeline.css";
 import "./story.css";
 import "./ask.css";
 import "./study.css";
+import "./studies.css";
 import "./reading.css";
 import "./words.css";
 import "./manuscripts.css";
@@ -59,6 +60,7 @@ import { BookPage } from "./pages/BookPage";
 import { DomainPage } from "./pages/DomainPage";
 import { NotesPage } from "./pages/NotesPage";
 import { PassagePage } from "./pages/PassagePage";
+import { StudyPage } from "./pages/StudyPage";
 import { LibraryPage } from "./pages/LibraryPage";
 import { ManuscriptPage } from "./pages/ManuscriptPage";
 import { ManuscriptsPage } from "./pages/ManuscriptsPage";
@@ -114,6 +116,7 @@ function App() {
           <Route path="/library/:edition/:ord" element={<WorkPage />} />
           <Route path="/book/:book" element={<BookPage />} />
           <Route path="/passage/:ref" element={<PassagePage />} />
+          <Route path="/study/:id" element={<StudyPage />} />
           <Route path="/domains/:id" element={<DomainPage />} />
           <Route path="/manuscripts" element={<ManuscriptsPage />} />
           <Route path="/manuscript/:id" element={<ManuscriptPage />} />

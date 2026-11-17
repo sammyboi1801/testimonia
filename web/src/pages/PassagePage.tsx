@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useMeta } from "../api";
 import { CopyMenu } from "../components/CopyCitation";
 import { Html } from "../components/Html";
+import { StudyStart } from "../components/StudyStart";
 import { Variant } from "../components/StudyPanel";
 import { formatYear, osisLabel, verseUrl } from "../lib";
 import { useSettings } from "../settings";
@@ -30,6 +31,7 @@ export function PassagePage() {
 
 function Guide({ g, books, editions, onEdition }: { g: PassageGuide; books: Book[]; editions: { id: string; abbrev: string }[]; onEdition: (id: string) => void }) {
   const r = g.range;
+  const [starting, setStarting] = useState(false);
   const verseNo = (osis: string) => osis.split(".").slice(1).join(":");
   // within this book: "1:18"; elsewhere: "Genesis 1:1"
   const short = (osis: string) => (osis.startsWith(`${r.book}.`) ? verseNo(osis) : osisLabel(osis, books));
@@ -71,6 +73,10 @@ function Guide({ g, books, editions, onEdition }: { g: PassageGuide; books: Book
           {g.chronology?.labels.length ? <span>{g.chronology.labels.join(" → ")}</span> : null}
           {era && <span>{period ? `${era} — ${period}` : era}</span>}
         </div>
+        <button className="btn primary pg-study" onClick={() => setStarting(true)}>
+          Start a Bible study
+        </button>
+        {starting && <StudyStart passage={r.ref} onClose={() => setStarting(false)} />}
       </header>
 
       <div className="bk-layout pg-layout">

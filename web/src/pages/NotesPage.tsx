@@ -8,6 +8,7 @@ import { useSync } from "../sync";
 import { useSettings } from "../settings";
 import { spanLabel } from "../components/SelectionToolbar";
 import { CopyMenu } from "../components/CopyCitation";
+import { StudyList } from "../components/StudyStart";
 import { colourOf, groupNotes, type NoteGroup } from "./noteGroups";
 import type { Book } from "../types";
 
@@ -66,7 +67,8 @@ export function NotesPage() {
 
   return (
     <div className="page notes-page">
-      <h1>My highlights and notes</h1>
+      <StudyList />
+      <h1 className="notes-title">My highlights and notes</h1>
       <p className="muted">
         {countLine(groups.filter((g) => g.colour).length, list.filter((n) => n.text.trim()).length)}{" "}
         {sync.user
