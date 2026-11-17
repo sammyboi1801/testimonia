@@ -11,6 +11,8 @@ import { copyText } from "../studyLib";
 import { useMeta } from "../api";
 import { Peek, peekable, type PeekTarget } from "./VersePeek";
 import { RichAnswer } from "./RichAnswer";
+import { useSettings } from "../settings";
+import { canListen, canSpeak, listen, readAloud, speakable } from "../voice";
 import { startTour, type Tour } from "../tour";
 
 interface Message {
@@ -307,6 +309,20 @@ export function Chat({
   useEffect(() => {
     onBusy?.(busy);
   }, [busy, onBusy]);
+  // what to do once the answer is in and saved (on the Ask page: open the page or tour the assistant asked for)
+  const afterAnswer = useRef<(() => void) | null>(null);
+  // hands-free: an answer to a spoken question is read aloud when it is done, then the mic opens for the next
+  const wasBusy = useRef(false);
+  useEffect(() => {
+    if (wasBusy.current && !busy && voiceAsked.current) {
+      voiceAsked.current = false;
+      const i = messages.length - 1;
+      if (messages[i]?.role === "assistant" && messages[i]?.content && !messages[i]?.error)
+        window.setTimeout(() => readAnswer(i, () => handsFreeRef.current && startMic()), 150); // after it is drawn
+    }
+    wasBusy.current = busy;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busy]);
   const firstRequest = useRef(requestId);
   const suggested = useRef(initial ?? (context ? `What should I know about ${context}?` : ""));
   useEffect(() => {
@@ -319,6 +335,95 @@ export function Chat({
   }, [requestId]);
   const abort = useRef<AbortController | null>(null);
   const end = useRef<HTMLDivElement>(null);
+  const thread = useRef<HTMLDivElement>(null);
+
+  // ---- voice: ask out loud, hear answers read, or both in turn (hands-free)
+  const { settings } = useSettings();
+  const [listening, setListening] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
+  const [reading, setReading] = useState<number | null>(null); // the answer being read aloud
+  const [handsFree, setHandsFree] = useState(() => {
+    try {
+      return localStorage.getItem("testimonia.ai.handsfree") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const stopListen = useRef<(() => void) | null>(null);
+  const stopRead = useRef<(() => void) | null>(null);
+  const voiceAsked = useRef(false); // this answer was asked aloud in hands-free mode: read it, then listen again
+  const handsFreeRef = useRef(handsFree);
+  handsFreeRef.current = handsFree;
+  useEffect(
+    () => () => {
+      stopListen.current?.();
+      stopRead.current?.();
+    },
+    [],
+  );
+  function toggleHandsFree() {
+    const next = !handsFree;
+    setHandsFree(next);
+    try {
+      localStorage.setItem("testimonia.ai.handsfree", next ? "1" : "0");
+    } catch {
+      /* storage unavailable */
+    }
+  }
+  /** Read answer `i` aloud, paragraph by paragraph, lighting the one being read; `then` once it has all been read. */
+  function readAnswer(i: number, then?: () => void) {
+    stopRead.current?.();
+    const box = thread.current?.querySelector(`[data-msg="${i}"] .ask-md`);
+    if (!box) return;
+    const blocks = [...box.children];
+    const order = blocks.map((b, k) => [k, speakable(b)] as const).filter(([, t]) => t);
+    const light = (k: number | null) => blocks.forEach((b, j) => b.classList.toggle("ans-reading", j === k));
+    setReading(i);
+    stopRead.current = readAloud(
+      order.map(([, t]) => t),
+      settings.speech.read,
+      settings.speech.readRate,
+      (j, finished) => {
+        if (j === null) {
+          light(null);
+          setReading(null);
+          stopRead.current = null;
+          if (finished) then?.();
+          return;
+        }
+        const k = order[j]![0];
+        light(k);
+        blocks[k]!.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      },
+    );
+  }
+  function startMic() {
+    stopRead.current?.();
+    setMicError(null);
+    const base = input.trim() ? `${input.trimEnd()} ` : "";
+    setListening(true);
+    stopListen.current = listen(
+      (heard) => setInput(base + heard),
+      (final, error) => {
+        setListening(false);
+        stopListen.current = null;
+        if (error)
+          setMicError(
+            error === "not-allowed" || error === "service-not-allowed"
+              ? "The microphone is blocked for this site. Allow it in the browser's site settings, then try again."
+              : "That did not come through. Tap the mic and try again.",
+          );
+        else if (final && handsFreeRef.current) {
+          voiceAsked.current = true;
+          void ask(base + final);
+        }
+      },
+    );
+  }
+  function toggleMic() {
+    if (listening) stopListen.current?.();
+    else startMic();
+  }
   const preset = PRESETS.find((p) => p.id === config.preset) ?? PRESETS[0]!;
   const inBrowser = runsInBrowser(config);
 
@@ -340,6 +445,21 @@ export function Chat({
       return next;
     });
   }, [messages, busy, chatId]);
+  // the answer is in: keep the conversation now (leaving the Ask page would skip the save above), then go
+  useEffect(() => {
+    if (busy || !afterAnswer.current) return;
+    const go = afterAnswer.current;
+    afterAnswer.current = null;
+    if (messages.length) {
+      const prev = chats.find((c) => c.id === chatId);
+      saveChats([
+        { id: chatId, title: titleOf(messages), updated: new Date().toISOString(), messages: messages.slice(-80), model: prev?.model ?? preset.label },
+        ...chats.filter((c) => c.id !== chatId),
+      ]);
+    }
+    window.setTimeout(go, 60);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busy]);
   // Follow the answer while it streams, but only while the reader is at the bottom, and only by scrolling the
   // chat's own scroller: scrollIntoView would also scroll the page, which made the screen jump on phones.
   const follow = useRef(true);
@@ -403,7 +523,11 @@ export function Chat({
       let card: AnswerCard | null = null;
       // the assistant can open pages (the atlas at a place, a verse, a chapter of a work); the chat stays open
       if (e.type === "navigate" && e.link.startsWith("/")) {
-        navigate(e.link);
+        const link = e.link;
+        // the drawer stays open over the page it opens; the Ask page itself would close, cutting the answer off
+        // before it is saved, so there the page opens once the answer is done
+        if (compact) navigate(link);
+        else afterAnswer.current = () => navigate(link);
         card = { kind: "open", label: linkLabel(e.link, books), link: e.link };
         e = { type: "tool", name: "show_in_app", summary: `opened ${e.link}` };
       }
@@ -425,8 +549,10 @@ export function Chat({
       if (e.type === "tour") {
         const tour: Tour = { title: e.title, steps: e.steps };
         card = { kind: "tour", label: `${e.title} · ${e.steps.length} stops`, tour };
-        startTour(tour);
-        if (compact) hideAsk();
+        if (compact) {
+          startTour(tour);
+          hideAsk();
+        } else afterAnswer.current = () => startTour(tour); // (as above: the Ask page would close mid-answer)
         e = { type: "tool", name: "tour", summary: `built a tour: ${e.title}` };
       }
       // a change to one of the reader's Bible studies (they live in this browser too)
@@ -605,14 +731,15 @@ export function Chat({
           </button>
         </header>
         {showHistory && <History chats={chats} current={chatId} onOpen={openChat} onNew={newChat} onDelete={deleteChat} onClose={() => setShowHistory(false)} />}
-        <div className="ask-thread" onClick={onAnswerClick}>
+        <div className="ask-thread" onClick={onAnswerClick} ref={thread}>
           {messages.length === 0 && (
             <div className="ask-empty">
               <p className="muted">
-                Ask about any passage, word, writer or event. Answers are grounded in the library — translations, manuscripts, the fathers, Josephus — and link to
-                their sources.
+                Ask about any passage, word, writer or event. Answers come from the library (the translations, manuscripts, church fathers and Josephus) and link
+                to their sources.
               </p>
-              {context && <p className="ask-context">About {context}</p>}
+              {/* in the drawer, its header already says which page it is about */}
+              {context && !compact && <p className="ask-context">About {context}</p>}
               <div className="search-examples">
                 {SUGGESTIONS.map((s) => (
                   <button key={s} className="chip" onClick={() => void ask(s)}>
@@ -630,7 +757,7 @@ export function Chat({
                 {m.content}
               </div>
             ) : (
-              <div key={i} className={`ask-a${live ? " streaming" : ""}`}>
+              <div key={i} className={`ask-a${live ? " streaming" : ""}${reading === i ? " reading" : ""}`} data-msg={i}>
                 {((m.steps?.length ?? 0) > 0 || live) && <Activity steps={m.steps ?? []} live={live} />}
                 {m.notice && <p className="muted small">{m.notice}</p>}
                 {m.content && <Answer text={m.content} books={books} live={live} />}
@@ -648,6 +775,11 @@ export function Chat({
                 {!live && m.content && (
                   <div className="ask-actions">
                     <button onClick={() => void copyAnswer(i)}>{copied === i ? "✓ Copied" : "Copy"}</button>
+                    {canSpeak() && (
+                      <button className={reading === i ? "on" : ""} onClick={() => (reading === i ? stopRead.current?.() : readAnswer(i))} aria-pressed={reading === i}>
+                        {reading === i ? "■ Stop" : "▶ Listen"}
+                      </button>
+                    )}
                     {last && !m.error && <button onClick={retry}>Retry</button>}
                   </div>
                 )}
@@ -667,7 +799,7 @@ export function Chat({
             ref={box}
             value={input}
             rows={1}
-            placeholder="Ask a question…"
+            placeholder={listening ? "Listening…" : "Ask a question…"}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey && !window.matchMedia("(pointer: coarse)").matches) {
@@ -677,7 +809,27 @@ export function Chat({
             }}
           />
           <div className="ac-row">
+            {handsFree && listening && <span className="ac-hint">Hands-free: it sends when you pause</span>}
             <span className="ac-spacer" />
+            {canListen() && !busy && (
+              <button
+                type="button"
+                className={`ac-mic${listening ? " on" : ""}`}
+                onClick={toggleMic}
+                aria-pressed={listening}
+                aria-label={listening ? "Stop listening" : "Speak your question"}
+                title={
+                  listening
+                    ? "Stop listening"
+                    : "Speak your question. Your browser turns speech into text (Chrome and Edge use Google's service for this; Safari does it on your device)."
+                }
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <rect x="9" y="3" width="6" height="11" rx="3" />
+                  <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+                </svg>
+              </button>
+            )}
             {busy ? (
               <button type="button" className="ac-send stop" onClick={() => abort.current?.abort()} aria-label="Stop">
                 <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden><rect x="5" y="5" width="14" height="14" rx="2.5" fill="currentColor" /></svg>
@@ -691,7 +843,13 @@ export function Chat({
             )}
           </div>
         </form>
-        <p className="ask-foot">AI can be wrong. Check the linked sources.</p>
+        {micError ? (
+          <p className="ask-foot ask-mic-error" role="alert">
+            {micError}
+          </p>
+        ) : (
+          <p className="ask-foot">AI can be wrong. Check the linked sources.</p>
+        )}
       </section>
       {setup && (
         // the model and key in a dialog of their own, over a dimmed page
@@ -747,6 +905,12 @@ export function Chat({
             <input type="checkbox" checked={config.remember} onChange={(e) => update({ remember: e.target.checked })} />
             Remember the key on this device
           </label>
+          {canListen() && canSpeak() && (
+            <label className="ask-remember">
+              <input type="checkbox" checked={handsFree} onChange={toggleHandsFree} />
+              Hands-free voice: a question you speak is sent when you pause, the answer is read aloud, then it listens again
+            </label>
+          )}
           <p className="ask-privacy">
             {inBrowser
               ? "This model runs on your computer: your browser talks to it directly, and Testimonia only supplies the library tools."

@@ -151,6 +151,11 @@ export function PrivacyPage() {
         question and your key pass through our server to that provider, which answers under its own privacy terms. Our server does not keep your questions.
         Your chats are saved in your browser, and in your account if you sign in.
       </p>
+      <p>
+        If you speak a question with the microphone button, your browser turns the speech into text. Chrome and Edge do this by sending the audio to
+        Google&apos;s speech service; Safari does it on your device. Testimonia never receives the audio, only the text you then send. Reading answers aloud
+        uses the voices installed on your device.
+      </p>
 
       <h2>Feedback</h2>
       <p>Messages sent from the About page are stored so they can be read and answered. Your email is included only if you add it.</p>

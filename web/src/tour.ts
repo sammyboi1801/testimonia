@@ -58,6 +58,9 @@ export function endTour(): void {
   set({ tour: null, at: 0 });
 }
 
+/** A tour is playing (read outside React, e.g. when the chat decides how much of the screen to take). */
+export const tourPlaying = (): boolean => state.tour !== null;
+
 export function useTour(): State {
   return useSyncExternalStore(
     (l) => {

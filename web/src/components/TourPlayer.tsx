@@ -2,7 +2,7 @@
 // jump between stops. Each stop opens its passage in the reader (the range shaded on wide screens; on phones the
 // verse is brought to the middle and marked) and shows its places on the map when it has any.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMeta } from "../api";
 import { openMap } from "../pins";
@@ -24,12 +24,23 @@ export function stopUrl(s: TourStop): string | null {
   return s.link ?? null;
 }
 
+/** The verses of a stop within one chapter ("Mark.1.14" to "Mark.1.20"); across chapters, the first chapter's part. */
+function rangeOsis(first: string, last: string): string[] {
+  const [book, c, v] = first.split(".");
+  const [, c2, v2] = last.split(".");
+  const end = c2 === c ? Number(v2) : Number(v) + 30;
+  const out: string[] = [];
+  for (let n = Number(v); n <= Math.min(end, Number(v) + 80); n++) out.push(`${book}.${c}.${n}`);
+  return out;
+}
+
 export function TourPlayer() {
   const { tour, at } = useTour();
   const navigate = useNavigate();
   const books = useMeta().data?.books ?? [];
   const card = useRef<HTMLElement>(null);
   const stop = tour?.steps[at];
+  const [folded, setFolded] = useState(false); // just the controls, to see more of the page
 
   // go where the stop is, and show its places
   useEffect(() => {
@@ -38,8 +49,26 @@ export function TourPlayer() {
     if (url) navigate(url);
     if (stop.map) openMap({ ...stop.map, title: stop.title });
     card.current?.querySelector<HTMLElement>(".tp-next")?.focus({ preventScroll: true });
+    // the stop's first verse at the top of the screen, clear of the card, once the chapter has drawn
+    const t = window.setTimeout(() => {
+      const el = stop.osis ? document.querySelector<HTMLElement>(`.reader [data-osis="${CSS.escape(stop.osis)}"]`) : null;
+      el?.scrollIntoView({ block: "start", behavior: "smooth" });
+    }, 450);
+    return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tour, at]);
+
+  // every verse of the stop softly marked (on phones too, where the reader's own range shading is not used)
+  const marked = useMemo(() => (stop?.osis ? rangeOsis(stop.osis, stop.end ?? stop.osis) : []), [stop]);
+  useEffect(() => {
+    if (!marked.length) return;
+    const style = document.createElement("style");
+    style.dataset.tour = "1";
+    const sel = marked.map((o) => `.reader [data-osis="${o}"]`).join(",\n");
+    style.textContent = `${sel} { background-color: color-mix(in srgb, var(--accent) 6%, transparent); border-radius: 6px; scroll-margin-top: 96px; }`;
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, [marked]);
 
   // ← and → step through it, Esc ends it (not while typing)
   useEffect(() => {
@@ -59,12 +88,15 @@ export function TourPlayer() {
   if (!tour || !stop) return null;
   const last = at === tour.steps.length - 1;
   return (
-    <aside className="tour-card" ref={card} aria-label={`Tour: ${tour.title}`} aria-live="polite">
+    <aside className={`tour-card${folded ? " folded" : ""}${stop.map ? " has-map" : ""}`} ref={card} aria-label={`Tour: ${tour.title}`} aria-live="polite">
       <header className="tp-head">
         <span className="tp-kicker">Tour</span>
         <span className="tp-title" title={tour.title}>
-          {tour.title}
+          {folded ? `${at + 1}/${tour.steps.length} · ${stop.title}` : tour.title}
         </span>
+        <button className="icon-btn tp-fold" onClick={() => setFolded(!folded)} aria-expanded={!folded} aria-label={folded ? "Show the stop" : "Fold the card"} title={folded ? "Show the stop" : "Fold the card to see more of the page"}>
+          {folded ? "▴" : "▾"}
+        </button>
         <button className="icon-btn tp-close" onClick={endTour} aria-label="End the tour" title="End the tour (Esc)">
           ✕
         </button>

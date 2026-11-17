@@ -184,10 +184,18 @@
 .va-btn:hover, .va-btn.on { border-color: var(--accent); color: var(--accent); }
 .va-ask { margin-left: auto; background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 600; }
 .va-note { margin-top: 6px; }
+/* the half / whole screen switch: phones only */
+.ask-drawer-head .ask-size { display: none; margin-left: auto; }
+.ask-drawer-head .ask-size + .icon-btn { margin-left: 0; }
 @media (max-width: 760px) {
   .ask-fab { right: 12px; bottom: 12px; padding: 9px 14px; }
   .workspace.has-verse:not(.panel-closed) ~ .ask-fab { display: none; }
-  .ask-drawer { top: auto; height: 88vh; height: 88dvh; width: 100vw; border-radius: 16px 16px 0 0; border-left: 0; animation: sheet-in 0.2s ease-out; }
+  /* phones: the whole screen, or half of it over a page being read (it knows that page either way, and acts on it) */
+  .ask-drawer { width: 100vw; border-left: 0; animation: sheet-up 0.32s var(--ease-out, ease-out); transition: height 0.32s var(--ease-out, ease-out), border-radius 0.32s; }
+  .ask-drawer.full { top: 0; height: 100vh; height: 100dvh; padding-top: env(safe-area-inset-top, 0px); border-radius: 0; }
+  .ask-drawer.half { top: auto; bottom: 0; height: 58vh; height: 58dvh; border-radius: 18px 18px 0 0; box-shadow: 0 -12px 40px rgb(0 0 0 / 0.18); }
+  .ask-layer.half { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+  .ask-drawer-head .ask-size { display: grid; }
 }
 
 /* phrase highlights and the selection toolbar */
@@ -527,4 +535,46 @@ mark.phrase { color: inherit; padding: 0.04em 0; border-radius: 2px; background:
   .tour-card { left: 8px; right: 8px; width: auto; bottom: calc(var(--tabbar-h, 64px) + 8px); max-height: 46vh; border-radius: 18px; }
   .tp-h { font-size: calc(20px * var(--display-size)); }
 }
+/* folded: just the heading, the dots and Back / Next, to see more of the page */
+.tour-card.folded .tp-body { display: none; }
+.tour-card.folded .tp-ask { display: none; }
+.tour-card.folded .tp-foot { border-top: 0; padding-top: 4px; }
+.tour-card.folded .tp-foot .tp-next { margin-left: auto; }
+.tp-fold { flex: none; font-size: 13px; }
+/* a sheet that needs the whole view (the view settings, the verse panel over a passage, a painting, the assistant's
+   settings): the tour waits behind it */
+body:has(.view-scrim, .vs-scrim, .art-view, .ask-modal-layer) .tour-card { display: none; }
+/* the chat open beside the page (a laptop): the tour stays in reach above its dimmed backdrop */
+body:has(.ask-layer:not(.hidden)) .tour-card { z-index: 96; }
+@media (max-width: 760px) {
+  body:has(.ask-layer.full:not(.hidden)) .tour-card { display: none; }
+  /* sharing the screen with a sheet below (a verse, the chat at half height, a map): the tour moves to the top and
+     shows only its controls, so both can be used. One plain rule per case, each marked (--dock) so the minifier
+     cannot merge them into an :is() list with :has() inside, which Chrome misreads (it hid the card instead). */
+  body:has(.workspace.has-verse:not(.panel-closed)) .tour-card { --dock: verse; top: calc(8px + env(safe-area-inset-top, 0px)); bottom: auto; }
+  body:has(.ask-layer.half:not(.hidden)) .tour-card { --dock: chat; top: calc(8px + env(safe-area-inset-top, 0px)); bottom: auto; }
+  body:has(.mp) .tour-card { --dock: map; top: calc(8px + env(safe-area-inset-top, 0px)); bottom: auto; }
+  body:has(.workspace.has-verse:not(.panel-closed)) .tour-card .tp-body { --dock: verse-b; display: none; }
+  body:has(.workspace.has-verse:not(.panel-closed)) .tour-card .tp-ask { --dock: verse-a; display: none; }
+  body:has(.ask-layer.half:not(.hidden)) .tour-card .tp-body { --dock: chat-b; display: none; }
+  body:has(.ask-layer.half:not(.hidden)) .tour-card .tp-ask { --dock: chat-a; display: none; }
+  body:has(.mp) .tour-card .tp-body { --dock: map-b; display: none; }
+  body:has(.mp) .tour-card .tp-ask { --dock: map-a; display: none; }
+}
+
+/* ---------------------------------------------------------------- voice */
+.ac-mic {
+  display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--rule); border-radius: 50%;
+  background: var(--panel); color: var(--ink-soft); transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+.ac-mic:hover { color: var(--accent); border-color: var(--accent); }
+.ac-mic.on { background: var(--accent); border-color: var(--accent); color: #fff; animation: mic-pulse 1.4s ease-in-out infinite; }
+@keyframes mic-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); } 50% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--accent) 0%, transparent); } }
+.ac-hint { font-size: 12px; color: var(--muted); }
+.ask-actions button.on { color: var(--accent); background: var(--accent-soft); }
+/* the paragraph being read aloud */
+.ask-md.rich > .ans-reading { background: color-mix(in srgb, var(--accent) 9%, transparent); border-radius: 8px; box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 9%, transparent); transition: background-color 0.3s, box-shadow 0.3s; }
+.ask-mic-error { color: var(--danger, #a33); }
+@media (prefers-reduced-motion: reduce) { .ac-mic.on { animation: none; } }
+
 @media (prefers-reduced-motion: reduce) { .ans-in, .tour-card, .tp-body { animation: none; } }

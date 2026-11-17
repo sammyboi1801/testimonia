@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { Chat } from "./Chat";
 import { mapScreenContext } from "../pins";
 import { useBackClose } from "../backClose";
+import { tourPlaying } from "../tour";
 
 
 interface AskRequest {
@@ -141,17 +142,25 @@ export function AskDrawer() {
     if (open && askStatus === "ready") setAskStatus("idle"); // seen
   }, [open]);
 
+  // phones: half the screen over a page being read (or a tour), so the page stays in sight as on a laptop; the whole
+  // screen elsewhere. The header's button switches between them.
+  const [full, setFull] = useState(true);
+  const sizeFor = () => !(tourPlaying() || /^\/(read|passage|study|atlas|library\/)/.test(window.location.pathname));
   useEffect(() => {
     const on = (e: Event) => {
       setReq((e as CustomEvent<AskRequest>).detail);
       setNonce((n) => n + 1);
       setMounted(true);
+      setFull(sizeFor());
       setOpen(true);
     };
     window.addEventListener(EVENT, on);
     const onShow = (e: Event) => {
       const show = (e as CustomEvent<boolean>).detail;
-      if (show) setMounted(true);
+      if (show) {
+        setMounted(true);
+        setFull(sizeFor());
+      }
       setOpen(show);
     };
     window.addEventListener(SHOW_EVENT, onShow);
@@ -203,11 +212,27 @@ export function AskDrawer() {
         </button>
       )}
       {mounted && (
-        <div className={`ask-layer${open ? "" : " hidden"}`} aria-hidden={!open} onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}>
-          <aside className="ask-drawer" role="dialog" aria-label="Study assistant">
+        <div className={`ask-layer${open ? "" : " hidden"}${full ? " full" : " half"}`} aria-hidden={!open} onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}>
+          <aside className={`ask-drawer${full ? " full" : " half"}`} role="dialog" aria-label="Study assistant">
             <header className="ask-drawer-head">
               <strong>✦ Study assistant</strong>
               {req.context && <span className="ask-context">{req.context}</span>}
+              <button
+                className="icon-btn ask-size"
+                onClick={() => setFull(!full)}
+                aria-label={full ? "Show the page above the chat" : "Use the whole screen"}
+                title={full ? "Show the page above the chat" : "Use the whole screen"}
+              >
+                {full ? (
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                  </svg>
+                )}
+              </button>
               <button className="icon-btn" onClick={() => setOpen(false)} aria-label="Close">
                 ✕
               </button>
