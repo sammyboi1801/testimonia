@@ -1,8 +1,10 @@
 import { useEffect, useState, type RefObject } from "react";
+import { useMeta } from "../api";
 import { HIGHLIGHTS, useNotes, type Highlight } from "../notes";
 import { rangeOffsets, snapToWords } from "../selection";
 import { openAsk } from "./AskDrawer";
-import { CopySelection } from "./CopyCitation";
+import { CopyMenu } from "./CopyCitation";
+import { VerseCard, type CardVerse } from "./VerseCard";
 
 interface Part {
   osis: string;
@@ -15,6 +17,7 @@ interface Picked {
   ed: string;
   label: string;
   text: string;
+  texts: string[]; // the words picked in each part
   x: number;
   y: number;
 }
@@ -26,7 +29,9 @@ interface Picked {
  */
 export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLElement | null>; verseLabel: (osis: string) => string }) {
   const { addMark, clearMarks } = useNotes();
+  const meta = useMeta();
   const [picked, setPicked] = useState<Picked | null>(null);
+  const [card, setCard] = useState<CardVerse | null>(null); // stays open after the selection is gone
 
   useEffect(() => {
     const read = () => {
@@ -57,6 +62,7 @@ export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLEle
         ed,
         label: spanLabel(parts[0]!.osis, parts[parts.length - 1]!.osis, verseLabel),
         text: texts.join(" "),
+        texts,
         x: Math.min(Math.max(r.left + r.width / 2, 150), window.innerWidth - 150),
         y: r.top,
       });
@@ -82,7 +88,8 @@ export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLEle
     };
   }, [root, verseLabel]);
 
-  if (!picked) return null;
+  const cardLayer = card && <VerseCard verse={card} onClose={() => setCard(null)} />;
+  if (!picked) return cardLayer || null;
   const done = () => {
     window.getSelection()?.removeAllRanges();
     setPicked(null);
@@ -92,7 +99,18 @@ export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLEle
     done();
   };
   const top = picked.y < 70 ? picked.y + 40 : picked.y - 46;
+  const first = picked.parts[0]!.osis;
+  const last = picked.parts[picked.parts.length - 1]!.osis;
+  const passage = {
+    label: picked.label,
+    edition: meta.data?.editions.find((e) => e.id === picked.ed)?.abbrev ?? picked.ed,
+    verses: picked.parts.map((p, i) => ({ verse: Number(p.osis.split(".")[2]), text: picked.texts[i]! })),
+  };
+  // the link opens the whole verses; its preview picture shows them (deploy/functions/share.js)
+  const shareUrl = `https://testimonia.web.app/v/${encodeURIComponent(first === last ? first : `${first}-${last}`)}`;
   return (
+    <>
+    {cardLayer}
     <div className="sel-bar" style={{ left: picked.x, top }} role="toolbar" aria-label="Highlight selection" onMouseDown={(e) => e.preventDefault()}>
       {HIGHLIGHTS.map((h) => (
         <button key={h.id} className={`hl-swatch hl-${h.id}`} title={`Highlight ${h.label.toLowerCase()}`} onClick={() => colour(h.id)} />
@@ -107,7 +125,16 @@ export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLEle
       >
         ⌫
       </button>
-      <CopySelection text={picked.text} label={picked.label} edition={picked.ed} onDone={done} />
+      <CopyMenu
+        passage={passage}
+        className="sel-btn"
+        shareUrl={shareUrl}
+        onCard={(v) => {
+          setCard(v);
+          done();
+        }}
+        onDone={done}
+      />
       <button
         className="sel-btn sel-ask"
         onClick={() => {
@@ -118,6 +145,7 @@ export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLEle
         ✦ Ask
       </button>
     </div>
+    </>
   );
 }
 

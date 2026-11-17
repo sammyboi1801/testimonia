@@ -106,7 +106,16 @@ async function draw(canvas: HTMLCanvasElement, v: CardVerse, size: Size, theme: 
     lines = wrap(ctx, text, boxW);
     if (lines.length * px * 1.42 <= boxH) break;
   }
+  px = Math.max(px, 34);
   const lead = px * 1.42;
+  // a long passage at the smallest size: as many lines as fit, ending in "…”"
+  const room = Math.floor(boxH / lead);
+  if (lines.length > room) {
+    lines = lines.slice(0, room);
+    let last = lines[room - 1]!.replace(/[”"]$/, "");
+    while (last && ctx.measureText(`${last}…”`).width > boxW) last = last.replace(/\s*\S+$/, "");
+    lines[room - 1] = `${last.replace(/[\s,;:.]+$/, "")}…”`;
+  }
   const blockH = lines.length * lead;
   let y = boxTop + (boxH - blockH) / 2 + px;
   ctx.fillStyle = INK;

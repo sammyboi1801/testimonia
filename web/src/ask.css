@@ -140,6 +140,8 @@
 .notes-list li { padding: 10px 12px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--panel); border-left: 4px solid var(--hl, var(--rule)); }
 .note-head { display: flex; align-items: baseline; gap: 12px; font-family: var(--font-text); font-size: 17px; }
 .note-head .link-btn { margin-left: auto; }
+.note-head .copy-wrap { margin-left: auto; }
+.note-head .copy-wrap .link-btn, .note-head .copy-wrap + .link-btn { margin-left: 0; }
 
 /* the chat used in the drawer */
 .ask-chat { display: flex; flex-direction: column; min-height: 100%; }

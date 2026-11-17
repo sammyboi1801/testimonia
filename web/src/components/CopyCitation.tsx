@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useMeta, useVerse } from "../api";
+import { useVerse } from "../api";
 import { useSettings } from "../settings";
 import { citeBlock, citeInline, copyText } from "../studyLib";
-import { cardFile, VerseCard } from "./VerseCard";
+import { cardFile, VerseCard, type CardVerse } from "./VerseCard";
 
 /** "Copied" for a moment after a successful copy. */
 function useCopied(): [boolean | null, (text: string) => Promise<boolean>] {
@@ -21,6 +21,30 @@ function useCopied(): [boolean | null, (text: string) => Promise<boolean>] {
   return [state, copy];
 }
 
+/** 18px line icons, drawn in the text colour. */
+const svg = (d: string) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d={d} />
+  </svg>
+);
+const ICON = {
+  quote: svg("M7 7h4v4c0 3-1.5 5-4 6M14 7h4v4c0 3-1.5 5-4 6"),
+  block: svg("M5 6h14M5 10h14M5 14h9M5 19h6"),
+  link: svg("M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"),
+  send: svg("M12 15V4M8 8l4-4 4 4M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"),
+  image: svg("M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM4 16l5-5 4 4 2-2 5 5M15.5 8.5h.01"),
+};
+
+function MenuItem({ icon, label, hint, onClick }: { icon: React.ReactNode; label: string; hint: string; onClick: () => void }) {
+  return (
+    <button role="menuitem" className="cm-item" onClick={onClick}>
+      <span className="cm-icon">{icon}</span>
+      <span className="cm-label">{label}</span>
+      <span className="cm-hint">{hint}</span>
+    </button>
+  );
+}
+
 interface Passage {
   label: string; // 'John 1:1–18'
   edition: string | null; // 'KJV'
@@ -29,23 +53,44 @@ interface Passage {
 
 /** A "Copy" button with a small menu: as a quotation, or as a block with a reference line. */
 /** With `shareUrl`, the button is "Share": the copy choices, plus the phone's share sheet and an image card. */
-export function CopyMenu({ passage, editions, onEdition, className = "va-btn", shareUrl }: { passage: Passage | null; editions?: { id: string; abbrev: string }[]; onEdition?: (id: string) => void; className?: string; shareUrl?: string }) {
+/** `onCard` shows the image card elsewhere (the selection toolbar goes away when the selection does); `onDone` runs after a copy or a send. */
+export function CopyMenu({
+  passage,
+  editions,
+  onEdition,
+  className = "va-btn",
+  shareUrl,
+  onCard,
+  onDone,
+}: {
+  passage: Passage | null;
+  editions?: { id: string; abbrev: string }[];
+  onEdition?: (id: string) => void;
+  className?: string;
+  shareUrl?: string;
+  onCard?: (v: CardVerse) => void;
+  onDone?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [card, setCard] = useState(false);
   const [copied, copy] = useCopied();
   const wrap = useRef<HTMLSpanElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const [shift, setShift] = useState(0);
+  const [up, setUp] = useState(false);
 
   // keep the menu inside the window (the study panel is narrow, and on a phone the button can sit anywhere)
   useLayoutEffect(() => {
     if (!open || !menu.current || !wrap.current) {
       setShift(0);
+      setUp(false);
       return;
     }
     const w = menu.current.offsetWidth;
-    const left = wrap.current.getBoundingClientRect().left;
-    setShift(Math.min(0, window.innerWidth - 10 - (left + w)) + Math.max(0, 10 - left));
+    const r = wrap.current.getBoundingClientRect();
+    setShift(Math.min(0, window.innerWidth - 10 - (r.left + w)) + Math.max(0, 10 - r.left));
+    // near the bottom of the window (a selection low on the page): open upwards
+    setUp(r.bottom + 6 + menu.current.offsetHeight > window.innerHeight - 10 && r.top - 6 - menu.current.offsetHeight > 10);
   }, [open]);
 
   useEffect(() => {
@@ -65,10 +110,24 @@ export function CopyMenu({ passage, editions, onEdition, className = "va-btn", s
   const inline = passage ? citeInline(text, passage.label, passage.edition) : "";
   const block = passage ? citeBlock(passage.verses, passage.label, passage.edition) : "";
   const pick = async (value: string) => {
-    await copy(value);
+    const ok = await copy(value);
     setOpen(false);
+    if (ok && onDone) window.setTimeout(onDone, 700);
   };
-  const short = (s: string) => (s.length > 70 ? `${s.slice(0, 68).trimEnd()}…` : s);
+  const many = (passage?.verses.length ?? 0) > 1;
+  const send = async () => {
+    if (!passage || !shareUrl) return;
+    setOpen(false);
+    try {
+      // with the picture when the phone can send a file and text together, else the text and link
+      const file = await cardFile({ text, label: passage.label, edition: passage.edition, url: shareUrl }).catch(() => null);
+      const withPicture = file && navigator.canShare?.({ files: [file], text: inline });
+      await navigator.share(withPicture ? { files: [file], text: `${inline}\n${shareUrl}` } : { title: passage.label, text: inline, url: shareUrl });
+    } catch {
+      /* closed */
+    }
+    onDone?.();
+  };
 
   return (
     <span className="copy-wrap" ref={wrap}>
@@ -76,54 +135,28 @@ export function CopyMenu({ passage, editions, onEdition, className = "va-btn", s
         {copied ? "✓ Copied" : copied === false ? "Copy failed" : shareUrl ? "↗ Share" : "⧉ Copy"}
       </button>
       {open && passage && (
-        <div className="copy-menu" role="menu" ref={menu} style={{ transform: `translateX(${shift}px)` }}>
-          <button role="menuitem" onClick={() => void pick(inline)}>
-            <span className="cm-label">Quotation</span>
-            <span className="cm-sample">
-              “{short(text)}” ({passage.label}
-              {passage.edition ? `, ${passage.edition}` : ""})
-            </span>
-          </button>
-          <button role="menuitem" onClick={() => void pick(block)}>
-            <span className="cm-label">Block with reference</span>
-            <span className="cm-sample">
-              {short(text)}
-              <br />— {passage.label}
-              {passage.edition ? ` (${passage.edition})` : ""}
-            </span>
-          </button>
+        <div className={`copy-menu${up ? " up" : ""}`} role="menu" ref={menu} style={{ transform: `translateX(${shift}px)` }}>
+          <div className="cm-head">
+            <span className="cm-ref">{passage.label}</span>
+            {passage.edition && <span className="cm-ed">{passage.edition}</span>}
+          </div>
+          <MenuItem icon={ICON.quote} label="Copy quotation" hint={`“${text}”`} onClick={() => void pick(inline)} />
+          <MenuItem icon={ICON.block} label={many ? "Copy with verse numbers" : "Copy as block"} hint={`Reference on its own line`} onClick={() => void pick(block)} />
           {shareUrl && (
             <>
+              <MenuItem icon={ICON.link} label="Copy link" hint="Pastes with a picture preview" onClick={() => void pick(shareUrl)} />
               <div className="cm-rule" />
-              {typeof navigator.share === "function" && (
-                <button
-                  role="menuitem"
-                  onClick={async () => {
-                    setOpen(false);
-                    try {
-                      // with the picture when the phone can send a file and text together, else the text and link
-                      const file = await cardFile({ text, label: passage.label, edition: passage.edition, url: shareUrl }).catch(() => null);
-                      const withPicture = file && navigator.canShare?.({ files: [file], text: inline });
-                      await navigator.share(withPicture ? { files: [file], text: `${inline}\n${shareUrl}` } : { title: passage.label, text: inline, url: shareUrl });
-                    } catch {
-                      /* closed */
-                    }
-                  }}
-                >
-                  <span className="cm-label">Send…</span>
-                  <span className="cm-sample">The verse, its picture and a link, through your phone's share sheet</span>
-                </button>
-              )}
-              <button
-                role="menuitem"
+              {typeof navigator.share === "function" && <MenuItem icon={ICON.send} label="Send…" hint="Picture, text and link" onClick={() => void send()} />}
+              <MenuItem
+                icon={ICON.image}
+                label="Image card"
+                hint="Square, post or story"
                 onClick={() => {
                   setOpen(false);
-                  setCard(true);
+                  if (onCard) onCard({ text, label: passage.label, edition: passage.edition, url: shareUrl });
+                  else setCard(true);
                 }}
-              >
-                <span className="cm-label">Image card</span>
-                <span className="cm-sample">The verse set as a picture, for WhatsApp or Instagram</span>
-              </button>
+              />
             </>
           )}
           {editions && editions.length > 1 && onEdition && (
@@ -161,22 +194,4 @@ export function CopyVerse({ osis, label }: { osis: string; label: string }) {
   // the short link: pasted anywhere, its preview shows the verse as a picture (deploy/functions/share.js)
   const shareUrl = `https://testimonia.web.app/v/${encodeURIComponent(osis)}`;
   return <CopyMenu passage={passage} editions={texts.map((x) => ({ id: x.edition_id, abbrev: x.abbrev ?? x.edition_id }))} onEdition={setChosen} shareUrl={shareUrl} />;
-}
-
-/** Selection toolbar: copy the selected words as “…” (John 1:1, KJV). */
-export function CopySelection({ text, label, edition, onDone }: { text: string; label: string; edition: string; onDone: () => void }) {
-  const meta = useMeta();
-  const [copied, copy] = useCopied();
-  const abbrev = meta.data?.editions.find((e) => e.id === edition)?.abbrev ?? edition;
-  return (
-    <button
-      className="sel-btn"
-      title={`Copy “…” (${label}, ${abbrev})`}
-      onClick={async () => {
-        if (await copy(citeInline(text, label, abbrev))) window.setTimeout(onDone, 700);
-      }}
-    >
-      {copied ? "✓ Copied" : "⧉ Copy"}
-    </button>
-  );
 }
