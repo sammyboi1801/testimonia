@@ -18,7 +18,7 @@ import {
   type Settings,
   type Theme,
 } from "../settings";
-import { listVoices, speak, speechSupported, voicesReady, type SpeechLang } from "../speech";
+import { listVoices, readingVoices, speak, speakPassage, speechSupported, voicesReady, type SpeechLang } from "../speech";
 import { Link } from "react-router-dom";
 import { Mark } from "./Marks";
 
@@ -290,7 +290,7 @@ export function SettingsPane({ onClose }: { onClose: () => void }) {
             )}
           </Section>
 
-          <Section id="speech" title="Pronunciation" note="Uses the voices installed on this computer — modern Greek and modern Hebrew, not ancient pronunciation.">
+          <Section id="speech" title="Pronunciation" note="Uses the voices installed on this device. Greek and Hebrew are read with modern pronunciation, not ancient.">
             <SpeechSettings settings={settings} onChange={(patch) => sub("speech", patch)} />
           </Section>
 
@@ -408,9 +408,14 @@ function ColorField({ value, custom, onChange }: { value: string; custom: boolea
 
 function SpeechSettings({ settings, onChange }: { settings: Settings; onChange: (p: Partial<Settings["speech"]>) => void }) {
   const [voices, setVoices] = useState<Record<SpeechLang, SpeechSynthesisVoice[]>>({ grc: [], hbo: [] });
+  const [english, setEnglish] = useState<SpeechSynthesisVoice[]>([]);
   useEffect(() => {
     let live = true;
-    void voicesReady().then(() => live && setVoices({ grc: listVoices("grc"), hbo: listVoices("hbo") }));
+    void voicesReady().then(() => {
+      if (!live) return;
+      setVoices({ grc: listVoices("grc"), hbo: listVoices("hbo") });
+      setEnglish(readingVoices("en"));
+    });
     return () => {
       live = false;
     };
@@ -420,6 +425,23 @@ function SpeechSettings({ settings, onChange }: { settings: Settings; onChange: 
   const samples: Record<SpeechLang, string> = { grc: "Ἐν ἀρχῇ ἦν ὁ λόγος", hbo: "בְּרֵאשִׁית בָּרָא אֱלֹהִים" };
   return (
     <>
+      {english.length > 0 && (
+        <Row label="Reading voice" hint="for chapters read aloud and the assistant's answers">
+          <span className="voice-row">
+            <select value={s.read ?? ""} onChange={(e) => onChange({ read: e.target.value || null })}>
+              <option value="">Best for your language ({english[0]!.name.replace(/^Microsoft |^Google | Online \(Natural\)/g, "").slice(0, 40)})</option>
+              {english.map((v) => (
+                <option key={v.name} value={v.name}>
+                  {v.name.replace(/^Microsoft |^Google /, "").replace(" Online (Natural)", " (natural)")}
+                </option>
+              ))}
+            </select>
+            <button className="link-btn" onClick={() => void speakPassage("In the beginning was the Word, and the Word was with God.", "en", s.read, s.readRate)}>
+              ▶ test
+            </button>
+          </span>
+        </Row>
+      )}
       <Row label="Speaker buttons">
         <Toggle checked={s.enabled} onChange={(enabled) => onChange({ enabled })} />
       </Row>

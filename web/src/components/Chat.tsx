@@ -757,7 +757,7 @@ export function Chat({
                 {m.content}
               </div>
             ) : (
-              <div key={i} className={`ask-a${live ? " streaming" : ""}${reading === i ? " reading" : ""}`} data-msg={i}>
+              <div key={i} className={`ask-a${live ? " streaming" : ""}${reading === i ? " ask-reading" : ""}`} data-msg={i}>
                 {((m.steps?.length ?? 0) > 0 || live) && <Activity steps={m.steps ?? []} live={live} />}
                 {m.notice && <p className="muted small">{m.notice}</p>}
                 {m.content && <Answer text={m.content} books={books} live={live} />}

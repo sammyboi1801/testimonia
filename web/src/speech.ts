@@ -83,12 +83,24 @@ export function speechLang(edition: string): string {
   return { eng: "en", lat: "la", grc: "el", hbo: "he", heb: "he" }[edition] ?? edition.slice(0, 2);
 }
 
-/** Installed voices for a language, natural/neural (online) voices first. */
+/**
+ * Installed voices for a language, the likeliest first: the reader's own variety of it (their browser's language,
+ * e.g. en-IN), then the common ones (en-US, en-GB), natural/neural voices before plain ones within each. Sorting by
+ * name alone made the default an accident of the alphabet ("Microsoft Abeo, English (Nigeria)" in Edge).
+ */
 export function readingVoices(prefix: string): SpeechSynthesisVoice[] {
   const natural = (v: SpeechSynthesisVoice) => (/natural|neural|online/i.test(v.name) ? 0 : 1);
+  const own = (typeof navigator !== "undefined" ? navigator.language : "").toLowerCase();
+  const common = prefix === "en" ? ["en-us", "en-gb"] : [];
+  const rank = (v: SpeechSynthesisVoice) => {
+    const lang = v.lang.toLowerCase().replace("_", "-");
+    if (own.startsWith(prefix) && lang === own) return 0;
+    const i = common.indexOf(lang);
+    return i >= 0 ? 1 + i : 9;
+  };
   return voices()
     .filter((v) => v.lang.toLowerCase().startsWith(prefix))
-    .sort((a, b) => natural(a) - natural(b) || a.name.localeCompare(b.name));
+    .sort((a, b) => rank(a) - rank(b) || natural(a) - natural(b) || a.name.localeCompare(b.name));
 }
 
 /** Speak one passage; resolves when it has been spoken (true) or was interrupted (false). */
