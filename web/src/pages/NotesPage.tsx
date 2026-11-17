@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useMeta } from "../api";
 import { osisLabel, verseUrl } from "../lib";
 import { HIGHLIGHTS, useNotes, type Note } from "../notes";
+import { useSync } from "../sync";
 
 function download(name: string, text: string, type: string) {
   const a = document.createElement("a");
@@ -15,6 +16,7 @@ function download(name: string, text: string, type: string) {
 /** Every note and highlight, in Bible order, with search, export and import. */
 export function NotesPage() {
   const { notes, set, remove, importNotes } = useNotes();
+  const sync = useSync();
   const books = useMeta().data?.books ?? [];
   const [q, setQ] = useState("");
   const [only, setOnly] = useState<string>("");
@@ -55,10 +57,12 @@ export function NotesPage() {
 
   return (
     <div className="page notes-page">
-      <h1>My notes</h1>
+      <h1>My highlights and notes</h1>
       <p className="muted">
-        {total} note{total === 1 ? "" : "s"} and highlights, kept in this browser only — no account, nothing leaves your device. Export them to keep a copy or move
-        them to another device.
+        {total} verse{total === 1 ? "" : "s"} highlighted or noted.{" "}
+        {sync.user
+          ? "Saved in this browser and synced to your account."
+          : "Saved in this browser. Sign in to sync them between devices, or export them to keep a copy."}
       </p>
       <div className="notes-tools">
         <input className="shelf-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search my notes…" />
@@ -83,7 +87,7 @@ export function NotesPage() {
       {msg && <p className="set-note">{msg}</p>}
       {total === 0 && (
         <div className="empty-state">
-          No notes yet. In the <Link to="/read/John/1">reader</Link>, choose a verse and use “My note” in the study panel to highlight it or write a note.
+          Nothing here yet. In the <Link to="/read/John/1">reader</Link>, tap a verse and choose Highlight or Note. Everything you mark shows up here.
         </div>
       )}
       <ul className="notes-list">
