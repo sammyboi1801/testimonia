@@ -134,7 +134,11 @@ def test_art_keeps_only_free_images_one_per_artist(monkeypatch):
                 {
                     "thumburl": f"https://upload.example/{i}.jpg",
                     "descriptionurl": f"https://commons.example/{i}",
-                    "extmetadata": {"LicenseShortName": {"value": licence}, "Artist": {"value": f"<a>{artist}</a>"}, "Categories": {"value": "Paintings of Nicodemus|PD-Art"}},
+                    "extmetadata": {
+                        "LicenseShortName": {"value": licence},
+                        "Artist": {"value": f"<a>{artist}</a>"},
+                        "Categories": {"value": "Paintings of Nicodemus|PD-Art"},
+                    },
                 }
             ],
         }

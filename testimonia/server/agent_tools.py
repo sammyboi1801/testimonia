@@ -1806,10 +1806,10 @@ def study_tool(
         if not rows:
             return "The reader has no Bible studies yet. They start one from a passage guide or from Notes."
         out = [f"# The reader's Bible studies ({len(rows)})"]
-        for s in sorted(rows, key=lambda s: str(s.get("updated") or ""), reverse=True):
-            state = "finished" if s.get("finished") else f"at step {s.get('at') or '?'}"
+        for row in sorted(rows, key=lambda r: str(r.get("updated") or ""), reverse=True):
+            state = "finished" if row.get("finished") else f"at step {row.get('at') or '?'}"
             out.append(
-                f"- {s.get('label')}{' · ' + s['title'] if s.get('title') else ''} ({s.get('method')}, {state}) id={s['id']} link: /study/{s['id']}"
+                f"- {row.get('label')}{' · ' + row['title'] if row.get('title') else ''} ({row.get('method')}, {state}) id={row['id']} link: /study/{row['id']}"
             )
         return "\n".join(out)
     s = _find_study(study)
@@ -1839,9 +1839,10 @@ def study_tool(
     ids = [st.get("id") for st in s.get("steps") or []]
     if step not in ids:
         return f"Error: step must be one of {', '.join(str(i) for i in ids)}."
-    if not (text or "").strip():
+    kept = (text or "").strip()
+    if not kept:
         return "Error: give the text to keep."
-    ACTION.set({"type": "study", "id": s["id"], "step": step, "help": text.strip()[:6000]})
+    ACTION.set({"type": "study", "id": s["id"], "step": step, "help": kept[:6000]})
     return f"Kept that in the {step} step of the study of {s.get('label')} (it updates in their browser)."
 
 

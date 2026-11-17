@@ -15,7 +15,7 @@ import time
 from collections import OrderedDict, deque
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
+from typing import Any, TypeVar
 
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -23,6 +23,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from .api import _verse_key, store
 
 router = APIRouter(prefix="/api/online")
+T = TypeVar("T")
 
 #: a generic client name, as the sources ask; no personal details
 HEADERS = {"User-Agent": "Testimonia/0.1 (open-source Bible study; https://github.com/sammyboi1801/testimonia)"}
@@ -47,15 +48,18 @@ def _open_licence(name: str | None) -> bool:
     return bool(re.match(r"^cc[ -]by(?:[ -]sa)?(?:[ -][\d.]+)?$", n))
 
 
-def _cached(key: str, fetch: Callable[[], Any], request: Request | None = None) -> Any:
+def _cached(key: str, fetch: Callable[[], T], request: Request | None = None) -> T | None:
+    """The answer kept for `key`, else fetched (and kept); None when the source failed."""
     now = time.time()
     with _cache_lock:
         hit = _cache.get(key)
         if hit and hit[0] > now:
             _cache.move_to_end(key)
-            return hit[1]
+            kept: T | None = hit[1]
+            return kept
     if request is not None:
         _rate_limit(request)
+    value: T | None
     try:
         with _outbound:
             value, ttl = fetch(), WEEK
@@ -384,7 +388,7 @@ def art_api(request: Request, q: str = Query(..., min_length=2, max_length=150))
     return {"images": _found(art(q))}
 
 
-def _found(value: Any) -> Any:
+def _found(value: T | None) -> T:
     """An answer, or 503 when the source could not be reached (never kept by the CDN, unlike an empty answer)."""
     if value is None:
         raise HTTPException(503, "that source could not be reached just now")
