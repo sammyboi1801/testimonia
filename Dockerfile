@@ -17,7 +17,7 @@ RUN npm run build
 
 # ---- server (the API and the assistant): target "api" leaves the web app out (Firebase serves it on GCP), so a
 # small server never runs the memory-hungry web build
-FROM python:3.13-slim AS api
+FROM python:3.15-slim AS api
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     TESTIMONIA_DATA=/data \
