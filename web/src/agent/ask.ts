@@ -1,14 +1,40 @@
 // One question to the reader's own assistant (their provider and key, as set up in Ask), its answer streamed back.
 // Used by the Bible study's helpers; the chat itself keeps whole conversations.
 
-import { PRESETS, loadConfig, loadKey, runsInBrowser } from "./providers";
+import { useSyncExternalStore } from "react";
+import { onRemoteChange } from "../sync";
+import { CONFIG_KEY, PRESETS, loadConfig, loadKey, onAiChange, runsInBrowser } from "./providers";
 import { runInBrowser, runOnServer, type AgentEvent } from "./run";
 
-/** The assistant is set up: a model chosen, and a key where the provider needs one. */
-export function assistantReady(): boolean {
+/**
+ * "ready": a model chosen, and a key where the provider needs one. "no-key": set up before, but this browser has
+ * no key now (it was kept for a session that has ended). "none": never set up here.
+ */
+export type AssistantState = "ready" | "no-key" | "none";
+export function assistantState(): AssistantState {
   const c = loadConfig();
   const preset = PRESETS.find((p) => p.id === c.preset);
-  return !!c.model && (!preset?.needsKey || !!loadKey());
+  if (c.model && (!preset?.needsKey || loadKey())) return "ready";
+  let chosen = false;
+  try {
+    chosen = localStorage.getItem(CONFIG_KEY) !== null;
+  } catch {
+    /* storage unavailable */
+  }
+  return chosen && c.model ? "no-key" : "none";
+}
+
+/** The assistant's state, kept current as it is set up here, in another tab, or on another device. */
+export function useAssistantState(): AssistantState {
+  return useSyncExternalStore(subscribe, assistantState);
+}
+function subscribe(cb: () => void) {
+  const offAi = onAiChange(cb);
+  const offRemote = onRemoteChange(CONFIG_KEY, cb);
+  return () => {
+    offAi();
+    offRemote();
+  };
 }
 
 /**

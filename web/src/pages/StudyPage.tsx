@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode }
 import { useQueries } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { chapterQuery, getJson, useMeta } from "../api";
-import { askOnce, assistantReady } from "../agent/ask";
+import { askOnce, useAssistantState } from "../agent/ask";
 import { Answer } from "../components/Chat";
 import { openAsk } from "../components/AskDrawer";
 import { Peek, peekable, type PeekTarget } from "../components/VersePeek";
@@ -591,10 +591,11 @@ function AiAnswer({ study, question, questions, onKeep, onClose }: { study: Stud
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(true);
   const [kept, setKept] = useState(false);
-  const ready = assistantReady();
+  const state = useAssistantState();
+  const ready = state === "ready";
   const peek = usePeek();
   useEffect(() => {
-    if (!ready) return;
+    if (!ready) return; // runs by itself once the assistant is set up, here or in another tab
     const ctrl = new AbortController();
     void askOnce(question, `a Bible study of ${study.label}${study.title ? ` (${study.title})` : ""}`, setText, ctrl.signal).then((err) => {
       if (!ctrl.signal.aborted) {
@@ -603,18 +604,25 @@ function AiAnswer({ study, question, questions, onKeep, onClose }: { study: Stud
       }
     });
     return () => ctrl.abort();
-  }, [question]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [question, ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!ready)
     return (
       <div className="st-ai-card">
-        <p>
-          The assistant answers with your own AI account (Claude, ChatGPT, Gemini and others, or a model on your computer). Set it up once and it works everywhere in
-          Testimonia.
-        </p>
+        {state === "no-key" ? (
+          <p>
+            Your assistant is set up, but this browser doesn't have your key right now. Keys are kept only until the browser closes, unless you tick “Remember the key on this
+            device” in Ask.
+          </p>
+        ) : (
+          <p>
+            The assistant answers with your own AI account (Claude, ChatGPT, Gemini and others, or a model on your computer). Set it up once and it works everywhere in
+            Testimonia.
+          </p>
+        )}
         <div className="st-ai-actions">
           <button className="btn primary" onClick={() => openAsk(study.label)}>
-            Set up the assistant
+            {state === "no-key" ? "Add your key" : "Set up the assistant"}
           </button>
           <button className="link-btn" onClick={onClose}>
             Not now

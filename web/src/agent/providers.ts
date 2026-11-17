@@ -94,6 +94,7 @@ export function saveConfig(c: AiConfig): void {
   } catch {
     /* storage unavailable */
   }
+  changed();
 }
 
 /** The key lives in this browser only: for the session, or on this device if the user chose "remember". */
@@ -113,6 +114,51 @@ export function saveKey(key: string, remember: boolean): void {
   } catch {
     /* storage unavailable */
   }
+  // a session key is lent to this browser's other open tabs, so a study opened in a new tab can use it too
+  channel?.postMessage(key && !remember ? { type: "key", key } : { type: "clear" });
+  changed();
+}
+
+// The assistant's setup changed (in this tab, another tab, or the key arrived from another tab).
+const EVENT = "testimonia-ai";
+function changed() {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENT));
+}
+export function onAiChange(cb: () => void): () => void {
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === CONFIG_KEY || e.key === KEY_KEY) cb();
+  };
+  window.addEventListener(EVENT, cb);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener(EVENT, cb);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+// A key kept "for this session" sits in one tab's sessionStorage, which a new tab cannot see. Open tabs of this
+// site (same origin only) answer a new tab's request for it, so "this session" means the browser's, not the tab's.
+const channel = typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel("testimonia.ai");
+if (channel) {
+  channel.onmessage = (e: MessageEvent) => {
+    const m = e.data as { type?: string; key?: unknown };
+    try {
+      if (m?.type === "need-key") {
+        const k = sessionStorage.getItem(KEY_KEY);
+        if (k) channel.postMessage({ type: "key", key: k });
+      } else if (m?.type === "key" && typeof m.key === "string" && m.key && !localStorage.getItem(KEY_KEY)) {
+        if (sessionStorage.getItem(KEY_KEY) === m.key) return;
+        sessionStorage.setItem(KEY_KEY, m.key);
+        changed();
+      } else if (m?.type === "clear" && sessionStorage.getItem(KEY_KEY)) {
+        sessionStorage.removeItem(KEY_KEY);
+        changed();
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  };
+  if (!loadKey()) channel.postMessage({ type: "need-key" });
 }
 
 /** A model on the user's own machine can only be reached from the browser, never from a hosted server. */

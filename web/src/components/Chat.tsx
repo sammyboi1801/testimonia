@@ -2,7 +2,7 @@ import DOMPurify from "dompurify";
 import { marked } from "marked";
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { CONFIG_KEY, PRESETS, loadConfig, loadKey, runsInBrowser, saveConfig, saveKey, type AiConfig } from "../agent/providers";
+import { CONFIG_KEY, PRESETS, loadConfig, loadKey, onAiChange, runsInBrowser, saveConfig, saveKey, type AiConfig } from "../agent/providers";
 import { runInBrowser, runOnServer, type AgentEvent, type Turn } from "../agent/run";
 import { HIGHLIGHTS, useNotes, type Highlight } from "../notes";
 import { openMap, pins } from "../pins";
@@ -206,6 +206,10 @@ export function Chat({
     return onRemoteChange(CONFIG_KEY, () => setConfig(loadConfig())); // chosen on another device
   }, []);
   const [key, setKey] = useState(loadKey);
+  useEffect(() => {
+    // a key lent by another open tab, or added there
+    return onAiChange(() => setKey(loadKey()));
+  }, []);
   const [setup, setSetup] = useState(() => !loadKey() && !PRESETS.find((p) => p.id === loadConfig().preset)?.local);
   const [chats, setChats] = useState<Conversation[]>(loadChats);
   useEffect(() => {
