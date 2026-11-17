@@ -53,8 +53,10 @@ cat > /etc/sysctl.d/90-testimonia.conf <<'EOF'
 kernel.panic = 10
 kernel.panic_on_oops = 1
 vm.swappiness = 10
+# Docker needs forwarding for outside traffic to reach the containers; set here so a reload never turns it off
+net.ipv4.ip_forward = 1
 EOF
-sysctl -q --system
+sysctl -q -p /etc/sysctl.d/90-testimonia.conf # only this file: a full reload resets what Docker set at runtime
 
 systemctl daemon-reexec
 systemctl daemon-reload

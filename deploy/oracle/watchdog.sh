@@ -28,6 +28,9 @@ if ! timeout 20 docker info >/dev/null 2>&1; then
 fi
 strike docker ok >/dev/null
 
+# without forwarding, the containers answer on this machine but not from outside (seen 2026-11-17)
+[ "$(cat /proc/sys/net/ipv4/ip_forward)" = 1 ] || { echo "forwarding was off: turning it on"; sysctl -q -w net.ipv4.ip_forward=1; }
+
 cd "$COMPOSE_DIR" || exit 0
 if curl -fsS -m 10 http://127.0.0.1:7860/api/health >/dev/null; then api=ok; else api=bad; fi
 if [ "$(strike api $api)" -ge 3 ]; then
