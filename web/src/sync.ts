@@ -115,6 +115,98 @@ export function merge(key: Key, local: unknown, remote: unknown): unknown {
   return remote; // settings, the assistant choice, the reading position: the account's (newest from any device)
 }
 
+/** JSON with object keys sorted: two devices' copies compare equal however their keys were ordered. */
+function canon(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(canon).join(",")}]`;
+  if (v && typeof v === "object")
+    return `{${Object.keys(v)
+      .sort()
+      .filter((k) => (v as Json)[k] !== undefined)
+      .map((k) => `${JSON.stringify(k)}:${canon((v as Json)[k])}`)
+      .join(",")}}`;
+  return JSON.stringify(v) ?? "null";
+}
+export const same = (a: unknown, b: unknown) => canon(a) === canon(b);
+
+/** Keyed items, given what both sides last agreed on: a side's change (or deletion) wins over an untouched item;
+ *  when both changed it, `pick` decides (an item kept on one side beats its deletion on the other). */
+function merge3Map<T>(base: Record<string, T>, local: Record<string, T>, remote: Record<string, T>, pick: (l: T, r: T) => T): Record<string, T> {
+  const out: Record<string, T> = {};
+  // the account's order first: with no change here, the result is the remote exactly (nothing to send back)
+  for (const k of new Set([...Object.keys(remote), ...Object.keys(local)])) {
+    const l = local[k];
+    const r = remote[k];
+    const b = base[k];
+    const v = same(l, b) ? r : same(r, b) ? l : l === undefined ? r : r === undefined ? l : pick(l, r);
+    if (v !== undefined) out[k] = v;
+  }
+  return out;
+}
+
+/** A set: the remote one, less what this device removed, plus what it added. */
+function merge3Set<T>(base: T[], local: T[], remote: T[]): T[] {
+  const b = new Set(base);
+  const l = new Set(local);
+  const removed = new Set([...b].filter((x) => !l.has(x)));
+  return [...new Set([...remote.filter((x) => !removed.has(x)), ...local.filter((x) => !b.has(x))])];
+}
+
+const byId = <T extends { id: string }>(list: T[] | undefined) => Object.fromEntries((list ?? []).map((x) => [x.id, x])) as Record<string, T>;
+const later = <T extends { updated?: string }>(l: T, r: T) => ((l.updated ?? "") >= (r.updated ?? "") ? l : r);
+
+/**
+ * Merge with `base`, what this device and the account last agreed on, so deletions travel too: a highlight removed
+ * on one device is removed on the others instead of coming back from them. Without a base (the first sign-in on a
+ * device), nothing is dropped: `merge` keeps both sides.
+ */
+export function merge3(key: Key, base: unknown, local: unknown, remote: unknown): unknown {
+  if (base == null || local == null || remote == null) return merge(key, local, remote);
+  if (key === "testimonia.notes.v1") return merge3Map(base as Json, local as Json, remote as Json, (l, r) => later(l as { updated?: string }, r as { updated?: string }));
+  if (key === "testimonia.pins.v1") {
+    type Pins = { pinned: string[]; sets: { id: string; created?: string }[] };
+    const [b, l, r] = [base, local, remote] as Pins[];
+    const sets = merge3Map(byId(b!.sets), byId(l!.sets), byId(r!.sets), (x) => x);
+    return { pinned: merge3Set(b!.pinned ?? [], l!.pinned ?? [], r!.pinned ?? []), sets: Object.values(sets) };
+  }
+  if (key === "testimonia.ai.chats.v1") {
+    type Chat = { id: string; updated?: string };
+    const all = merge3Map(byId(base as Chat[]), byId(local as Chat[]), byId(remote as Chat[]), later);
+    return Object.values(all).sort((a, b) => (b.updated ?? "").localeCompare(a.updated ?? "")).slice(0, 100);
+  }
+  if (key === "testimonia.plans") {
+    type Plan = { start: string | null; done: number[] };
+    const [b, l, r] = [base, local, remote] as Record<string, Plan>[];
+    const plans = merge3Map(b!, l!, r!, (x, y) => ({ start: x.start ?? y.start, done: [...new Set([...(x.done ?? []), ...(y.done ?? [])])].sort((p, q) => p - q) }));
+    for (const id of Object.keys(plans)) {
+      const [pb, pl, pr] = [b![id], l![id], r![id]];
+      // both sides changed this plan: the days ticked on either, less those unticked on either
+      if (pb && pl && pr && !same(pl, pb) && !same(pr, pb)) {
+        const done = merge3Set(pb.done ?? [], pl.done ?? [], merge3Set(pb.done ?? [], pr.done ?? [], pb.done ?? []));
+        plans[id] = { start: pl.start ?? pr.start, done: done.sort((x, y) => x - y) };
+      }
+    }
+    return plans;
+  }
+  return merge(key, local, remote); // the streak only grows; settings and the rest: the account's
+}
+
+/** What this device and the account last agreed on, per account and key (kept across visits for offline edits). */
+const baseKey = (key: Key) => `testimonia.sync.base.${uid}.${SYNCED[key]}`;
+function readBase(key: Key): unknown {
+  try {
+    return parse(localStorage.getItem(baseKey(key)));
+  } catch {
+    return null;
+  }
+}
+function saveBase(key: Key, json: string) {
+  try {
+    localStorage.setItem(baseKey(key), json);
+  } catch {
+    /* full (a long chat history): without a base this key falls back to keeping both sides */
+  }
+}
+
 function fit(key: Key, value: unknown): string {
   let json = JSON.stringify(value);
   if (key === "testimonia.ai.chats.v1" && Array.isArray(value)) {
@@ -179,7 +271,9 @@ async function upload(key: Key): Promise<boolean> {
   try {
     const value = parse(localStorage.getItem(key));
     const { doc, setDoc, serverTimestamp } = f.mod.store;
-    await setDoc(doc(f.db, "users", uid, "blobs", SYNCED[key]), { json: fit(key, value), updated: serverTimestamp() });
+    const json = fit(key, value);
+    await setDoc(doc(f.db, "users", uid, "blobs", SYNCED[key]), { json, updated: serverTimestamp() });
+    saveBase(key, json);
     setState({ status: "synced" });
     return true;
   } catch (e) {
@@ -205,19 +299,28 @@ async function connect(user: { uid: string; displayName: string | null; email: s
       const ref = doc(f.db, "users", uid, "blobs", SYNCED[key]);
       const snap = await getDoc(ref);
       const remote = snap.exists() ? parse(snap.data().json as string) : null;
-      const merged = merge(key, parse(localStorage.getItem(key)), remote);
+      const local = parse(localStorage.getItem(key));
+      const merged = merge3(key, readBase(key), local, remote);
       if (merged != null) {
-        const json = JSON.stringify(merged);
-        if (json !== localStorage.getItem(key)) writeLocal(key, json);
-        if (!snap.exists() || json !== (snap.data().json as string)) await upload(key);
+        if (!same(merged, local)) writeLocal(key, JSON.stringify(merged));
+        if (!snap.exists() || !same(parse(fit(key, merged)), remote)) await upload(key);
+        else saveBase(key, snap.data().json as string);
       }
       // changes made on the reader's other devices
       unsubs.push(
         onSnapshot(ref, (s: any) => {
           if (!s.exists() || s.metadata.hasPendingWrites) return;
           const incoming = s.data().json as string;
-          if (incoming === localStorage.getItem(key)) return;
-          writeLocal(key, JSON.stringify(merge(key, parse(localStorage.getItem(key)), parse(incoming))));
+          const remote = parse(incoming);
+          const local = parse(localStorage.getItem(key));
+          if (same(remote, local)) return saveBase(key, incoming);
+          const merged = merge3(key, readBase(key), local, remote);
+          saveBase(key, incoming);
+          if (!same(merged, local)) writeLocal(key, JSON.stringify(merged));
+          // this device had changes of its own not yet sent: send the merged result (only a real difference, so two
+          // devices never answer each other back and forth)
+          // (as it would be sent: a chat history too long for one document is trimmed the same way each time)
+          if (!same(parse(fit(key, merged)), remote)) scheduleUpload(key);
         }),
       );
     }

@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { verseUrl } from "../lib";
 import { dateOf, dayOf, isoDate, loadProgress, saveProgress, usePlan, usePlans, type PlanProgress, type PlanReading } from "../readingApi";
 
-/** The reading plans, with each one's progress in this browser. */
+/** The reading plans, with each one's progress (synced with the account when signed in). */
 export function PlansPage() {
   const { data, isLoading, error } = usePlans();
   const today = isoDate(new Date());
@@ -11,7 +11,7 @@ export function PlansPage() {
     <div className="page rd-page">
       <header className="rd-head">
         <h1>Reading plans</h1>
-        <p className="rd-lede">A portion for each day. Your progress is kept in this browser only — no account needed.</p>
+        <p className="rd-lede">A portion for each day. Your progress is saved in this browser, and on all your devices when you sign in.</p>
       </header>
       {isLoading && <div className="loading">Loading…</div>}
       {error && <div className="error">{String(error)}</div>}
