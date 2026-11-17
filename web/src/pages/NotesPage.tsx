@@ -1,9 +1,14 @@
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useQueries } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { useMeta } from "../api";
+import { chapterQuery, useMeta } from "../api";
 import { osisLabel, verseUrl } from "../lib";
 import { HIGHLIGHTS, useNotes, type Note } from "../notes";
 import { useSync } from "../sync";
+import { useSettings } from "../settings";
+import { spanLabel } from "../components/SelectionToolbar";
+import { colourOf, groupNotes, type NoteGroup } from "./noteGroups";
+import type { Book } from "../types";
 
 function download(name: string, text: string, type: string) {
   const a = document.createElement("a");
@@ -29,17 +34,20 @@ export function NotesPage() {
       const [b, c, v] = n.osis.split(".");
       return (order.get(b!) ?? 999) * 1_000_000 + Number(c) * 1000 + Number(v);
     };
-    return Object.values(notes)
-      .filter((n) => (!only || n.highlight === only) && (!q || `${osisLabel(n.osis, books)} ${n.text}`.toLowerCase().includes(q.toLowerCase())))
-      .sort((a, b) => key(a) - key(b));
-  }, [notes, q, only, order, books]);
-
-  const total = Object.keys(notes).length;
+    return Object.values(notes).sort((a, b) => key(a) - key(b));
+  }, [notes, order]);
+  const groups = useMemo(() => groupNotes(list), [list]);
+  const label = (g: NoteGroup) => spanLabel(g.notes[0]!.osis, g.notes[g.notes.length - 1]!.osis, (o) => osisLabel(o, books));
+  const shown = groups.filter(
+    (g) => (!only || g.colour === only) && (!q || `${label(g)} ${g.notes.map((n) => n.text).join(" ")}`.toLowerCase().includes(q.toLowerCase())),
+  );
+  const total = groups.length;
 
   function exportMarkdown() {
-    const lines = ["# My notes — Testimonia", ""];
-    for (const n of list) {
-      lines.push(`## ${osisLabel(n.osis, books)}${n.highlight ? ` (${n.highlight})` : ""}`, "", n.text || "_highlighted_", "");
+    const lines = ["# My highlights and notes (Testimonia)", ""];
+    for (const g of shown) {
+      const text = g.notes.map((n) => n.text.trim()).filter(Boolean).join("\n\n");
+      lines.push(`## ${label(g)}${g.colour ? ` (${g.colour})` : ""}`, "", text || "_highlighted_", "");
     }
     download("testimonia-notes.md", lines.join("\n"), "text/markdown");
   }
@@ -59,7 +67,7 @@ export function NotesPage() {
     <div className="page notes-page">
       <h1>My highlights and notes</h1>
       <p className="muted">
-        {total} verse{total === 1 ? "" : "s"} highlighted or noted.{" "}
+        {countLine(groups.filter((g) => g.colour).length, list.filter((n) => n.text.trim()).length)}{" "}
         {sync.user
           ? "Saved in this browser and synced to your account."
           : "Saved in this browser. Sign in to sync them between devices, or export them to keep a copy."}
@@ -75,7 +83,7 @@ export function NotesPage() {
           <button className="btn" onClick={() => download("testimonia-notes.json", JSON.stringify(Object.values(notes), null, 2), "application/json")} disabled={!total}>
             Export
           </button>
-          <button className="btn" onClick={exportMarkdown} disabled={!list.length}>
+          <button className="btn" onClick={exportMarkdown} disabled={!shown.length}>
             Markdown
           </button>
           <button className="btn" onClick={() => file.current?.click()}>
@@ -91,19 +99,95 @@ export function NotesPage() {
         </div>
       )}
       <ul className="notes-list">
-        {list.map((n) => (
-          <li key={n.osis} className={n.highlight ? `hl-${n.highlight}` : ""}>
-            <div className="note-head">
-              <Link to={verseUrl(n.osis)}>{osisLabel(n.osis, books)}</Link>
-              <span className="muted small">{new Date(n.updated).toLocaleDateString()}</span>
-              <button className="link-btn" onClick={() => window.confirm(`Delete your note on ${osisLabel(n.osis, books)}?`) && remove(n.osis)}>
-                Delete
-              </button>
-            </div>
-            <textarea className="my-note-text" defaultValue={n.text} rows={Math.min(8, Math.max(2, n.text.split("\n").length))} onBlur={(e) => e.target.value !== n.text && set(n.osis, { text: e.target.value })} placeholder="Highlighted — add a note…" />
-          </li>
+        {shown.map((g) => (
+          <NoteCard key={g.notes[0]!.osis} group={g} label={label(g)} books={books} onSet={set} onRemove={remove} />
         ))}
       </ul>
     </div>
+  );
+}
+
+/** "3 highlights and 1 note." */
+function countLine(highlights: number, notes: number): string {
+  const n = (k: number, word: string) => `${k} ${word}${k === 1 ? "" : "s"}`;
+  if (!highlights && !notes) return "No highlights or notes yet.";
+  if (!notes) return `${n(highlights, "highlight")}.`;
+  if (!highlights) return `${n(notes, "note")}.`;
+  return `${n(highlights, "highlight")} and ${n(notes, "note")}.`;
+}
+
+/** One highlight: the passage as highlighted (whole verses, or the words picked), and its note. */
+function NoteCard({
+  group,
+  label,
+  books,
+  onSet,
+  onRemove,
+}: {
+  group: NoteGroup;
+  label: string;
+  books: Book[];
+  onSet: (osis: string, patch: { text: string }) => void;
+  onRemove: (osis: string) => void;
+}) {
+  const { settings } = useSettings();
+  const first = group.notes[0]!;
+  const last = group.notes[group.notes.length - 1]!;
+  const [book, ch] = first.osis.split(".");
+  // the words were picked in one translation: show that one, else the reader's first column
+  const ed = first.marks?.[0]?.ed ?? settings.editions[0] ?? "kjva";
+  const [chapter] = useQueries({ queries: [chapterQuery(book!, Number(ch), [ed])] });
+  const verses = chapter?.data?.verses;
+  const holder = group.notes.find((n) => n.text.trim()) ?? first; // the note this card edits
+  const updated = group.notes.reduce((t, n) => (n.updated > t ? n.updated : t), "");
+  const many = group.notes.length > 1;
+
+  return (
+    <li className={group.colour ? `hl-${group.colour}` : ""}>
+      <div className="note-head">
+        <Link to={verseUrl(first.osis, undefined, many ? Number(last.osis.split(".")[2]) : undefined)}>{label}</Link>
+        <span className="muted small">{updated ? new Date(updated).toLocaleDateString() : ""}</span>
+        <button
+          className="link-btn"
+          onClick={() => window.confirm(`Delete your ${group.colour ? "highlight" : "note"} on ${label}?`) && group.notes.forEach((n) => onRemove(n.osis))}
+        >
+          Delete
+        </button>
+      </div>
+      {group.colour && (
+        <p className="note-passage">
+          {group.notes.map((n) => {
+            const t = verses?.find((v) => v.osis === n.osis)?.texts[ed]?.text;
+            if (!t) return null;
+            const marks = (n.marks ?? []).filter((m) => m.ed === ed).sort((x, y) => x.start - y.start);
+            const parts: React.ReactNode[] = [];
+            if (n.highlight || !marks.length) parts.push(<span key="all" className={`note-hl hl-${colourOf(n)}`}>{t}</span>);
+            else {
+              let at = 0;
+              for (const m of marks) {
+                if (m.start > at) parts.push(<span key={`r${at}`} className="note-rest">{t.slice(at, m.start)}</span>);
+                parts.push(<span key={m.start} className={`note-hl hl-${m.color}`}>{t.slice(m.start, m.end)}</span>);
+                at = Math.max(at, m.end);
+              }
+              if (at < t.length) parts.push(<span key="rest" className="note-rest">{t.slice(at)}</span>);
+            }
+            return (
+              <span key={n.osis}>
+                {many && <sup className="note-vn">{n.osis.split(".")[2]}</sup>}
+                {parts}{" "}
+              </span>
+            );
+          })}
+          {!verses && <span className="skel skel-line" aria-label={`Loading ${osisLabel(first.osis, books)}`} />}
+        </p>
+      )}
+      <textarea
+        className="my-note-text"
+        defaultValue={holder.text}
+        rows={Math.min(8, Math.max(2, holder.text.split("\n").length))}
+        onBlur={(e) => e.target.value !== holder.text && onSet(holder.osis, { text: e.target.value })}
+        placeholder="Add a note…"
+      />
+    </li>
   );
 }

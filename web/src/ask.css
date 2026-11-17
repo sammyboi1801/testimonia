@@ -421,3 +421,10 @@ mark.phrase { color: inherit; padding: 0.04em 0; border-radius: 2px; background:
 /* narrow screens: the chip names the provider; the model is in the settings */
 @media (max-width: 520px) { .ah-model .ah-model-name { display: none; } }
 .ask-chat.compact .ah-model .ah-model-name { display: none; }
+
+/* Notes page: the highlighted passage itself */
+.note-passage { margin: 6px 0 8px; font-family: var(--font-text, var(--font-display)); font-size: 16px; line-height: 1.6; color: var(--ink); }
+.note-hl { background: color-mix(in srgb, var(--hl) 38%, transparent); border-radius: 3px; padding: 1px 0; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.note-rest { color: var(--muted); }
+.note-vn { font-size: 0.68em; color: var(--muted); margin-right: 2px; font-family: var(--font-ui); }
+.note-passage .skel-line { display: inline-block; width: 70%; height: 1em; }

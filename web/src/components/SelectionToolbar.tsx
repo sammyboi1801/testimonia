@@ -4,20 +4,25 @@ import { rangeOffsets, snapToWords } from "../selection";
 import { openAsk } from "./AskDrawer";
 import { CopySelection } from "./CopyCitation";
 
-interface Picked {
+interface Part {
   osis: string;
-  ed: string;
-  label: string;
   start: number;
   end: number;
+}
+
+interface Picked {
+  parts: Part[]; // one per verse: a selection may run across several
+  ed: string;
+  label: string;
   text: string;
   x: number;
   y: number;
 }
 
 /**
- * Select words in a verse and this toolbar appears above them: highlight in a colour, remove highlights,
- * or ask the assistant about the phrase. Works on any `.vtext[data-osis][data-ed]` inside the reader.
+ * Select words in a verse, or across several, and this toolbar appears above them: highlight in a colour, remove
+ * highlights, or ask the assistant about the words. Works on any `.vtext[data-osis][data-ed]` inside the reader.
+ * Across verses, each verse keeps its own part (start to end of the words selected in it), all in one colour.
  */
 export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLElement | null>; verseLabel: (osis: string) => string }) {
   const { addMark, clearMarks } = useNotes();
@@ -29,22 +34,29 @@ export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLEle
       if (!sel || sel.isCollapsed || !sel.rangeCount) return setPicked(null);
       const range = sel.getRangeAt(0);
       const host = (n: Node) => (n.nodeType === 1 ? (n as Element) : n.parentElement)?.closest<HTMLElement>(".vtext[data-osis][data-ed]");
-      const a = host(range.startContainer);
-      const b = host(range.endContainer);
-      if (!a || a !== b || !root.current?.contains(a)) return setPicked(null); // one verse at a time
-      const offsets = rangeOffsets(a, range);
-      if (!offsets) return setPicked(null);
-      const plain = a.dataset.text ?? "";
-      const { start, end } = snapToWords(plain, offsets.start, offsets.end);
-      if (end <= start) return setPicked(null);
+      const touched = [...(root.current?.querySelectorAll<HTMLElement>(".vtext[data-osis][data-ed]") ?? [])].filter((el) => range.intersectsNode(el));
+      const first = host(range.startContainer) ?? touched[0];
+      if (!first) return setPicked(null);
+      // one translation: side by side, a selection also passes through the other columns' verses
+      const ed = first.dataset.ed!;
+      const parts: Part[] = [];
+      const texts: string[] = [];
+      for (const el of touched.filter((el) => el.dataset.ed === ed).slice(0, 60)) {
+        const offsets = rangeOffsets(el, range);
+        if (!offsets) continue;
+        const plain = el.dataset.text ?? "";
+        const { start, end } = snapToWords(plain, offsets.start, offsets.end);
+        if (end <= start) continue;
+        parts.push({ osis: el.dataset.osis!, start, end });
+        texts.push(plain.slice(start, end));
+      }
+      if (!parts.length) return setPicked(null);
       const r = range.getBoundingClientRect();
       setPicked({
-        osis: a.dataset.osis!,
-        ed: a.dataset.ed!,
-        label: verseLabel(a.dataset.osis!),
-        start,
-        end,
-        text: plain.slice(start, end),
+        parts,
+        ed,
+        label: spanLabel(parts[0]!.osis, parts[parts.length - 1]!.osis, verseLabel),
+        text: texts.join(" "),
         x: Math.min(Math.max(r.left + r.width / 2, 150), window.innerWidth - 150),
         y: r.top,
       });
@@ -76,7 +88,7 @@ export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLEle
     setPicked(null);
   };
   const colour = (c: Highlight) => {
-    addMark(picked.osis, { ed: picked.ed, start: picked.start, end: picked.end, color: c });
+    for (const p of picked.parts) addMark(p.osis, { ed: picked.ed, start: p.start, end: p.end, color: c });
     done();
   };
   const top = picked.y < 70 ? picked.y + 40 : picked.y - 46;
@@ -89,7 +101,7 @@ export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLEle
         className="sel-btn"
         title="Remove highlights here"
         onClick={() => {
-          clearMarks(picked.osis, picked.ed, picked.start, picked.end);
+          for (const p of picked.parts) clearMarks(p.osis, picked.ed, p.start, p.end);
           done();
         }}
       >
@@ -107,4 +119,14 @@ export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLEle
       </button>
     </div>
   );
+}
+
+/** "John 3:16", "John 3:16–18", or "John 3:36 – 4:2" across a chapter break. */
+export function spanLabel(from: string, to: string, verseLabel: (osis: string) => string): string {
+  if (from === to) return verseLabel(from);
+  const [b1, c1] = from.split(".");
+  const [b2, c2, v2] = to.split(".");
+  if (b1 === b2 && c1 === c2) return `${verseLabel(from)}–${v2}`;
+  if (b1 === b2) return `${verseLabel(from)}–${c2}:${v2}`;
+  return `${verseLabel(from)} – ${verseLabel(to)}`;
 }
