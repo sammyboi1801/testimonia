@@ -9,8 +9,99 @@ import { useSettings } from "../settings";
 export interface PeekTarget {
   href: string; // /read/John/3?v=John.3.16&to=18, or /library/{edition}/{section}
   rect: DOMRect; // the link that was tapped
-  quote?: string; // for a work: the words quoted, marked in the section
+  quote?: string; // for a work: the words around the citation (stored with it)
+  osis?: string; // for a work: the verse being studied, to find its reference in the section
   label?: string; // for a work: its title as the link showed it
+}
+
+/** Does a reference like "John.1.9-John.1.11" (or "John.1", or several) include this verse? */
+export function refCovers(ref: string, osis: string): boolean {
+  const [book, c, v] = osis.split(".");
+  const at = Number(c) * 1000 + Number(v);
+  return ref.split(/[\s;,]+/).some((part) => {
+    const [a = "", z = a] = part.split("-");
+    const pa = a.split(".");
+    const pz = z.split(".");
+    if (pa[0] !== book) return false;
+    const lo = Number(pa[1]) * 1000 + (pa[2] ? Number(pa[2]) : 0);
+    const hi = pz[0] !== book ? Infinity : Number(pz[1]) * 1000 + (pz[2] ? Number(pz[2]) : 999);
+    return at >= lo && at <= hi;
+  });
+}
+
+const SKIP = ".note, a.ref"; // footnotes and reference labels: never part of the quotation
+
+/** Mark the words a writer quotes from this verse: the quotation just before its reference in the text (from its
+ * opening quotation mark, or else its sentence). Without such a reference, the stored words around the citation are
+ * found instead. Returns the first mark, to scroll to. */
+export function markQuote(root: HTMLElement, osis?: string, quote?: string): HTMLElement | null {
+  const nodes: { n: Text; at: number }[] = [];
+  let flat = "";
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode() as Text | null; n; n = walker.nextNode() as Text | null) {
+    if (n.parentElement?.closest(SKIP)) continue;
+    nodes.push({ n, at: flat.length });
+    flat += n.data;
+  }
+  // where an element sits in the flat text: at the first kept text after it
+  const posOf = (el: Element) => nodes.find(({ n }) => el.compareDocumentPosition(n) & Node.DOCUMENT_POSITION_FOLLOWING && !el.contains(n))?.at ?? flat.length;
+  const span = (osis && beforeRef(root, osis, flat, posOf)) || (quote && aroundCitation(flat, quote));
+  return span ? wrap(nodes, span[0], span[1]) : null;
+}
+
+function beforeRef(root: HTMLElement, osis: string, flat: string, posOf: (el: Element) => number): [number, number] | null {
+  const ref = [...root.querySelectorAll<HTMLElement>("a.ref[data-ref]")].find((a) => refCovers(a.dataset.ref ?? "", osis));
+  if (!ref) return null;
+  const anchor = ref.closest(".note") ?? ref;
+  let end = posOf(anchor);
+  // the quotation starts no earlier than the previous reference
+  const floor = Math.max(0, ...[...root.querySelectorAll(".note, a.ref")].filter((el) => el !== anchor && !anchor.contains(el) && !el.contains(anchor)).map(posOf).filter((p) => p < end));
+  while (end > floor && /\s/.test(flat[end - 1]!)) end--;
+  const text = flat.slice(floor, end);
+  let start = -1;
+  const close = text.search(/[”"][^\w“”"]{0,3}$/); // a quotation closing right before the reference
+  if (close >= 0) start = text[close] === "”" ? text.lastIndexOf("“", close) : text.lastIndexOf('"', close - 1);
+  if (start < 0) {
+    const stops = [...text.slice(0, -2).matchAll(/[.!?;]["”’)]?\s+/g)]; // else its last sentence
+    const last = stops[stops.length - 1];
+    start = last ? last.index + last[0].length : text.search(/\S/);
+  }
+  if (start < 0 || end - (floor + start) < 8) return null;
+  if (end - (floor + start) > 700) start = text.indexOf(" ", text.length - 700) + 1; // a very long one: its end
+  return [floor + start, end];
+}
+
+function aroundCitation(flat: string, quote: string): [number, number] | null {
+  // the stored words run ~170 characters before the reference and ~130 after: mark the part before it
+  const words = quote.replace(/\.{3}|…/g, " ").split(/\s+/).filter(Boolean);
+  const edges = words.slice(1, -1); // the first and last may be cut mid-word
+  const lead: string[] = [];
+  for (const w of edges) {
+    if (lead.join(" ").length > 160) break;
+    lead.push(w);
+  }
+  for (let n = lead.length; n >= 4; n--) {
+    const re = new RegExp(lead.slice(0, n).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s+"));
+    const m = re.exec(flat);
+    if (m) return [m.index, m.index + m[0].length];
+  }
+  return null;
+}
+
+function wrap(nodes: { n: Text; at: number }[], start: number, end: number): HTMLElement | null {
+  let first: HTMLElement | null = null;
+  for (const { n, at } of nodes) {
+    const s = Math.max(0, start - at);
+    const e = Math.min(n.data.length, end - at);
+    if (s >= e || !n.data.slice(s, e).trim()) continue;
+    if (e < n.data.length) n.splitText(e);
+    const part = s > 0 ? n.splitText(s) : n;
+    const mark = document.createElement("mark");
+    part.replaceWith(mark);
+    mark.appendChild(part);
+    first ??= mark;
+  }
+  return first;
 }
 
 /** Links that open in a box rather than a page: a verse, or a section of a work. */
@@ -69,28 +160,10 @@ function WorkPeek({ target, onClose }: { target: PeekTarget; onClose: () => void
   // find the quoted words in the section and mark them
   useEffect(() => {
     const root = body.current;
-    if (!root || !data.data || !target.quote) return;
-    const words = target.quote.replace(/\.{3}|…/g, " ").replace(/\s+/g, " ").trim().split(" ");
-    const probe = words.slice(Math.min(3, Math.max(0, words.length - 8)), Math.min(3, Math.max(0, words.length - 8)) + 6).join(" ");
-    if (probe.length < 12) return;
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-      const text = (n.textContent ?? "").replace(/\s+/g, " ");
-      const i = text.indexOf(probe);
-      if (i < 0) continue;
-      try {
-        const range = document.createRange();
-        range.setStart(n, i);
-        range.setEnd(n, Math.min((n.textContent ?? "").length, i + probe.length));
-        const mark = document.createElement("mark");
-        range.surroundContents(mark);
-        mark.scrollIntoView({ block: "center" });
-      } catch {
-        /* the quote crosses markup: leave it unmarked */
-      }
-      break;
-    }
-  }, [data.data, target.quote]);
+    if (!root || !data.data || (!target.quote && !target.osis)) return;
+    const mark = markQuote(root, target.osis, target.quote);
+    if (mark) mark.scrollIntoView({ block: "center" });
+  }, [data.data, target.quote, target.osis]);
   const s = data.data?.section;
   const label = [target.label, s?.cite && !target.label?.includes(s.cite) ? s.cite : ""].filter(Boolean).join(" ") || s?.title || "From the library";
   return (

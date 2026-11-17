@@ -96,7 +96,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
     if (!a || !peekable(href) || e.metaKey || e.ctrlKey) return;
     e.preventDefault();
     e.stopPropagation();
-    setPeek({ href, rect: a.getBoundingClientRect(), quote: a.dataset.quote, label: a.dataset.label ?? a.textContent ?? undefined });
+    setPeek({ href, rect: a.getBoundingClientRect(), quote: a.dataset.quote, osis: g.verse.osis, label: a.dataset.label ?? a.textContent ?? undefined });
   };
   useEffect(() => {
     tabs.current?.querySelector<HTMLElement>("[aria-selected=true]")?.scrollIntoView({ block: "nearest", inline: "nearest" });
