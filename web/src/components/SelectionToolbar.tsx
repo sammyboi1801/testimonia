@@ -1,9 +1,9 @@
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { useMeta } from "../api";
 import { HIGHLIGHTS, useNotes, type Highlight } from "../notes";
 import { rangeOffsets, snapToWords } from "../selection";
 import { openAsk } from "./AskDrawer";
-import { CopyMenu } from "./CopyCitation";
+import { CopyMenu, screenFloor } from "./CopyCitation";
 import { VerseCard, type CardVerse } from "./VerseCard";
 
 interface Part {
@@ -20,6 +20,8 @@ interface Picked {
   texts: string[]; // the words picked in each part
   x: number;
   y: number;
+  bottom: number;
+  touch: boolean;
 }
 
 /**
@@ -32,9 +34,15 @@ export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLEle
   const meta = useMeta();
   const [picked, setPicked] = useState<Picked | null>(null);
   const [card, setCard] = useState<CardVerse | null>(null); // stays open after the selection is gone
+  const bar = useRef<HTMLDivElement>(null);
+  // the last press was on the toolbar: a phone may clear the selection on that tap, the toolbar must stay for it
+  const inBar = useRef(false);
 
   useEffect(() => {
+    const touch = window.matchMedia?.("(pointer: coarse)").matches ?? false;
+    let timer: number | undefined;
     const read = () => {
+      if (inBar.current) return;
       const sel = window.getSelection();
       if (!sel || sel.isCollapsed || !sel.rangeCount) return setPicked(null);
       const range = sel.getRangeAt(0);
@@ -63,23 +71,43 @@ export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLEle
         label: spanLabel(parts[0]!.osis, parts[parts.length - 1]!.osis, verseLabel),
         text: texts.join(" "),
         texts,
-        x: Math.min(Math.max(r.left + r.width / 2, 150), window.innerWidth - 150),
+        x: Math.min(Math.max(r.left + r.width / 2, 170), window.innerWidth - 170),
         y: r.top,
+        bottom: r.bottom,
+        touch,
       });
     };
     const onUp = () => window.setTimeout(read, 0);
     const onChange = () => {
       const sel = window.getSelection();
-      if (!sel || sel.isCollapsed) setPicked(null);
+      if (!sel || sel.isCollapsed) {
+        window.clearTimeout(timer);
+        if (!inBar.current) setPicked(null);
+        return;
+      }
+      // a phone selects by a long press and moves the ends by their handles, often without a touchend: follow the
+      // selection itself, once it has settled
+      if (touch) {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(read, 450);
+      }
     };
+    const onDown = (e: PointerEvent) => {
+      inBar.current = !!bar.current?.contains(e.target as Node);
+    };
+    document.addEventListener("pointerdown", onDown, true);
     document.addEventListener("mouseup", onUp);
     document.addEventListener("touchend", onUp);
     document.addEventListener("keyup", onUp);
     document.addEventListener("selectionchange", onChange);
-    const hide = () => setPicked(null);
+    const hide = () => {
+      if (!inBar.current) setPicked(null);
+    };
     root.current?.addEventListener("scroll", hide, { passive: true });
     const el = root.current;
     return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("pointerdown", onDown, true);
       document.removeEventListener("mouseup", onUp);
       document.removeEventListener("touchend", onUp);
       document.removeEventListener("keyup", onUp);
@@ -91,6 +119,7 @@ export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLEle
   const cardLayer = card && <VerseCard verse={card} onClose={() => setCard(null)} />;
   if (!picked) return cardLayer || null;
   const done = () => {
+    inBar.current = false;
     window.getSelection()?.removeAllRanges();
     setPicked(null);
   };
@@ -98,7 +127,17 @@ export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLEle
     for (const p of picked.parts) addMark(p.osis, { ed: picked.ed, start: p.start, end: p.end, color: c });
     done();
   };
-  const top = picked.y < 70 ? picked.y + 40 : picked.y - 46;
+  // a phone puts its own copy/share bubble above the selection: there, ours goes below (clear of the handles)
+  const floor = screenFloor();
+  const top = !picked.touch
+    ? picked.y < 70
+      ? picked.y + 40
+      : picked.y - 46
+    : picked.bottom + 72 < floor
+      ? picked.bottom + 22 // under the selection
+      : picked.y - 100 > 60
+        ? picked.y - 100 // above it, clear of the phone's own bubble
+        : floor - 56; // a selection taller than the screen: at the bottom
   const first = picked.parts[0]!.osis;
   const last = picked.parts[picked.parts.length - 1]!.osis;
   const passage = {
@@ -111,7 +150,7 @@ export function SelectionToolbar({ root, verseLabel }: { root: RefObject<HTMLEle
   return (
     <>
     {cardLayer}
-    <div className="sel-bar" style={{ left: picked.x, top }} role="toolbar" aria-label="Highlight selection" onMouseDown={(e) => e.preventDefault()}>
+    <div ref={bar} className="sel-bar" style={{ left: picked.x, top }} role="toolbar" aria-label="Highlight selection" onMouseDown={(e) => e.preventDefault()}>
       {HIGHLIGHTS.map((h) => (
         <button key={h.id} className={`hl-swatch hl-${h.id}`} title={`Highlight ${h.label.toLowerCase()}`} onClick={() => colour(h.id)} />
       ))}

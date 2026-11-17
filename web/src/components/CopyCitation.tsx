@@ -21,6 +21,12 @@ function useCopied(): [boolean | null, (text: string) => Promise<boolean>] {
   return [state, copy];
 }
 
+/** The lowest point a pop-up may reach: the top of the phone's tab bar, else the window's bottom. */
+export function screenFloor(): number {
+  const t = document.querySelector(".tabbar")?.getBoundingClientRect();
+  return t && t.height ? t.top : window.innerHeight;
+}
+
 /** 18px line icons, drawn in the text colour. */
 const svg = (d: string) => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -90,7 +96,7 @@ export function CopyMenu({
     const r = wrap.current.getBoundingClientRect();
     setShift(Math.min(0, window.innerWidth - 10 - (r.left + w)) + Math.max(0, 10 - r.left));
     // near the bottom of the window (a selection low on the page): open upwards
-    setUp(r.bottom + 6 + menu.current.offsetHeight > window.innerHeight - 10 && r.top - 6 - menu.current.offsetHeight > 10);
+    setUp(r.bottom + 6 + menu.current.offsetHeight > screenFloor() - 10 && r.top - 6 - menu.current.offsetHeight > 10);
   }, [open]);
 
   useEffect(() => {
@@ -115,12 +121,28 @@ export function CopyMenu({
     if (ok && onDone) window.setTimeout(onDone, 700);
   };
   const many = (passage?.verses.length ?? 0) > 1;
+  // the picture is drawn while the menu is open: a phone opens its share sheet only straight after the tap
+  const picture = useRef<File | null>(null);
+  const canSend = typeof navigator.share === "function";
+  useEffect(() => {
+    picture.current = null;
+    if (!open || !passage || !shareUrl || !canSend) return;
+    let alive = true;
+    cardFile({ text, label: passage.label, edition: passage.edition, url: shareUrl })
+      .then((f) => {
+        if (alive) picture.current = f;
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [open, text, passage?.label, passage?.edition, shareUrl, canSend]);
   const send = async () => {
     if (!passage || !shareUrl) return;
+    const file = picture.current;
     setOpen(false);
     try {
-      // with the picture when the phone can send a file and text together, else the text and link
-      const file = await cardFile({ text, label: passage.label, edition: passage.edition, url: shareUrl }).catch(() => null);
+      // with the picture when it is ready and the phone can send a file and text together, else the text and link
       const withPicture = file && navigator.canShare?.({ files: [file], text: inline });
       await navigator.share(withPicture ? { files: [file], text: `${inline}\n${shareUrl}` } : { title: passage.label, text: inline, url: shareUrl });
     } catch {
@@ -146,7 +168,7 @@ export function CopyMenu({
             <>
               <MenuItem icon={ICON.link} label="Copy link" hint="Pastes with a picture preview" onClick={() => void pick(shareUrl)} />
               <div className="cm-rule" />
-              {typeof navigator.share === "function" && <MenuItem icon={ICON.send} label="Send…" hint="Picture, text and link" onClick={() => void send()} />}
+              {canSend && <MenuItem icon={ICON.send} label="Send…" hint="Picture, text and link" onClick={() => void send()} />}
               <MenuItem
                 icon={ICON.image}
                 label="Image card"
