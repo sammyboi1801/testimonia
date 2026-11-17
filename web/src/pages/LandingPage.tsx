@@ -373,7 +373,8 @@ export default function LandingPage() {
           Nicaea icon, Codex Sinaiticus, Caravaggio’s <i>Saint Jerome Writing</i>, the Leningrad Codex and the 1611 King James title page.
         </p>
         <p>
-          <a href="https://github.com/sammyboi1801/testimonia">Open source on GitHub</a> · No tracking, no ads
+          <a href="https://github.com/sammyboi1801/testimonia">Open source on GitHub</a> · No ads · <Link to="/about">About</Link> ·{" "}
+          <Link to="/privacy">Privacy</Link> · <Link to="/about#feedback">Feedback</Link>
         </p>
       </footer>
     </div>

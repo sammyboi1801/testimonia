@@ -62,7 +62,7 @@ def main() -> int:
     template = (a.dist / "index.html").read_text(encoding="utf-8")
     if '<div id="root"></div>' not in template or "<title>" not in template:
         raise SystemExit("index.html is not the app template")
-    urls = [f"{site}/"]
+    urls = [f"{site}/", f"{site}/about", f"{site}/privacy"]
     for f in sorted((a.static / "chapter").glob("*/*.json")):
         book, ch = f.parent.name, int(f.stem)
         meta = json.loads(f.read_text(encoding="utf-8"))
@@ -114,7 +114,7 @@ def main() -> int:
         f"User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: {site}/sitemap.xml\n", encoding="utf-8"
     )
     _home(a.dist, a.static, template)
-    print(f"pre-rendered {len(urls) - 1} chapters and the home page; sitemap with {len(urls)} pages")
+    print(f"pre-rendered {len(urls) - 3} chapters and the home page; sitemap with {len(urls)} pages")
     return 0
 
 

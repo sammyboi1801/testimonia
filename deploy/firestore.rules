@@ -1,5 +1,6 @@
 rules_version = '2';
 // Each signed-in reader can read and write only their own data: users/{uid}/blobs/{notes|pins|settings|chats|assistant}.
+// Anyone can add feedback (create only).
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{uid}/blobs/{blob} {
@@ -9,6 +10,18 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['json', 'updated'])
         && request.resource.data.json is string
         && request.resource.data.json.size() < 1000000;
+    }
+    // feedback from the About page: anyone may add one short message; nobody can read, change or list them
+    // from the app (read them in the Firebase console)
+    match /feedback/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['message', 'page', 'contact', 'at'])
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 2
+        && request.resource.data.message.size() <= 4000
+        && request.resource.data.page is string
+        && request.resource.data.page.size() <= 300
+        && (!('contact' in request.resource.data) || (request.resource.data.contact is string && request.resource.data.contact.size() <= 200))
+        && request.resource.data.at == request.time;
     }
     match /{document=**} {
       allow read, write: if false;

@@ -123,3 +123,23 @@
   .design-cards { grid-template-columns: 1fr; }
   .symbols { flex-wrap: wrap; }
 }
+
+/* About, Privacy, Page not found */
+.set-links { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 4px 0 0; font-size: 14px; }
+.info-page { max-width: 760px; margin: 0 auto; padding-bottom: 64px; line-height: 1.6; }
+.info-page h2 { font-family: var(--font-display); font-weight: var(--display-weight); font-size: 22px; margin: 28px 0 6px; }
+.info-page ul { padding-left: 20px; }
+.info-page li { margin: 4px 0; }
+.info-lead { font-size: 17px; color: var(--ink); }
+.info-feedback { margin-top: 36px; padding-top: 4px; border-top: 1px solid var(--rule); }
+.info-feedback form { display: grid; gap: 10px; margin-top: 10px; }
+.info-feedback textarea, .info-feedback input {
+  width: 100%; font: inherit; font-size: 15px; padding: 10px 12px; border: 1px solid var(--rule);
+  border-radius: var(--radius); background: var(--panel); color: var(--ink);
+}
+.info-feedback textarea { resize: vertical; min-height: 120px; }
+.info-send { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.info-send .btn { padding: 8px 18px; font-size: 14px; }
+.info-send .btn:disabled { opacity: 0.5; }
+.info-thanks { padding: 12px 14px; border-radius: var(--radius); background: var(--panel); border: 1px solid var(--rule); }
+.info-missing code { font-size: 14px; padding: 1px 5px; border-radius: 4px; background: var(--panel); }

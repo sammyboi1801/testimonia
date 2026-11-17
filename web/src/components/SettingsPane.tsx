@@ -19,6 +19,7 @@ import {
   type Theme,
 } from "../settings";
 import { listVoices, speak, speechSupported, voicesReady, type SpeechLang } from "../speech";
+import { Link } from "react-router-dom";
 import { Mark } from "./Marks";
 
 const SECTIONS = [
@@ -31,6 +32,7 @@ const SECTIONS = [
   { id: "speech", label: "Pronunciation" },
   { id: "panel", label: "Study panel" },
   { id: "backup", label: "Backup" },
+  { id: "about", label: "About" },
 ] as const;
 
 const MARK_KINDS: MarkKind[] = ["var", "fat", "quo"];
@@ -323,6 +325,14 @@ export function SettingsPane({ onClose }: { onClose: () => void }) {
 
           <Section id="backup" title="Backup" note="Settings live in this browser. Save them to a file to move them to another computer.">
             <Backup settings={settings} onLoad={replace} />
+          </Section>
+
+          <Section id="about" title="About">
+            <p className="set-links">
+              <Link to="/about" onClick={onClose}>About Testimonia</Link>
+              <Link to="/about#feedback" onClick={onClose}>Send feedback</Link>
+              <Link to="/privacy" onClick={onClose}>Privacy</Link>
+            </p>
           </Section>
         </div>
       </aside>

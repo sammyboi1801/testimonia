@@ -21,6 +21,8 @@ services:
         VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:-}
     image: testimonia
     restart: unless-stopped
+    # a runaway request ends this container (Docker starts it again), not the whole 1 GB machine
+    mem_limit: 640m
     environment:
       TESTIMONIA_CORE_DB_URL: ${TESTIMONIA_CORE_DB_URL:-}
       TESTIMONIA_CORS_ORIGINS: ${TESTIMONIA_CORS_ORIGINS:-} # e.g. https://testimonia.web.app
@@ -33,6 +35,7 @@ services:
     profiles: [caddy]
     image: caddy:2
     restart: unless-stopped
+    mem_limit: 128m
     depends_on: [app]
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-localhost}

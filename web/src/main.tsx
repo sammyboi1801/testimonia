@@ -54,6 +54,7 @@ import { TimelineLab } from "./pages/TimelineLab";
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const HomePage = lazy(() => import("./pages/HomePage"));
 import { AskPage } from "./pages/AskPage";
+import { AboutPage, NotFoundPage, PrivacyPage } from "./pages/InfoPages";
 import { BookPage } from "./pages/BookPage";
 import { DomainPage } from "./pages/DomainPage";
 import { NotesPage } from "./pages/NotesPage";
@@ -131,7 +132,9 @@ function App() {
           <Route path="/place/:id" element={<Suspense fallback={loading}><PlacePage /></Suspense>} />
           <Route path="/person/:id" element={<Suspense fallback={loading}><PersonPage /></Suspense>} />
           <Route path="/event/:id" element={<Suspense fallback={loading}><EventPage /></Suspense>} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </ErrorBoundary>
       <ErrorBoundary resetKey={location.pathname}>

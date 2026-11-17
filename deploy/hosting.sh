@@ -50,7 +50,13 @@ py tools/prerender.py "$DIST" "$STATIC"
 # 4. publish: the live site, or a preview channel
 cd deploy
 if [ -n "${CHANNEL:-}" ]; then
-  firebase hosting:channel:deploy "$CHANNEL" --expires 2d --project testimonia-35d9f
+  firebase hosting:channel:deploy "$CHANNEL" --expires 2d --project testimonia-35d9f | tee "${APP%/*}/deploy.log"
+  url=$(grep -oE "https://testimonia--${CHANNEL}-[a-z0-9]+\.web\.app" "${APP%/*}/deploy.log" | head -1)
 else
   firebase deploy --only hosting --project testimonia-35d9f
+  url=https://testimonia.web.app
 fi
+
+# 5. check it works end to end (pages, data, server, share links); a failure here means look before walking away
+cd ..
+[ -n "$url" ] && py tools/smoke.py "$url"

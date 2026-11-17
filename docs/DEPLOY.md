@@ -132,3 +132,28 @@ docker run -p 7860:7860 -v ~/TestimoniaData/build:/data/build testimonia     # u
 or, without Docker: `pip install -e .`, `testimonia fetch && testimonia build`, `cd web && npm ci && npm run build`,
 then `testimonia serve --open`. A local server (bound to 127.0.0.1) may use local models (Ollama, LM Studio)
 for the assistant directly.
+
+## Keeping it up
+
+The live site runs on Firebase Hosting (the Bible, as static files on its CDN) and a small VM (the API and the
+assistant). Most failures repair themselves:
+
+- **A crash**: Docker starts the container again (`restart: unless-stopped`).
+- **A hang**: `deploy/oracle/watchdog.sh` checks every minute and restarts the API, Caddy or Docker after three
+  failed checks in a row. Its log: `journalctl -u testimonia-watchdog`.
+- **Memory running out**: each container has a memory limit, and earlyoom ends the biggest process before the
+  machine thrashes.
+- **A frozen machine**: a kernel watchdog reboots it, and Docker starts everything again.
+
+Set all of this up once on the VM with `sudo bash ~/testimonia/deploy/oracle/install-watchdog.sh`.
+
+**Alerts**: `.github/workflows/monitor.yml` runs `tools/smoke.py` against the live site every 15 minutes. If it
+fails twice in a row, it opens an issue labelled `outage` (GitHub emails you), and it closes that issue when the
+site passes again. Every deploy runs the same checks at the end (`deploy/hosting.sh`).
+
+If an outage issue stays open:
+
+1. `py tools/smoke.py` shows what is failing.
+2. If only the server is failing, reset the VM:
+   `gcloud compute instances reset testimonia --zone=us-central1-a --project=<project>`.
+3. If the Bible data is failing, redeploy with `bash deploy/hosting.sh`.

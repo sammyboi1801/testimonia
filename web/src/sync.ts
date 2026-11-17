@@ -148,6 +148,20 @@ async function firebase() {
   return fb;
 }
 
+/** Feedback from the About page: anyone may add one (no account), no one can read it back from the app. */
+export async function sendFeedback(message: string, contact: string): Promise<boolean> {
+  const f = await firebase().catch(() => null);
+  if (!f) return false;
+  const doc: Record<string, unknown> = { message: message.slice(0, 4000), page: location.pathname.slice(0, 300), at: f.mod.store.serverTimestamp() };
+  if (contact.trim()) doc.contact = contact.trim().slice(0, 200);
+  try {
+    await f.mod.store.addDoc(f.mod.store.collection(f.db, "feedback"), doc);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function writeLocal(key: Key, json: string) {
   applying = true;
   try {
