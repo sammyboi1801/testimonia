@@ -218,7 +218,7 @@ def jewish(s: Any, osis: str) -> dict[str, Any] | None:
                 "kind": kind,
                 "title": title,
                 "ref": x.get("ref"),
-                "year": date[0] if date and isinstance(date[0], int) else None,
+                "year": date[0] if date and isinstance(date[0], int) and date[0] != 0 else None,  # 0: undated
                 "has_en": bool(x.get("sourceHasEn")),
                 "url": "https://www.sefaria.org/" + str(x.get("ref", "")).replace(" ", "_"),
             }

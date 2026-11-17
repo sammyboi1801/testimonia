@@ -144,7 +144,7 @@ export function JewishReaders({ osis }: { osis: string }) {
                   <a className="who" href={s.url} target="_blank" rel="noreferrer">
                     {s.title}
                   </a>
-                  {s.year !== null && <span className="when">{formatYear(s.year)}</span>}
+                  {!!s.year && <span className="when">{formatYear(s.year)}</span>}
                 </div>
                 {s.text ? (
                   <p className="text jr-text">
