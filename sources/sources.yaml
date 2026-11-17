@@ -337,6 +337,30 @@ sources:
       included in the published core.db. scripRef osisRef attributes give exact verse citations.
 
   # ---------------------------------------------------------------- Jewish & Roman witnesses
+  - id: philo-yonge
+    name: The Works of Philo Judaeus, tr. C. D. Yonge (Bohn, 1854–55), Internet Archive OCR
+    url: https://archive.org/details/worksofphilojuda01phil
+    download: the OCR text of the four Bohn volumes digitized by the Internet Archive from University of Toronto copies
+    public: true    # the 1854–55 translation and the scans are public domain
+    fetch:
+      - http: https://archive.org/download/worksofphilojuda01phil/worksofphilojuda01phil_djvu.txt
+        target: witnesses
+        filename: philo-yonge-vol1.txt
+      - http: https://archive.org/download/worksofphilojuda02phil/worksofphilojuda02phil_djvu.txt
+        target: witnesses
+        filename: philo-yonge-vol2.txt
+      - http: https://archive.org/download/worksofphilojuda03phil/worksofphilojuda03phil_djvu.txt
+        target: witnesses
+        filename: philo-yonge-vol3.txt
+      - http: https://archive.org/download/worksofphilojuda04phil/worksofphilojuda04phil_djvu.txt
+        target: witnesses
+        filename: philo-yonge-vol4.txt
+    license: PD (Yonge 1854–55)
+    attribution: "Philo of Alexandria, tr. C. D. Yonge (London: Henry G. Bohn, 1854–55); scans digitized by the Internet Archive from University of Toronto copies"
+    feeds: [work, work_edition, work_section, citation]
+    phase: 1
+    notes: "48 treatises cut into Yonge's numbered sections; his footnoted Scripture references link the sections to the verses Philo quotes. De mundo (a later compilation) and the fragments are left out."
+
   - id: ccel-josephus
     name: CCEL ThML — The Works of Flavius Josephus (tr. William Whiston, 1737)
     url: https://ccel.org/ccel/josephus/complete
@@ -504,7 +528,7 @@ sources:
     attribution: "Project Gutenberg"
     feeds: [work, work_edition, work_section]
     phase: 1
-    notes: "Pistis Sophia (Horner 1924, #76266); Aquinas Summa Theologica (1920); Philo (Yonge). Josephus, Suetonius, Pliny and Lucian: see ccel-josephus and pd-roman-witnesses"
+    notes: "Pistis Sophia (Horner 1924, #76266); Aquinas Summa Theologica (1920). Philo, Josephus, Suetonius, Pliny and Lucian: see philo-yonge, ccel-josephus and pd-roman-witnesses"
 
   - id: wikisource
     name: Wikisource (selected PD texts)

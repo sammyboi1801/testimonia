@@ -1,4 +1,6 @@
-"""Jewish and Roman witnesses: Josephus, Tacitus, Suetonius, Pliny the Younger and Lucian.
+"""Jewish and Roman witnesses: Philo, Josephus, Tacitus, Suetonius, Pliny the Younger and Lucian.
+
+* Philo (Yonge 1854–55) from the Internet Archive's OCR of the Bohn volumes: see philo.py.
 
 * Josephus (Whiston 1737) from CCEL ThML — the same markup as the church fathers, so the CCEL helpers turn it into
   sections, footnotes and Scripture links (Whiston's notes cite Scripture; those links are kept as 'comment').
@@ -19,10 +21,12 @@ from typing import Any
 from lxml import etree
 
 from ..refs import parse_refs
+from . import philo as philo_mod
 from .base import Context, IngestError, step
 from .ccel import RefResolver, Section, _section, smart_title
 from .curated import read_csv
 
+PHILO = "philo-yonge"
 JOSEPHUS = "ccel-josephus"
 TACITUS = "perseus-tacitus"
 ROMAN = "pd-roman-witnesses"
@@ -44,6 +48,7 @@ class Work:
     source: str
     sections: list[Section]
     language: str = "eng"
+    kind: str = "comment"  # what a reference in a section means: an editor's note ('comment'), or a 'quotation'
 
 
 # ----------------------------------------------------------------------------- Josephus (ThML)
@@ -361,11 +366,20 @@ def _store(ctx: Context, w: Work, resolver: RefResolver) -> int:
             for one in osis.split():
                 span = resolver.resolve(one)
                 if span:
-                    cites.append((*span, w.id, w.edition, ord_, sec.cite, w.author, w.date_to, "comment",
-                                  snippet or None, w.source))  # fmt: skip
+                    words = snippet or (_opening(sec.text) if w.kind == "quotation" else "")
+                    cites.append((*span, w.id, w.edition, ord_, sec.cite, w.author, w.date_to, w.kind,
+                                  words or None, w.source))  # fmt: skip
     ctx.insert("work_section", ["edition_id", "ord", "cite", "parent_ord", "level", "title", "html", "text"], rows)
     _insert_citations(ctx, cites)
     return len(rows)
+
+
+def _opening(text: str) -> str:
+    """For a quotation with no words of its own (Philo's footnotes): the section's opening, for the verse's list."""
+    if not text:
+        return ""
+    cut = text[:260]
+    return (cut.rsplit(" ", 1)[0] + " …") if len(text) > 260 else cut
 
 
 def _insert_citations(ctx: Context, rows: list[tuple[Any, ...]]) -> None:
@@ -411,13 +425,35 @@ def _links(ctx: Context) -> int:
     return len(rows)
 
 
-@step("witnesses", sources=[JOSEPHUS, TACITUS, ROMAN], requires=["history", "verses"])
+def philo_works(paths: list[Path]) -> list[Work]:
+    """Philo's treatises (Yonge 1854–55) as witnesses: Jewish writings whose references are quotations of Scripture."""
+    return [
+        Work(
+            pw.id,
+            pw.title,
+            philo_mod.AUTHOR,
+            "jewish",
+            pw.dates[0],
+            pw.dates[1],
+            f"{pw.id}@yonge",
+            "C. D. Yonge",
+            1854,
+            PHILO,
+            pw.sections,
+            kind="quotation",
+        )
+        for pw in philo_mod.philo(paths)
+    ]
+
+
+@step("witnesses", sources=[JOSEPHUS, TACITUS, ROMAN, PHILO], requires=["history", "verses"])
 def ingest_witnesses(ctx: Context) -> None:
-    """Jewish & Roman witnesses: Josephus, Tacitus (Annals), Suetonius, Pliny (10.96–97), Lucian (Peregrine)."""
+    """Jewish & Roman witnesses: Philo, Josephus, Tacitus (Annals), Suetonius, Pliny (10.96–97), Lucian (Peregrine)."""
     resolver = RefResolver(ctx)
     known = {r[0] for r in ctx.con.execute("SELECT id FROM person")}
     works: list[Work] = []
     loaders: list[tuple[str, Callable[[], list[Work]]]] = [
+        (PHILO, lambda: philo_works([ctx.find(PHILO, f"philo-yonge-vol{v}.txt") for v in (1, 2, 3, 4)])),
         (JOSEPHUS, lambda: josephus(ctx.find(JOSEPHUS, "josephus-whiston.xml"))),
         (TACITUS, lambda: tacitus(ctx.find(TACITUS, "tacitus-annals-eng.xml"))),
         (ROMAN, lambda: [

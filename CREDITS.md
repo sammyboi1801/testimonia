@@ -7,7 +7,7 @@ Testimonia is built entirely on openly licensed data. This page lists every data
 uses, with the credit line its licence requires. A built `core.db` is distributed under
 **CC BY-SA 4.0** as a combination of these sources (see [DATA_LICENSE.md](DATA_LICENSE.md)).
 
-**49 sources** · 22 explicitly excluded
+**50 sources** · 22 explicitly excluded
 
 ## Summary
 
@@ -39,6 +39,7 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 | Septuagint (Swete) with Morpheus lemmas and parsing (QuantForge LXX) | CC-BY-SA-4.0 | 1 |
 | Suetonius, Pliny the Younger and Lucian in public-domain translations | PD | 1 |
 | Tacitus, Annals — tr. A. J. Church & W. J. Brodribb (1876), Perseus TEI | CC-BY-SA-4.0 | 1 |
+| The Works of Philo Judaeus, tr. C. D. Yonge (Bohn, 1854–55), Internet Archive OCR | PD (Yonge 1854–55) | 1 |
 | Thomas Aquinas, Catena Aurea (Newman translation, 1841) | PD | 1 |
 | Wikipedia page summaries (introductions shown live in the app) | CC-BY-SA-4.0 | 1 |
 | Wikisource (selected PD texts) | PD texts (Wikisource contributions CC-BY-SA) | 1 |
@@ -282,6 +283,14 @@ uses, with the credit line its licence requires. A built `core.db` is distribute
 - **Credit:** Tacitus, Annals, tr. A. J. Church & W. J. Brodribb (1876); TEI by the Perseus Digital Library, CC BY-SA 4.0
 - **Used for:** `work`, `work_edition`, `work_section`
 - **Pinned version:** fetched 2026-11-06
+
+### The Works of Philo Judaeus, tr. C. D. Yonge (Bohn, 1854–55), Internet Archive OCR
+
+- **Source:** <https://archive.org/details/worksofphilojuda01phil>
+- **Licence:** PD (Yonge 1854–55)
+- **Credit:** Philo of Alexandria, tr. C. D. Yonge (London: Henry G. Bohn, 1854–55); scans digitized by the Internet Archive from University of Toronto copies
+- **Used for:** `work`, `work_edition`, `work_section`, `citation`
+- **Pinned version:** fetched 2026-11-17
 
 ### Thomas Aquinas, Catena Aurea (Newman translation, 1841)
 
