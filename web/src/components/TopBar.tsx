@@ -14,7 +14,9 @@ const narrow = typeof window !== "undefined" && window.matchMedia("(max-width: 7
 export function TopBar() {
   const navigate = useNavigate();
   // phones: a ‹ back button whenever there is somewhere in the app to go back to (installed apps have no browser Back)
-  const canGoBack = useLocation().key !== "default";
+  const location = useLocation();
+  const canGoBack = location.key !== "default";
+  const onSearch = location.pathname.startsWith("/search");
   const { settings, update } = useSettings();
   const [q, setQ] = useState("");
   // ?settings in the URL opens the pane (handy for screenshots and links to settings)
@@ -46,7 +48,8 @@ export function TopBar() {
         <img className="brand-mark" src="/favicon.svg" alt="" width="28" height="28" />
         <span className="brand-name">Testimonia</span>
       </NavLink>
-      <form className="omnibox" onSubmit={submit} role="search">
+      {/* on the Search page its own box does this: the header's stays out of sight (its space kept) */}
+      <form className={`omnibox${onSearch ? " omnibox-off" : ""}`} onSubmit={submit} role="search" aria-hidden={onSearch || undefined}>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}

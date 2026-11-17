@@ -8,6 +8,8 @@ import { osisLabel, verseUrl } from "../lib";
 import type { Book, SearchResults } from "../types";
 
 const snip = (html: string) => ({ __html: DOMPurify.sanitize(html, { ALLOWED_TAGS: ["mark"] }) });
+/** Phones get a placeholder short enough to be read whole. */
+const narrow = typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches;
 
 type Scope = "all" | "bible" | "works" | "lexicon" | "grammar";
 const SCOPES: { id: Scope; label: string }[] = [
@@ -65,7 +67,7 @@ export function SearchPage() {
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="A word, a phrase, a name, a reference — in English, Greek or Hebrew"
+            placeholder={narrow ? "A word, name or verse" : "A word, a phrase, a name or a verse, in English, Greek or Hebrew"}
             aria-label="Search"
             autoFocus
           />
@@ -102,7 +104,7 @@ export function SearchPage() {
             <div className="search-scope-cards">
               <div>
                 <strong>{meta.data.editions.length}</strong>
-                <span>Bible editions — English, Greek, Hebrew and Latin</span>
+                <span>Bible editions in English, Greek, Hebrew and Latin</span>
               </div>
               <div>
                 <strong>{meta.data.counts.works.toLocaleString()}</strong>

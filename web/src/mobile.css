@@ -94,8 +94,17 @@
   .br-row { grid-template-columns: 120px minmax(0, 1fr) 44px; }
   .search-box input { font-size: 16px; }
   .search-box .btn { display: none; }
-  .search-scopes { flex-wrap: nowrap; overflow-x: auto; }
-  .search-scopes button { white-space: nowrap; }
+  /* the scopes slide sideways without a scrollbar; the fade at the edge says there are more */
+  .search-scopes { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(90deg, #000 85%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); }
+  .search-scopes::-webkit-scrollbar { display: none; }
+  .search-scopes button { white-space: nowrap; flex: none; }
+  .search-scopes button:last-child { margin-right: 28px; }
+  /* the library's size in one quiet row of three, not three big cards down the screen */
+  .search-scope-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .search-scope-cards div { padding: 10px 10px 11px; align-content: start; }
+  .search-scope-cards strong { font-size: calc(22px * var(--display-size)); line-height: 1.1; }
+  .search-scope-cards span { font-size: 11.5px; line-height: 1.3; }
   .ask-input textarea { font-size: 16px; }
   .notes-io { margin-left: 0; }
   .settings { width: 100vw; }
