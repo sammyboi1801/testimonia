@@ -138,9 +138,14 @@ def scholarship(query: str) -> list[dict[str, Any]] | None:
                         "abstract": _abstract(w.get("abstract_inverted_index"))[:700],
                     }
                 )
-            return [w for w in out if w["title"]]
+            return [w for w in out if _real_title(w["title"])]
 
     return _cached(f"oa:{q.lower()}", fetch)
+
+
+def _real_title(t: str) -> bool:
+    """A work's title, not a file name ('nvt_ct03') or a lone word ('Nicodemus.') the index picked up."""
+    return len(t.split()) >= 3 and "_" not in t
 
 
 def _abstract(inverted: dict[str, list[int]] | None) -> str:
@@ -273,7 +278,7 @@ def art(query: str, limit: int = 8) -> list[dict[str, Any]] | None:
                     "generator": "search",
                     "gsrsearch": f"{q} filetype:bitmap",
                     "gsrnamespace": 6,
-                    "gsrlimit": 20,
+                    "gsrlimit": 40,
                     "prop": "imageinfo",
                     "iiprop": "url|extmetadata|size",
                     "iiurlwidth": 640,
@@ -281,21 +286,30 @@ def art(query: str, limit: int = 8) -> list[dict[str, Any]] | None:
             )
             r.raise_for_status()
             pages = sorted(r.json().get("query", {}).get("pages", []), key=lambda p: p.get("index", 0))
-        out = []
-        by_artist: dict[str, int] = {}
+        out: list[dict[str, Any]] = []
+        artists: set[str] = set()
+        wanted = _words(q)
         for p in pages:
             info = (p.get("imageinfo") or [{}])[0]
             meta = info.get("extmetadata") or {}
             licence = (meta.get("LicenseShortName") or {}).get("value")
             if not _open_licence(licence) or not info.get("thumburl"):
                 continue
-            who = _plain((meta.get("Artist") or {}).get("value")).lower()
-            if who and by_artist.get(who, 0) >= 2:
-                continue  # many photographs of one painting: two at most
-            by_artist[who] = by_artist.get(who, 0) + 1
+            # one work per artist, known by surname ("Paolo Veronese" and "Veronese" are one painter)
+            words = re.findall(r"[a-zà-ÿ]{3,}", _plain((meta.get("Artist") or {}).get("value")).lower())
+            who = words[-1] if words and words[-1] not in ("photographer", "unknown", "anonymous") else ""
+            if who and who in artists:
+                continue
+            title = re.sub(r"^File:|\.\w+$", "", p.get("title", "")).replace("_", " ")
+            cats = _plain((meta.get("Categories") or {}).get("value"))
+            if not ART.search(cats) or NOT_ART.search(cats) or not (wanted & _words(f"{title} {cats}")):
+                continue  # not a work of art, or not of this scene (a stray match on one word of the search)
+            if any(_same_work(title, info, o) for o in out):
+                continue  # another photograph of a painting already shown
+            artists.add(who)
             out.append(
                 {
-                    "title": re.sub(r"^File:|\.\w+$", "", p.get("title", "")).replace("_", " "),
+                    "title": title,
                     "thumb": info["thumburl"],
                     "width": info.get("thumbwidth"),
                     "height": info.get("thumbheight"),
@@ -311,6 +325,35 @@ def art(query: str, limit: int = 8) -> list[dict[str, Any]] | None:
         return out
 
     return _cached(f"art:{q.lower()}", fetch)
+
+
+_COMMON = {"the", "and", "of", "in", "at", "de", "la", "le", "les", "des", "zu", "die", "der", "with", "painting"}
+#: Commons categories that mark a work of art (or a photograph of one)
+ART = re.compile(
+    r"artworks? |paintings|in art\b|icons?\b|mosaics?|fresco|stained glass|illuminat|engravings?|"
+    r"bible illustrations|azulejo|tissot|dor[ée] bible|altarpiece|manuscripts?\b|codex",
+    re.I,
+)
+
+
+#: scans of old books' pages (their engravings match a search on any word of a book's title)
+NOT_ART = re.compile(r"internet archive book images|flickr's 'the commons'|\b1[6-9]\d\d books\b|fleurons", re.I)
+
+
+def _words(text: str) -> set[str]:
+    """The telling words of a text: four letters or more, not the common ones."""
+    return {w for w in re.findall(r"[a-zà-ÿ]{4,}", text.lower()) if w not in _COMMON | {"jesus", "christ", "with"}}
+
+
+def _same_work(title: str, info: dict[str, Any], other: dict[str, Any]) -> bool:
+    """Two photographs of one painting: nearly the same shape, and a word of the title in common."""
+    w, h, ow, oh = info.get("thumbwidth"), info.get("thumbheight"), other.get("width"), other.get("height")
+    if not (w and h and ow and oh):
+        return False
+    if abs((w / h) / (ow / oh) - 1) > 0.025:
+        return False
+    words = {x for x in re.findall(r"\w{4,}", title.lower()) if x not in _COMMON}
+    return bool(words & {x for x in re.findall(r"\w{4,}", other["title"].lower()) if x not in _COMMON})
 
 
 # ----------------------------------------------------------------------------- the API the pages use

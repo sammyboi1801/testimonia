@@ -125,7 +125,7 @@ def test_jewish_sources_quote_only_open_translations(monkeypatch):
     assert midrash["licence"] == "CC-BY-NC"
 
 
-def test_art_keeps_only_free_images_two_per_artist(monkeypatch):
+def test_art_keeps_only_free_images_one_per_artist(monkeypatch):
     def page(i, licence, artist):
         return {
             "title": f"File:Painting {i}.jpg",
@@ -134,7 +134,7 @@ def test_art_keeps_only_free_images_two_per_artist(monkeypatch):
                 {
                     "thumburl": f"https://upload.example/{i}.jpg",
                     "descriptionurl": f"https://commons.example/{i}",
-                    "extmetadata": {"LicenseShortName": {"value": licence}, "Artist": {"value": f"<a>{artist}</a>"}},
+                    "extmetadata": {"LicenseShortName": {"value": licence}, "Artist": {"value": f"<a>{artist}</a>"}, "Categories": {"value": "Paintings of Nicodemus|PD-Art"}},
                 }
             ],
         }
@@ -142,7 +142,7 @@ def test_art_keeps_only_free_images_two_per_artist(monkeypatch):
     pages = [page(1, "Public domain", "Tanner"), page(2, "CC BY-NC 2.0", "Someone"), page(3, "Public domain", "Tanner"), page(4, "Public domain", "Tanner"), page(5, "CC BY-SA 4.0", "Tissot")]  # fmt: skip
     _serve(monkeypatch, lambda r: httpx.Response(200, json={"query": {"pages": pages}}))
     images = online.art("Jesus and Nicodemus")
-    assert [i["title"] for i in images] == ["Painting 1", "Painting 3", "Painting 5"]
+    assert [i["title"] for i in images] == ["Painting 1", "Painting 5"]
     assert images[0]["artist"] == "Tanner"
 
 
