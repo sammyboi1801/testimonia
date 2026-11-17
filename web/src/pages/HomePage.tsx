@@ -419,7 +419,7 @@ export default function HomePage() {
             <Link className="hm-step" to="/read/John/1?v=John.1.1">
               <b>1</b>
               <strong>Tap a verse</strong>
-              <span>Highlight it, write a note — it syncs to your account.</span>
+              <span>Highlight it or write a note. It syncs to your account.</span>
             </Link>
             <Link className="hm-step" to="/read/John/1?v=John.1.1&t=words&w=G3056">
               <b>2</b>
