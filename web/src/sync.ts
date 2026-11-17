@@ -6,6 +6,7 @@
 // Firestore (users/{uid}/blobs/{key}), merges what each device has when someone signs in, and listens for
 // changes from their other devices. API keys for the assistant are never synced.
 import { useSyncExternalStore } from "react";
+import { forgetKeys } from "./agent/providers";
 
 const SYNCED = {
   "testimonia.notes.v1": "notes",
@@ -437,10 +438,7 @@ export async function signOut(opts: { forgetKey?: boolean; force?: boolean } = {
   }
   localStorage.removeItem("testimonia.ai.chat.current");
   localStorage.removeItem("testimonia.ai.current");
-  if (opts.forgetKey) {
-    localStorage.removeItem("testimonia.ai.key");
-    sessionStorage.removeItem("testimonia.ai.key");
-  }
+  if (opts.forgetKey) forgetKeys();
   return true;
 }
 

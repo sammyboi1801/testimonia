@@ -3,6 +3,7 @@ import { useQueries } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { chapterQuery, getJson, useMeta } from "../api";
 import { askOnce, useAssistantState } from "../agent/ask";
+import { PRESETS, loadConfig } from "../agent/providers";
 import { Answer } from "../components/Chat";
 import { openAsk } from "../components/AskDrawer";
 import { Peek, peekable, type PeekTarget } from "../components/VersePeek";
@@ -585,6 +586,12 @@ function usePeek() {
   };
 }
 
+const keyRejected = (error: string) => /\b(401|403)\b|invalid.{0,20}key|api key.{0,20}invalid|authenticat|unauthori[sz]ed|incorrect api key/i.test(error);
+function providerLabel() {
+  const c = loadConfig();
+  return PRESETS.find((p) => p.id === c.preset)?.label.replace(/\s*\(.*\)$/, "") ?? "Your AI provider";
+}
+
 function AiAnswer({ study, question, questions, onKeep, onClose }: { study: Study; question: string; questions: boolean; onKeep: (t: string) => void; onClose: () => void }) {
   const books = useMeta().data?.books ?? [];
   const [text, setText] = useState("");
@@ -645,7 +652,17 @@ function AiAnswer({ study, question, questions, onKeep, onClose }: { study: Stud
         </div>
       )}
       {peek.node}
-      {error && <p className="st-ai-error">{error}</p>}
+      {error &&
+        (keyRejected(error) ? (
+          <div className="st-ai-error">
+            <p>{providerLabel()} didn't accept your key. It may have been mistyped, revoked, or made for a different provider.</p>
+            <button className="btn" onClick={() => openAsk(study.label)}>
+              Check your key
+            </button>
+          </div>
+        ) : (
+          <p className="st-ai-error">{error}</p>
+        ))}
       {!busy && (
         <div className="st-ai-actions">
           {!items.length && text && (

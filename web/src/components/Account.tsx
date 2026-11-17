@@ -1,4 +1,5 @@
 import { InstallButton } from "./Install";
+import { hasAnyKey } from "../agent/providers";
 import { useEffect, useRef, useState } from "react";
 import { deleteAccount, resetPassword, signIn, signInWithEmail, signOut, syncAvailable, useSync } from "../sync";
 
@@ -135,13 +136,7 @@ function SignInCard() {
 
 /** Sign out: what leaves this device, and whether the assistant's key goes too. */
 function SignOutStep({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
-  const hasKey = (() => {
-    try {
-      return !!(localStorage.getItem("testimonia.ai.key") || sessionStorage.getItem("testimonia.ai.key"));
-    } catch {
-      return false;
-    }
-  })();
+  const hasKey = hasAnyKey();
   const [forgetKey, setForgetKey] = useState(false);
   const [busy, setBusy] = useState(false);
   const [unsynced, setUnsynced] = useState(false);

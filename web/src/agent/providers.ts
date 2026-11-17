@@ -97,26 +97,73 @@ export function saveConfig(c: AiConfig): void {
   changed();
 }
 
-/** The key lives in this browser only: for the session, or on this device if the user chose "remember". */
-export function loadKey(): string {
+/**
+ * The key lives in this browser only: for the session, or on this device if the user chose "remember". Each
+ * provider keeps its own key. The provider choice syncs between devices but keys never do, so one shared key would
+ * be sent to whichever provider another device picked: rejected, and handed to a company it was not meant for.
+ */
+const keyName = (preset: string) => `${KEY_KEY}.${preset}`;
+
+export function loadKey(preset = loadConfig().preset): string {
   try {
-    return localStorage.getItem(KEY_KEY) ?? sessionStorage.getItem(KEY_KEY) ?? "";
+    adoptOldKey();
+    return localStorage.getItem(keyName(preset)) ?? sessionStorage.getItem(keyName(preset)) ?? "";
   } catch {
     return "";
   }
 }
 
-export function saveKey(key: string, remember: boolean): void {
+export function saveKey(key: string, remember: boolean, preset = loadConfig().preset): void {
   try {
-    localStorage.removeItem(KEY_KEY);
-    sessionStorage.removeItem(KEY_KEY);
-    if (key) (remember ? localStorage : sessionStorage).setItem(KEY_KEY, key);
+    localStorage.removeItem(keyName(preset));
+    sessionStorage.removeItem(keyName(preset));
+    if (key) (remember ? localStorage : sessionStorage).setItem(keyName(preset), key);
   } catch {
     /* storage unavailable */
   }
   // a session key is lent to this browser's other open tabs, so a study opened in a new tab can use it too
-  channel?.postMessage(key && !remember ? { type: "key", key } : { type: "clear" });
+  channel?.postMessage(key && !remember ? { type: "keys", keys: { [preset]: key } } : { type: "clear", preset });
   changed();
+}
+
+/** Any provider's key, kept in this browser. */
+export function hasAnyKey(): boolean {
+  try {
+    return [localStorage, sessionStorage].some((s) => Object.keys(s).some(isKeyName));
+  } catch {
+    return false;
+  }
+}
+
+/** Forget every provider's key in this browser (signing out, when asked to). */
+export function forgetKeys(): void {
+  try {
+    for (const s of [localStorage, sessionStorage]) Object.keys(s).filter(isKeyName).forEach((k) => s.removeItem(k));
+  } catch {
+    /* storage unavailable */
+  }
+  channel?.postMessage({ type: "clear" });
+  changed();
+}
+
+const isKeyName = (k: string) => k === KEY_KEY || k.startsWith(`${KEY_KEY}.`);
+
+/** Keys saved before they were kept per provider: given to the provider chosen now, once. */
+function adoptOldKey() {
+  for (const s of [localStorage, sessionStorage]) {
+    const old = s.getItem(KEY_KEY);
+    if (old === null) continue;
+    s.removeItem(KEY_KEY);
+    const name = keyName(loadConfig().preset);
+    if (old && s.getItem(name) === null) s.setItem(name, old);
+  }
+}
+
+/** This tab's session keys, by provider. */
+function sessionKeys(): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const k of Object.keys(sessionStorage)) if (k.startsWith(`${KEY_KEY}.`)) out[k.slice(KEY_KEY.length + 1)] = sessionStorage.getItem(k) ?? "";
+  return out;
 }
 
 // The assistant's setup changed (in this tab, another tab, or the key arrived from another tab).
@@ -126,7 +173,7 @@ function changed() {
 }
 export function onAiChange(cb: () => void): () => void {
   const onStorage = (e: StorageEvent) => {
-    if (e.key === CONFIG_KEY || e.key === KEY_KEY) cb();
+    if (e.key === null || e.key === CONFIG_KEY || isKeyName(e.key)) cb();
   };
   window.addEventListener(EVENT, cb);
   window.addEventListener("storage", onStorage);
@@ -141,24 +188,32 @@ export function onAiChange(cb: () => void): () => void {
 const channel = typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel("testimonia.ai");
 if (channel) {
   channel.onmessage = (e: MessageEvent) => {
-    const m = e.data as { type?: string; key?: unknown };
+    const m = e.data as { type?: string; keys?: unknown; preset?: unknown };
     try {
-      if (m?.type === "need-key") {
-        const k = sessionStorage.getItem(KEY_KEY);
-        if (k) channel.postMessage({ type: "key", key: k });
-      } else if (m?.type === "key" && typeof m.key === "string" && m.key && !localStorage.getItem(KEY_KEY)) {
-        if (sessionStorage.getItem(KEY_KEY) === m.key) return;
-        sessionStorage.setItem(KEY_KEY, m.key);
-        changed();
-      } else if (m?.type === "clear" && sessionStorage.getItem(KEY_KEY)) {
-        sessionStorage.removeItem(KEY_KEY);
-        changed();
+      if (m?.type === "need-keys") {
+        const keys = sessionKeys();
+        if (Object.keys(keys).length) channel.postMessage({ type: "keys", keys });
+      } else if (m?.type === "keys" && m.keys && typeof m.keys === "object") {
+        let got = false;
+        for (const [preset, key] of Object.entries(m.keys as Record<string, unknown>)) {
+          const name = keyName(preset);
+          if (typeof key !== "string" || !key || localStorage.getItem(name) !== null || sessionStorage.getItem(name) === key) continue;
+          sessionStorage.setItem(name, key);
+          got = true;
+        }
+        if (got) changed();
+      } else if (m?.type === "clear") {
+        const names = typeof m.preset === "string" ? [keyName(m.preset)] : Object.keys(sessionStorage).filter(isKeyName);
+        if (names.some((n) => sessionStorage.getItem(n) !== null)) {
+          names.forEach((n) => sessionStorage.removeItem(n));
+          changed();
+        }
       }
     } catch {
       /* storage unavailable */
     }
   };
-  if (!loadKey()) channel.postMessage({ type: "need-key" });
+  channel.postMessage({ type: "need-keys" });
 }
 
 /** A model on the user's own machine can only be reached from the browser, never from a hosted server. */
