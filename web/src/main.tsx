@@ -51,6 +51,7 @@ import { TopBar } from "./components/TopBar";
 import { TabBar } from "./components/TabBar";
 import { startSync, useSync } from "./sync";
 import { MapHost } from "./components/MapHost";
+import { TourPlayer } from "./components/TourPlayer";
 import { TimelineLab } from "./pages/TimelineLab";
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -143,6 +144,9 @@ function App() {
       <ErrorBoundary resetKey={location.pathname}>
         <AskDrawer />
         <MapHost />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <TourPlayer />
       </ErrorBoundary>
       <TabBar />
     </div>

@@ -1,22 +1,23 @@
-import DOMPurify from "dompurify";
-import { marked } from "marked";
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { CONFIG_KEY, PRESETS, loadConfig, loadKey, onAiChange, runsInBrowser, saveConfig, saveKey, type AiConfig } from "../agent/providers";
 import { runInBrowser, runOnServer, type AgentEvent, type Turn } from "../agent/run";
 import { HIGHLIGHTS, useNotes, type Highlight } from "../notes";
-import { openMap, pins } from "../pins";
+import { openMap, pins, type MapRequest } from "../pins";
 import { onRemoteChange } from "../sync";
 import { applyStudyChange } from "../agent/reader";
-import { screenContext } from "./AskDrawer";
+import { hideAsk, screenContext } from "./AskDrawer";
 import { copyText } from "../studyLib";
 import { useMeta } from "../api";
-import { linkRefs, Peek, peekable, type PeekTarget } from "./VersePeek";
+import { Peek, peekable, type PeekTarget } from "./VersePeek";
+import { RichAnswer } from "./RichAnswer";
+import { startTour, type Tour } from "../tour";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   steps?: string[]; // tools used while answering
+  cards?: AnswerCard[]; // what it did in the app (a map shown, a page opened, a tour built), to do again
   notice?: string;
   error?: string;
 }
@@ -114,16 +115,76 @@ function History({ chats, current, onOpen, onNew, onDelete, onClose }: { chats: 
 
 const NO_BOOKS: { osis: string; name: string }[] = [];
 
-function markdown(text: string): string {
-  return DOMPurify.sanitize(marked.parse(text, { async: false }) as string);
+/** One answer, drawn richly (verse cards, pull-quotes, link icons, images); memoised so earlier answers are not
+ *  redrawn on every streamed word. Plain references ("John 3:16") become links too, so every verse can be peeked at. */
+export const Answer = memo(function Answer({ text, books, live = false }: { text: string; books: { osis: string; name: string }[]; live?: boolean }) {
+  return <RichAnswer text={text} books={books} live={live} />;
+});
+
+/** What the assistant did in the app while answering, kept under its answer so it can be done again. */
+export type AnswerCard =
+  | { kind: "map"; label: string; map: MapRequest }
+  | { kind: "open"; label: string; link: string }
+  | { kind: "verse"; label: string; link: string }
+  | { kind: "study"; label: string; link: string }
+  | { kind: "pins"; label: string }
+  | { kind: "tour"; label: string; tour: Tour };
+
+function AnswerCards({ cards, onOpen }: { cards: AnswerCard[]; onOpen: (c: AnswerCard) => void }) {
+  return (
+    <div className="ans-cards">
+      {cards.map((c, i) => (
+        <button key={i} className={`ans-card ac-${c.kind} ans-in`} onClick={() => onOpen(c)}>
+          <span className="ans-card-icon" aria-hidden>
+            {c.kind === "map" ? (
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10Zm0-8a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+              </svg>
+            ) : c.kind === "tour" ? (
+              "➜"
+            ) : c.kind === "verse" ? (
+              "✎"
+            ) : c.kind === "study" ? (
+              "❖"
+            ) : c.kind === "pins" ? (
+              "★"
+            ) : (
+              "↗"
+            )}
+          </span>
+          <span className="ans-card-text">
+            <span className="ans-card-kind">{{ map: "Map", open: "Opened", verse: "Your notes", study: "Your study", pins: "Pins", tour: "Tour" }[c.kind]}</span>
+            <span className="ans-card-label">{c.label}</span>
+          </span>
+          <span className="ans-card-go" aria-hidden>
+            {c.kind === "tour" ? "Start" : "Show"}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
 }
 
-/** One answer, rendered from markdown; memoised so earlier answers are not re-parsed on every streamed word. */
-export const Answer = memo(function Answer({ text, books }: { text: string; books: { osis: string; name: string }[] }) {
-  // plain references ("John 3:16") become links too, so every verse can be peeked at
-  const html = useMemo(() => markdown(linkRefs(text, books)), [text, books]);
-  return <div className="ask-md" dangerouslySetInnerHTML={{ __html: html }} />;
-});
+/** The reader's page for a verse, or a range within one chapter. */
+function verseLink(osis: string, last?: string): string {
+  const [book, c, v] = osis.split(".");
+  const [, c2, v2] = (last ?? osis).split(".");
+  return `/read/${book}/${c}?v=${osis}${c2 === c && v2 && Number(v2) > Number(v) ? `&to=${v2}` : ""}`;
+}
+
+/** A short name for an app link: "/read/John/1?v=John.1.9" → "John 1:9". */
+function linkLabel(link: string, books: { osis: string; name: string }[]): string {
+  const v = /[?&]v=([1-4]?[A-Za-z]+)\.(\d+)\.(\d+)/.exec(link);
+  if (v) return `${books.find((b) => b.osis === v[1])?.name ?? v[1]} ${v[2]}:${v[3]}`;
+  const r = /^\/read\/([^/]+)\/(\d+)/.exec(link);
+  if (r) return `${books.find((b) => b.osis === r[1])?.name ?? r[1]} ${r[2]}`;
+  const place = /(?:^\/place\/|place=)([^&#/]+)/.exec(link);
+  if (place) return decodeURIComponent(place[1]!).replace(/[-_]/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+  const ms = /^\/manuscript\/([^?#]+)/.exec(link);
+  if (ms) return `Manuscript ${decodeURIComponent(ms[1]!).replace(/^GA:/, "")}`;
+  if (/^\/library\/[^/]+\/\d+/.test(link)) return "A section in the library";
+  return link;
+}
 
 /** The nearest ancestor that scrolls (the drawer's chat area, or the page). */
 function scroller(el: HTMLElement | null): HTMLElement | null {
@@ -339,25 +400,41 @@ export function Chat({
     // text that resumes after a tool step is a new paragraph, not glued to the last sentence ("reported.There is…")
     let afterTool = false;
     const on = (e: AgentEvent) => {
+      let card: AnswerCard | null = null;
       // the assistant can open pages (the atlas at a place, a verse, a chapter of a work); the chat stays open
       if (e.type === "navigate" && e.link.startsWith("/")) {
         navigate(e.link);
+        card = { kind: "open", label: linkLabel(e.link, books), link: e.link };
         e = { type: "tool", name: "show_in_app", summary: `opened ${e.link}` };
       }
       // the map beside the text, and pins: the assistant shows and keeps places
       if (e.type === "map") {
-        openMap({ ref: e.ref, person: e.person, event: e.event, places: e.places, title: e.title });
+        const map: MapRequest = { ref: e.ref, person: e.person, event: e.event, places: e.places, title: e.title };
+        openMap(map);
+        card = { kind: "map", label: e.title ?? e.ref ?? e.person ?? e.event ?? "Places", map };
         e = { type: "tool", name: "map", summary: `mapped ${e.title ?? "places"}` };
       } else if (e.type === "pins") {
         if (e.action === "add") pins.add(e.places);
         else if (e.action === "remove") pins.remove(e.places);
         else pins.saveSet(e.name ?? "My places", e.places);
-        e = { type: "tool", name: "pins", summary: e.action === "save_set" ? `saved set “${e.name}”` : `${e.action === "add" ? "pinned" : "unpinned"} ${e.places.length} places` };
+        const summary = e.action === "save_set" ? `saved set “${e.name}”` : `${e.action === "add" ? "pinned" : "unpinned"} ${e.places.length} places`;
+        card = { kind: "pins", label: summary.replace(/^\w/, (c) => c.toUpperCase()) };
+        e = { type: "tool", name: "pins", summary };
+      }
+      // a tour it built: it starts at once (the chat steps aside), and stays here to take again
+      if (e.type === "tour") {
+        const tour: Tour = { title: e.title, steps: e.steps };
+        card = { kind: "tour", label: `${e.title} · ${e.steps.length} stops`, tour };
+        startTour(tour);
+        if (compact) hideAsk();
+        e = { type: "tool", name: "tour", summary: `built a tour: ${e.title}` };
       }
       // a change to one of the reader's Bible studies (they live in this browser too)
       if (e.type === "study") {
+        const id = e.id;
         const done = applyStudyChange(e);
         if (!done) return;
+        card = { kind: "study", label: done.replace(/^\w/, (c) => c.toUpperCase()), link: `/study/${id}` };
         e = { type: "tool", name: "study", summary: done };
       }
       // a whole passage highlighted at once
@@ -366,7 +443,9 @@ export function Chat({
         const color = (HIGHLIGHTS.find((h) => h.id === want)?.id ?? null) as Highlight | null;
         for (const o of e.osis) notesApi.set(o, { highlight: color });
         const first = e.osis[0]?.replace(/^([^.]+)\.(\d+)\.(\d+)$/, "$1 $2:$3") ?? "";
-        e = { type: "tool", name: "notes", summary: `${color ? "highlighted" : "cleared"} ${e.osis.length} verses from ${first}` };
+        const summary = `${color ? "highlighted" : "cleared"} ${e.osis.length} verses from ${first}`;
+        if (e.osis[0]) card = { kind: "verse", label: summary.replace(/^\w/, (c) => c.toUpperCase()), link: verseLink(e.osis[0], e.osis[e.osis.length - 1]) };
+        e = { type: "tool", name: "notes", summary };
       }
       // changes to the reader's notes, asked for in the chat, applied here (notes live in this browser)
       if (e.type === "note") {
@@ -381,9 +460,11 @@ export function Chat({
         else if (e.action === "replace") notesApi.set(e.osis, { text: e.text });
         else notesApi.set(e.osis, { text: cur?.text ? `${cur.text}\n\n${e.text}` : e.text });
         const verb = { add: "noted", replace: "rewrote note on", remove: "removed note on", highlight: "highlighted" }[e.action];
+        if (e.action !== "remove") card = { kind: "verse", label: `${verb.replace(/^\w/, (c) => c.toUpperCase())} ${label}`, link: verseLink(e.osis) };
         e = { type: "tool", name: "notes", summary: `${verb} ${label}` };
       }
       const ev = e;
+      const made = card;
       const gap = ev.type === "text" && afterTool;
       if (ev.type === "tool") afterTool = true;
       else if (ev.type === "text") afterTool = false;
@@ -393,6 +474,8 @@ export function Chat({
         if (ev.type === "text") last.content += gap && last.content && !/\n\s*$/.test(last.content) ? `\n\n${ev.text.replace(/^\s+/, "")}` : ev.text;
         else if (ev.type === "tool") last.steps = [...(last.steps ?? []), ev.summary];
         else if (ev.type === "notice") last.notice = ev.message;
+        // one card per thing done (a second identical map or highlight replaces the first)
+        if (made) last.cards = [...(last.cards ?? []).filter((c) => c.label !== made.label), made].slice(-6);
         else if (ev.type === "error") last.error = ev.message;
         copy[copy.length - 1] = last;
         return copy;
@@ -429,6 +512,16 @@ export function Chat({
     e.preventDefault();
     if (peekable(href)) setPeek({ href, rect: a.getBoundingClientRect(), label: a.textContent ?? undefined });
     else navigate(href);
+  }
+
+  // a card under an answer does again what the assistant did: show the map, open the page, take the tour
+  function openCard(c: AnswerCard) {
+    if (c.kind === "map") openMap(c.map);
+    else if (c.kind === "pins") navigate("/atlas?pinned=1");
+    else if (c.kind === "tour") {
+      startTour(c.tour);
+      if (compact) hideAsk();
+    } else navigate(c.link);
   }
 
   // Retry: ask the last question again, from just before it
@@ -540,7 +633,8 @@ export function Chat({
               <div key={i} className={`ask-a${live ? " streaming" : ""}`}>
                 {((m.steps?.length ?? 0) > 0 || live) && <Activity steps={m.steps ?? []} live={live} />}
                 {m.notice && <p className="muted small">{m.notice}</p>}
-                {m.content && <Answer text={m.content} books={books} />}
+                {m.content && <Answer text={m.content} books={books} live={live} />}
+                {(m.cards?.length ?? 0) > 0 && <AnswerCards cards={m.cards!} onOpen={openCard} />}
                 {m.error && (
                   <p className="ask-error">
                     {/fetch|network|load failed|connection/i.test(m.error) ? "The connection dropped." : m.error}

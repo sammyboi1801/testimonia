@@ -430,3 +430,101 @@ mark.phrase { color: inherit; padding: 0.04em 0; border-radius: 2px; background:
 .note-rest { color: var(--muted); }
 .note-vn { font-size: 0.68em; color: var(--muted); margin-right: 2px; font-family: var(--font-ui); }
 .note-passage .skel-line { display: inline-block; width: 70%; height: 1em; }
+
+/* ---------------------------------------------------------------- answers, drawn richly (RichAnswer) */
+/* each block fades up once, as it first streams in */
+.ans-in { animation: ans-in 0.42s var(--ease-out, ease-out) both; }
+@keyframes ans-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+.ask-md.rich > .ans-block > :last-child { margin-bottom: 10px; }
+/* the caret now sits at the end of the paragraph being written */
+.ask-a.streaming .ask-md.rich > :last-child::after { content: none; }
+.ask-a.streaming .ask-md.rich > .ans-block:last-child > :is(p, h1, h2, h3, h4):last-child::after,
+.ask-a.streaming .ask-md.rich > .ans-block:last-child > :is(ul, ol):last-child > li:last-child::after {
+  content: ""; display: inline-block; width: 0.45em; height: 1em; margin-left: 3px; vertical-align: -0.12em;
+  border-radius: 2px; background: var(--accent); animation: caret-blink 1s steps(1) infinite;
+}
+
+/* links: a small sign of what each opens */
+.ask-md.rich a.chip-link { border-bottom: 0; background-image: none; }
+.chip-link {
+  display: inline; padding: 1px 5px 1px 4px; margin: 0 1px; border-radius: 6px; color: var(--link); text-decoration: none;
+  background: color-mix(in srgb, var(--accent) 8%, transparent); box-decoration-break: clone; -webkit-box-decoration-break: clone;
+  transition: background-color 0.15s, color 0.15s;
+}
+.chip-link:hover { background: color-mix(in srgb, var(--accent) 17%, transparent); color: var(--accent); }
+/* short names stay whole on one line; a long title may wrap */
+.chip-link:is(.cl-verse, .cl-word, .cl-place, .cl-manuscript, .cl-person, .cl-passage) { white-space: nowrap; }
+.chip-link .cl-icon { display: inline-block; margin-right: 3px; vertical-align: -0.1em; opacity: 0.75; }
+.chip-link .cl-glyph { margin-right: 3px; font-family: var(--font-text); font-style: italic; opacity: 0.8; }
+.chip-link.cl-external { background: transparent; padding: 0; border-bottom: 1px dotted var(--link) !important; border-radius: 0; }
+.chip-link .cl-out { margin-left: 2px; font-size: 0.8em; opacity: 0.7; }
+
+/* a verse on its own line: a card with its words */
+.ans-verse { margin: 4px 0 14px; padding: 14px 16px 12px; border: 1px solid var(--rule); border-left: 3px solid var(--accent); border-radius: 4px 14px 14px 4px;
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--panel)); }
+.ans-verse blockquote { margin: 0; padding: 0; border: 0; font-family: var(--font-text); font-size: 1.06em; line-height: 1.55; color: var(--ink); }
+.ans-verse blockquote sup { margin: 0 2px 0 1px; font-family: var(--font-ui); font-size: 0.6em; color: var(--numeral); }
+.ans-verse figcaption { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-family: var(--font-ui); font-size: 13px; }
+.ans-verse .ans-ed { font-size: 11px; letter-spacing: 0.08em; color: var(--muted); }
+.ans-verse-skel span { display: block; height: 0.9em; margin: 6px 0; border-radius: 4px; background: var(--panel-2); animation: skel-shimmer 1.4s linear infinite;
+  background-image: linear-gradient(90deg, transparent, color-mix(in srgb, var(--panel) 70%, transparent), transparent); background-size: 200% 100%; }
+.ans-verse-skel span:last-child { width: 62%; }
+
+/* a quoted father: a pull-quote under his name */
+.ask-md blockquote.ans-quote { position: relative; margin: 6px 0 14px; padding: 4px 0 2px 22px; border-left: 0; color: var(--ink); font-style: italic; }
+.ans-quote::before { content: "“"; position: absolute; left: -2px; top: -10px; font-family: var(--font-display); font-size: 46px; line-height: 1; color: color-mix(in srgb, var(--accent) 55%, transparent); font-style: normal; }
+.ans-quote p { margin: 0 0 6px; }
+.ans-quote .ans-cite { font-style: normal; font-family: var(--font-ui); font-size: 13px; color: var(--muted); }
+
+/* a painting or a manuscript, inline */
+.ans-fig { display: block; margin: 6px 0 14px; }
+.ans-fig-btn { display: block; width: 100%; padding: 0; border: 0; border-radius: 14px; overflow: hidden; background: var(--panel-2); cursor: zoom-in;
+  box-shadow: 0 10px 28px -12px rgb(40 22 6 / 0.45); }
+.ans-fig-btn img { display: block; width: 100%; max-height: 420px; object-fit: cover; transition: transform 0.35s var(--ease-out, ease-out); }
+.ans-fig-btn:hover img { transform: scale(1.02); }
+.ans-cap { display: block; margin-top: 6px; font-family: var(--font-ui); font-size: 12.5px; color: var(--muted); }
+.ans-table { overflow-x: auto; margin: 0 0 10px; }
+.ans-table table { border-collapse: collapse; font-size: 0.92em; }
+.ans-table th, .ans-table td { padding: 4px 10px; border-bottom: 1px solid var(--rule); text-align: left; }
+
+/* what it did in the app, under the answer: tap to do it again */
+.ans-cards { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 8px; }
+.ans-card { display: flex; align-items: center; gap: 10px; max-width: 100%; padding: 8px 12px 8px 9px; border: 1px solid var(--rule); border-radius: 12px;
+  background: var(--panel); color: var(--ink); text-align: left; transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s; }
+.ans-card:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--rule)); transform: translateY(-1px); box-shadow: 0 6px 16px -10px rgb(40 22 6 / 0.45); }
+.ans-card-icon { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 9px; background: var(--accent-soft); color: var(--accent); font-size: 15px; }
+.ans-card.ac-tour .ans-card-icon { background: var(--accent); color: #fff; }
+.ans-card-text { display: flex; flex-direction: column; min-width: 0; }
+.ans-card-kind { font-family: var(--font-ui); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.ans-card-label { font-family: var(--font-ui); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ans-card-go { margin-left: 4px; font-family: var(--font-ui); font-size: 12.5px; font-weight: 600; color: var(--accent); }
+
+/* ---------------------------------------------------------------- a tour, step by step */
+.tour-card {
+  position: fixed; left: 24px; bottom: 24px; z-index: 85; width: min(400px, calc(100vw - 32px)); max-height: min(70vh, 560px); display: flex; flex-direction: column;
+  border: 1px solid var(--rule); border-radius: 20px; background: var(--panel); box-shadow: 0 24px 60px -18px rgb(40 22 6 / 0.5), 0 2px 8px rgb(40 22 6 / 0.08);
+  animation: tour-in 0.42s var(--ease-spring, ease-out);
+}
+@keyframes tour-in { from { opacity: 0; transform: translateY(24px) scale(0.97); } to { opacity: 1; transform: none; } }
+.tp-head { display: flex; align-items: center; gap: 8px; padding: 12px 10px 4px 16px; }
+.tp-kicker { flex: none; padding: 2px 8px; border-radius: 999px; background: var(--accent); color: #fff; font-family: var(--font-ui); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.tp-title { flex: 1; min-width: 0; font-family: var(--font-ui); font-size: 13.5px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-close { flex: none; }
+.tp-dots { display: flex; gap: 5px; padding: 6px 16px 2px; }
+.tp-dot { flex: 1; height: 4px; padding: 0; border: 0; border-radius: 3px; background: var(--rule); cursor: pointer; transition: background-color 0.25s; }
+.tp-dot.done { background: color-mix(in srgb, var(--accent) 45%, var(--rule)); }
+.tp-dot.on { background: var(--accent); }
+.tp-body { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 16px 4px; animation: ans-in 0.35s var(--ease-out, ease-out) both; }
+.tp-step { font-family: var(--font-ui); font-size: 12px; color: var(--muted); }
+.tp-label { color: var(--accent); }
+.tp-h { margin: 2px 0 6px; font-family: var(--font-display); font-weight: var(--display-weight); font-size: calc(23px * var(--display-size)); line-height: 1.15; color: var(--ink); }
+.tp-body .ask-md { font-size: 15.5px; }
+.tp-foot { display: flex; align-items: center; gap: 8px; padding: 10px 12px 12px; border-top: 1px solid var(--rule); }
+.tp-ask { margin-right: auto; margin-left: 4px; font-size: 13px; }
+.tp-back:disabled { opacity: 0.4; }
+@media (max-width: 760px) {
+  /* phones: docked above the tab bar, the text on top of it still readable */
+  .tour-card { left: 8px; right: 8px; width: auto; bottom: calc(var(--tabbar-h, 64px) + 8px); max-height: 46vh; border-radius: 18px; }
+  .tp-h { font-size: calc(20px * var(--display-size)); }
+}
+@media (prefers-reduced-motion: reduce) { .ans-in, .tour-card, .tp-body { animation: none; } }

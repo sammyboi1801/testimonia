@@ -36,6 +36,15 @@ export function openAsk(context: string | null = null, question?: string): void 
   window.dispatchEvent(new CustomEvent<AskRequest>(EVENT, { detail: { context, question } }));
 }
 
+const SHOW_EVENT = "testimonia:ask-show";
+/** Step the drawer aside (a tour plays on the page) or bring it back as it was, the conversation untouched. */
+export function hideAsk(): void {
+  window.dispatchEvent(new CustomEvent<boolean>(SHOW_EVENT, { detail: false }));
+}
+export function showAsk(): void {
+  window.dispatchEvent(new CustomEvent<boolean>(SHOW_EVENT, { detail: true }));
+}
+
 /** What the reader has on screen right now, for the assistant: read at the moment a question is sent, so it
  *  follows the reader around the site. Built from the address (ids the tools understand) and the page heading. */
 export function screenContext(): string {
@@ -140,7 +149,16 @@ export function AskDrawer() {
       setOpen(true);
     };
     window.addEventListener(EVENT, on);
-    return () => window.removeEventListener(EVENT, on);
+    const onShow = (e: Event) => {
+      const show = (e as CustomEvent<boolean>).detail;
+      if (show) setMounted(true);
+      setOpen(show);
+    };
+    window.addEventListener(SHOW_EVENT, onShow);
+    return () => {
+      window.removeEventListener(EVENT, on);
+      window.removeEventListener(SHOW_EVENT, onShow);
+    };
   }, []);
   // phones: the ✦ button slides away while reading down the page and comes back on the way up
   const [tucked, setTucked] = useState(false);

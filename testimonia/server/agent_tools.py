@@ -550,6 +550,45 @@ TOOLS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "tour",
+        "description": (
+            "Build a guided tour the reader steps through in the app, one stop at a time with Next and Back: each "
+            "stop opens a passage in the reader (a verse range is shaded), can show places on the map, and carries "
+            "one or two sentences of yours. Use it when the reader asks to be walked through something (Paul's "
+            "second journey, how John 1 echoes Genesis 1, the structure of a letter, a theme across books) or when "
+            "seeing the passages in order helps. 3 to 8 stops; check the passages with your other tools first. After "
+            "building it, answer briefly and say the tour is ready."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "A short title, e.g. 'Paul's second journey'"},
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {"type": "string", "description": "The stop's heading, a few words"},
+                            "text": {"type": "string", "description": "One or two sentences (markdown links allowed)"},
+                            "passage": {
+                                "type": "string",
+                                "description": "Optional: the passage to open, e.g. 'Acts 16:6-10'",
+                            },
+                            "map": {
+                                "type": "string",
+                                "description": "Optional: places to show, as a passage ('Acts 16') or a person's name",
+                            },
+                            "link": {"type": "string", "description": "Optional, instead of a passage: an app page"},
+                        },
+                        "required": ["title", "text"],
+                    },
+                },
+            },
+            "required": ["title", "steps"],
+            "additionalProperties": False,
+        },
+    },
+    {
         "name": "reading_plan",
         "description": (
             "The reader's reading plans and progress (kept in their browser). 'today' gives what each plan they "
@@ -1933,6 +1972,41 @@ def art(store: Store, query: str) -> str:
     return "\n".join(out)
 
 
+def tour(store: Store, title: str, steps: list[dict[str, str]]) -> str:
+    """Check a tour the assistant wrote and hand it to the reader's browser, which plays it stop by stop."""
+    if not 2 <= len(steps) <= 10:
+        return "Error: a tour has 2 to 10 stops."
+    out: list[dict[str, Any]] = []
+    problems: list[str] = []
+    for i, s in enumerate(steps, 1):
+        stop: dict[str, Any] = {"title": s["title"].strip()[:80], "text": s["text"].strip()[:700]}
+        if s.get("passage"):
+            refs = parse_refs(s["passage"])
+            if not refs:
+                problems.append(f"stop {i}: {s['passage']!r} is not a passage")
+                continue
+            r = refs[0]
+            first = api._osis(r.start)
+            last = store.one(
+                "SELECT osis FROM verse WHERE vkey <= ? AND verse > 0 ORDER BY vkey DESC LIMIT 1", (r.end,)
+            )
+            stop["osis"] = first
+            stop["end"] = (last or {}).get("osis") or first
+            stop["label"] = _span(r.start, api._verse_key(stop["end"]))
+        elif s.get("link"):
+            if not str(s["link"]).startswith("/"):
+                problems.append(f"stop {i}: a link must be an app path beginning with '/'")
+                continue
+            stop["link"] = s["link"]
+        if s.get("map"):
+            stop["map"] = {"ref": s["map"]} if parse_refs(s["map"]) else {"person": s["map"]}
+        out.append(stop)
+    if problems:
+        return "Error: " + "; ".join(problems) + ". Fix those stops and build the tour again."
+    ACTION.set({"type": "tour", "title": title.strip()[:80], "steps": out})
+    return f"The tour “{title}” is ready in the reader's app: {len(out)} stops. Tell them in a sentence; do not repeat the stops."
+
+
 #: tools the reader turns on in Settings (offered to the assistant only then)
 OPT_IN = {"jewish_sources": "jewish"}
 
@@ -1956,6 +2030,7 @@ def passage_osis(store: Store, verse: str) -> list[str]:
 
 
 FUNCTIONS: dict[str, Callable[..., str]] = {
+    "tour": tour,
     "scholarship": scholarship,
     "jewish_sources": jewish_sources,
     "art": art,
@@ -2007,6 +2082,18 @@ LIMITS = {
 }
 
 
+def _item_ok(v: Any, items: dict[str, Any]) -> bool:
+    """One item of an array argument: a string, or an object whose fields are strings (as its schema lists)."""
+    if items.get("type") != "object":
+        return isinstance(v, str)
+    props = items.get("properties", {})
+    return (
+        isinstance(v, dict)
+        and all(k in props and isinstance(x, str) for k, x in v.items())
+        and all(k in v for k in items.get("required", []))
+    )
+
+
 def validate(name: str, args: Any) -> str | None:
     """Return an error message if the arguments don't fit the tool's schema (model output is untrusted)."""
     spec = next((t for t in TOOLS if t["name"] == name), None)
@@ -2022,13 +2109,19 @@ def validate(name: str, args: Any) -> str | None:
         if key not in props:
             return f"unexpected argument {key!r}"
         kind = props[key]["type"]
+        items = props[key].get("items", {})
         ok = {
             "string": isinstance(value, str),
             "integer": isinstance(value, int) and not isinstance(value, bool),
-            "array": isinstance(value, list) and all(isinstance(v, str) for v in value),
+            "array": isinstance(value, list) and all(_item_ok(v, items) for v in value),
         }[kind]
         if not ok:
-            return f"argument {key!r} must be a {kind}"
+            what = (
+                "list of objects with " + ", ".join(items.get("properties", {}))
+                if items.get("type") == "object"
+                else kind
+            )
+            return f"argument {key!r} must be a {what}"
         if "enum" in props[key] and value not in props[key]["enum"]:
             return f"argument {key!r} must be one of {props[key]['enum']}"
     return None

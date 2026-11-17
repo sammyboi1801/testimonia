@@ -26,7 +26,8 @@ same_dir() { [ "$(cd "$1" 2>/dev/null && pwd -W)" = "$(cd "$2" 2>/dev/null && pw
 
 # 1. the app, built on its own
 ( cd web && MSYS_NO_PATHCONV=1 VITE_API_BASE= VITE_AGENT_BASE="$SERVER" VITE_STATIC_DATA=/data npx vite build --outDir "$(winpath "$APP")" --emptyOutDir )
-grep -q '`/data`' "$APP"/assets/index-*.js || { echo "static data path did not build as /data" >&2; exit 1; }
+# (in whichever chunk the bundler put the API code)
+grep -q '`/data`' "$APP"/assets/*.js || { echo "static data path did not build as /data" >&2; exit 1; }
 
 # 2. the site: everything but the data replaced by the new build
 if [ -e "$DIST/data" ] && ! is_link "$DIST/data"; then

@@ -380,7 +380,13 @@ READER = {
             "finished": False,
             "updated": "2026-11-17T10:00:00Z",
             "steps": [
-                {"id": "read", "title": "Read", "prompt": "What is happening?", "answer": "The Word was God", "help": ""},
+                {
+                    "id": "read",
+                    "title": "Read",
+                    "prompt": "What is happening?",
+                    "answer": "The Word was God",
+                    "help": "",
+                },
                 {"id": "observe", "title": "Observe", "prompt": "What do you notice?", "answer": "", "help": ""},
             ],
             "questions": ["Who is the Word?"],
@@ -421,9 +427,42 @@ def test_reading_plan_tool(store):
     assert "follows no reading plan" in agent_tools.run(store, "reading_plan", {"action": "today"})[0]
 
 
+def test_the_assistant_builds_a_tour(store, client):
+    steps = [
+        {"title": "The Word", "text": "John opens like Genesis.", "passage": "John 1:1-18", "map": "John 1"},
+        {"title": "In the beginning", "text": "The first words of the Bible.", "passage": "Genesis 1:1"},
+        {"title": "The atlas", "text": "Where it happened.", "link": "/atlas?place=jerusalem", "map": "Peter"},
+    ]
+    text, err = agent_tools.run(store, "tour", {"title": "John and Genesis", "steps": steps})
+    assert not err
+    assert "3 stops" in text
+    action = agent_tools.ACTION.get()
+    assert action["type"] == "tour"
+    first, second, third = action["steps"]
+    assert first["osis"] == "John.1.1"
+    assert first["end"] == "John.1.18"  # the last verse the library has in the range
+    assert first["map"] == {"ref": "John 1"}
+    assert second["osis"] == second["end"] == "Gen.1.1"
+    assert third["link"] == "/atlas?place=jerusalem"
+    assert third["map"] == {"person": "Peter"}
+    # a stop that cannot be found is sent back to be fixed, and nothing reaches the browser
+    agent_tools.ACTION.set(None)
+    bad = [*steps[:2], {"title": "?", "text": "?", "passage": "Hezekiah 4:4"}]
+    text, _ = agent_tools.run(store, "tour", {"title": "x", "steps": bad})
+    assert text.startswith("Error: stop 3")
+    assert agent_tools.ACTION.get() is None
+    # malformed input is refused before it runs
+    assert agent_tools.validate("tour", {"title": "x", "steps": ["just a string"]})
+    assert agent_tools.validate("tour", {"title": "x", "steps": [{"title": "no text"}]})
+    assert agent_tools.validate("tour", {"title": "x", "steps": [{"title": "a", "text": "b", "colour": "red"}]})
+    assert agent._navigation("tour", {"title": "x", "steps": steps}, False, {"type": "tour"}) == {"type": "tour"}
+
+
 def test_highlighting_a_whole_passage(store, client):
     assert agent_tools.passage_osis(store, "John 1:1-18") == ["John.1.1", "John.1.18"]
-    nav = agent._navigation("notes", {"action": "highlight", "verse": "John 1:1-18", "color": "gold"}, False, None, store)
+    nav = agent._navigation(
+        "notes", {"action": "highlight", "verse": "John 1:1-18", "color": "gold"}, False, None, store
+    )
     assert nav == {"type": "highlights", "osis": ["John.1.1", "John.1.18"], "highlight": "gold"}
     one = agent._navigation("notes", {"action": "highlight", "verse": "John 1:1", "color": "gold"}, False, None, store)
     assert one["type"] == "note"

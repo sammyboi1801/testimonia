@@ -98,7 +98,13 @@ How to work:
 How to write:
 - Lead with the answer in one or two sentences, then the evidence. Use short sections with headings for longer
   answers, and lists only where items are parallel.
-- Professional and measured: no filler, no flattery, no exclamation marks. Answer in the language of the question."""
+- Professional and measured: no filler, no flattery, no exclamation marks. Answer in the language of the question.
+- The app draws your answer richly. A verse link alone on its own line becomes a card showing the verse's text: use
+  it for the one or two verses the answer turns on (not for every reference). Quote an early writer as a markdown
+  blockquote whose last line names him and links the section: "> … quoted words …" then "> — [Irenaeus, Against
+  Heresies 3.11](/library/<edition>/<section>)". Links to places, people and manuscripts get small icons; keep them.
+- To walk the reader through passages in order (a journey, a theme across books), build a tour with the tour tool
+  rather than describing every stop in the answer."""
 
 
 class Turn(BaseModel):
@@ -498,7 +504,7 @@ def _navigation(
         return None
     if name == "show_in_app":
         return {"type": "navigate", "link": str(args.get("link", ""))}
-    if name in ("map", "pins", "study"):
+    if name in ("map", "pins", "study", "tour"):
         return action  # what the tool resolved: a map to open, pins or a study to change
     if name == "notes" and args.get("action") == "highlight" and s is not None:
         verses = agent_tools.passage_osis(s, str(args.get("verse", "")))

@@ -5,6 +5,7 @@ import { apiUrl } from "../api";
 import type { AiConfig } from "./providers";
 import { pins as pinStore } from "../pins";
 import { jewishOn, readerState } from "./reader";
+import type { TourStop } from "../tour";
 
 const pinIds = () => pinStore.get().pinned;
 
@@ -18,6 +19,7 @@ export type AgentEvent =
   | { type: "note"; action: "add" | "replace" | "remove" | "highlight"; osis: string; text: string; highlight: string | null }
   | { type: "study"; id: string; questions?: string[]; step?: string; help?: string }
   | { type: "highlights"; osis: string[]; highlight: string | null }
+  | { type: "tour"; title: string; steps: TourStop[] }
   | { type: "error"; message: string }
   | { type: "done"; model?: string; usage?: Record<string, number> };
 
