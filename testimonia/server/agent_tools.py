@@ -22,7 +22,7 @@ from fastapi import HTTPException
 
 from ..morphology import FEATURES
 from ..refs import parse_refs
-from . import api, reading, study, words
+from . import api, online, reading, study, words
 from . import geography as geo_api
 from . import manuscripts as ms_api
 from . import rulers as rulers_api
@@ -351,7 +351,8 @@ TOOLS: list[dict[str, Any]] = [
             "The reader's own notes and highlights (kept in their browser). action 'list' shows them (optionally for "
             "a book, a verse, or matching a word in `query`); 'add' appends text to a verse's note (creating it); "
             "'replace' overwrites a verse's note; 'remove' deletes a verse's note and highlight; 'highlight' colours "
-            "a verse (gold, green, blue, rose, violet; empty to clear). Only change notes when the reader asks."
+            "a verse, or every verse of a passage of up to 80 verses ('John 3:16-21') (gold, green, blue, rose, "
+            "violet; empty to clear). Only change notes when the reader asks."
         ),
         "parameters": {
             "type": "object",
@@ -499,6 +500,52 @@ TOOLS: list[dict[str, Any]] = [
                 "text": {"type": "string", "description": "For keep: the help to save (markdown)"},
             },
             "required": ["action"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "scholarship",
+        "description": (
+            "Modern scholarship from OpenAlex (a secondary source outside the library, looked up live): published "
+            "articles and books on a passage or question, most relevant first, with authors, year, journal, how "
+            "often each is cited, its abstract and a free link where there is one. Search with the reference and its "
+            "subject, e.g. 'John 2:13-22 temple' or 'Isaiah 53 suffering servant'. Cite the work (author, year, "
+            "title, link) and say what it argues only from its abstract; never invent its contents."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"query": {"type": "string"}},
+            "required": ["query"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "jewish_sources",
+        "description": (
+            "Jewish readers of a Hebrew Bible verse, from Sefaria (looked up live): the Targum, Mishnah, Talmud, "
+            "Midrash and the commentators (Rashi, Ibn Ezra, Radak…), oldest first, with the English where its "
+            "licence allows and a link to each. One Old Testament verse, e.g. 'Isaiah 53:5'. Present them as Jewish "
+            "interpretation, fairly and in their own terms, kept apart from the Christian writers."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"reference": {"type": "string"}},
+            "required": ["reference"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "art",
+        "description": (
+            "Paintings, icons, mosaics and manuscript images from Wikimedia Commons (looked up live), each with its "
+            "artist, date, licence and link; only freely licensed images. Search for a scene or person, e.g. "
+            "'Jesus and Nicodemus' or 'Codex Sinaiticus John'. To show one in the answer, write it as a markdown "
+            "image with its thumb link, then credit the artist and licence beneath it."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"query": {"type": "string"}},
+            "required": ["query"],
             "additionalProperties": False,
         },
     },
@@ -1280,6 +1327,9 @@ def notes_tool(notes: list[Any], args: dict[str, Any]) -> tuple[str, bool]:
         return "Error: give the note's text.", True
     if action == "highlight" and args.get("color") not in (*HIGHLIGHTS, "", None):
         return f"Error: color must be one of {', '.join(HIGHLIGHTS)} (or empty to clear).", True
+    refs = parse_refs(str(args.get("verse", "")))
+    if action == "highlight" and refs and refs[0].end != refs[0].start:
+        return f"Highlighted {args['verse']} (every verse; it updates in their browser).", False
     done = {"add": "Added to", "replace": "Replaced", "remove": "Removed", "highlight": "Highlighted"}[action]
     return f"{done} the reader's note on {_label(osis)} (it updates in their browser).", False
 
@@ -1704,8 +1754,14 @@ def _find_study(which: str | None) -> dict[str, Any] | None:
     return next((s for s in rows if w in f"{s.get('label', '')} {s.get('title', '')}".lower()), None)
 
 
-def study_tool(store: Store, action: str, study: str | None = None, questions: list[str] | None = None,
-               step: str | None = None, text: str | None = None) -> str:
+def study_tool(
+    store: Store,
+    action: str,
+    study: str | None = None,
+    questions: list[str] | None = None,
+    step: str | None = None,
+    text: str | None = None,
+) -> str:
     rows = _studies()
     if action == "list":
         if not rows:
@@ -1713,7 +1769,9 @@ def study_tool(store: Store, action: str, study: str | None = None, questions: l
         out = [f"# The reader's Bible studies ({len(rows)})"]
         for s in sorted(rows, key=lambda s: str(s.get("updated") or ""), reverse=True):
             state = "finished" if s.get("finished") else f"at step {s.get('at') or '?'}"
-            out.append(f"- {s.get('label')}{' · ' + s['title'] if s.get('title') else ''} ({s.get('method')}, {state}) id={s['id']} link: /study/{s['id']}")
+            out.append(
+                f"- {s.get('label')}{' · ' + s['title'] if s.get('title') else ''} ({s.get('method')}, {state}) id={s['id']} link: /study/{s['id']}"
+            )
         return "\n".join(out)
     s = _find_study(study)
     if s is None:
@@ -1759,7 +1817,9 @@ def _plan_day(start: str, today: str, days: int) -> int:
 
 
 def _readings_line(readings: list[dict[str, Any]]) -> str:
-    return "; ".join(f"[{r['label']}]({_verse_link(r['osis'])})" + (f" ({r['title']})" if r.get("title") else "") for r in readings)
+    return "; ".join(
+        f"[{r['label']}]({_verse_link(r['osis'])})" + (f" ({r['title']})" if r.get("title") else "") for r in readings
+    )
 
 
 def reading_plan(store: Store, action: str, plan: str | None = None, day: int | None = None) -> str:
@@ -1770,7 +1830,11 @@ def reading_plan(store: Store, action: str, plan: str | None = None, day: int | 
         out = ["# Reading plans in the library"]
         for p in reading.plans():
             mine = progress.get(p["id"]) or {}
-            following = f" (they follow it: {len(mine.get('done') or [])} of {p['days']} days read)" if mine.get("start") else ""
+            following = (
+                f" (they follow it: {len(mine.get('done') or [])} of {p['days']} days read)"
+                if mine.get("start")
+                else ""
+            )
             out.append(f"- {p['title']} (id {p['id']}, {p['days']} days){following}: {p['description']}")
         return "\n".join(out) + "\nLink: /plans"
     if action == "day":
@@ -1781,7 +1845,11 @@ def reading_plan(store: Store, action: str, plan: str | None = None, day: int | 
         except HTTPException:
             return f"Error: no plan {plan!r}; 'list' names them."
         d = next((x for x in full["days"] if x["day"] == day), None)
-        return f"# {full['title']}, day {day}\n{_readings_line(d['readings'])}" if d else f"Day {day} is not in {full['title']}."
+        return (
+            f"# {full['title']}, day {day}\n{_readings_line(d['readings'])}"
+            if d
+            else f"Day {day} is not in {full['title']}."
+        )
     # today
     started = {k: v for k, v in progress.items() if isinstance(v, dict) and v.get("start")}
     if not started:
@@ -1801,12 +1869,96 @@ def reading_plan(store: Store, action: str, plan: str | None = None, day: int | 
         out.append(f"\n## {full['title']}: day {n} of {len(full['days'])}" + (" (read)" if n in done else ""))
         out.append(_readings_line(d["readings"]))
         if behind:
-            out.append(f"Not yet read from earlier days: {len(behind)} (days {', '.join(map(str, behind[:10]))}{'…' if len(behind) > 10 else ''})")
+            out.append(
+                f"Not yet read from earlier days: {len(behind)} (days {', '.join(map(str, behind[:10]))}{'…' if len(behind) > 10 else ''})"
+            )
     out.append("\nLink: /plans")
     return "\n".join(out)
 
 
+def scholarship(store: Store, query: str) -> str:
+    works = online.scholarship(query)
+    if works is None:
+        return "OpenAlex could not be reached; answer from the library alone."
+    if not works:
+        return f"OpenAlex has no scholarly work matching {query!r}. Try the reference with a different subject word."
+    out = [f"# Modern scholarship on {query!r} (OpenAlex; secondary sources)"]
+    for w in works:
+        who = ", ".join(w["authors"]) + (" et al." if w["more_authors"] else "")
+        out.append(
+            f'- {who or "Unknown author"} ({w["year"] or "n.d."}), "{w["title"]}"'
+            + (f", {w['venue']}" if w["venue"] else "")
+            + f". Cited {w['cited_by']} times. Link: {w['url']}"
+            + (f" (free to read: {w['free_url']})" if w["free_url"] and w["free_url"] != w["url"] else "")
+            + (f"\n  Abstract: {w['abstract']}" if w["abstract"] else "")
+        )
+    return "\n".join(out)
+
+
+def jewish_sources(store: Store, reference: str) -> str:
+    refs = parse_refs(reference)
+    if not refs:
+        return f"Could not read {reference!r} as a Bible reference."
+    osis = api._osis(refs[0].start)
+    if osis.split(".")[0] not in online.SEFARIA_BOOKS:
+        return "Sefaria links Jewish writings to the Hebrew Bible only; give an Old Testament verse."
+    data = online.jewish(store, osis)
+    if data is None:
+        return "Sefaria could not be reached; answer from the library alone."
+    if not data["sources"]:
+        return f"Sefaria links no Targum, Mishnah, Talmud, Midrash or commentary to {_label(osis)}."
+    out = [f"# Jewish readers of {_label(osis)} (Sefaria: {data['ref']}) link: {data['url']}"]
+    for e in data["sources"]:
+        when = f"c. {e['year']}" if e.get("year") is not None else "date unknown"
+        line = f"- [{e['kind']}] {e['title']} ({when}), {e['ref']}: {e['url']}"
+        if e.get("text"):
+            line += f'\n  "{e["text"]}" (tr. {e.get("translation")}, {e.get("licence")})'
+        out.append(line)
+    return "\n".join(out)
+
+
+def art(store: Store, query: str) -> str:
+    images = online.art(query)
+    if images is None:
+        return "Wikimedia Commons could not be reached."
+    if not images:
+        return f"No freely licensed image on Wikimedia Commons matches {query!r}."
+    out = [f"# Images for {query!r} (Wikimedia Commons)"]
+    for i in images:
+        out.append(
+            f"- {i['title']}. Artist: {i['artist'] or 'unknown'}"
+            + (f", {i['date']}" if i["date"] else "")
+            + f". Licence: {i['licence']}. Page: {i['page']} Thumb: {i['thumb']}"
+        )
+    return "\n".join(out)
+
+
+#: tools the reader turns on in Settings (offered to the assistant only then)
+OPT_IN = {"jewish_sources": "jewish"}
+
+
+def offered() -> list[dict[str, Any]]:
+    """The tools for this question: all of them, less the ones the reader has not turned on."""
+    reader = READER.get() or {}
+    return [t for t in TOOLS if t["name"] not in OPT_IN or reader.get(OPT_IN[t["name"]])]
+
+
+def passage_osis(store: Store, verse: str) -> list[str]:
+    """Every verse of a reference, at most 80 ('John 3:16-18' → three ids); [] when it is not one."""
+    refs = parse_refs(verse)
+    if not refs:
+        return []
+    rows = store.all(
+        "SELECT osis FROM verse WHERE vkey BETWEEN ? AND ? AND verse > 0 ORDER BY vkey LIMIT 81",
+        (refs[0].start, refs[0].end),
+    )
+    return [r["osis"] for r in rows][:80]
+
+
 FUNCTIONS: dict[str, Callable[..., str]] = {
+    "scholarship": scholarship,
+    "jewish_sources": jewish_sources,
+    "art": art,
     "commentary": commentary,
     "cross_references": cross_references,
     "study": study_tool,
@@ -1849,6 +2001,8 @@ LIMITS = {
     "compare_translations": 20_000,
     "book_overview": 20_000,
     "commentary": 24_000,
+    "jewish_sources": 20_000,
+    "scholarship": 14_000,
     "study": 20_000,
 }
 

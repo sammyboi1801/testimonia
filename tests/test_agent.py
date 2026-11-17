@@ -303,7 +303,7 @@ def test_new_study_tools(store):
         ("timeline", {"from_year": 30, "to_year": 400}),
         ("compare_translations", {"reference": "John 1:1"}),
         ("fathers_on", {"reference": "John 1:1", "before_year": 325}),
-        ("passage_guide", {"reference": "John 1:1-3"}),
+        ("passage_guide", {"reference": "John 1:1-18"}),
         ("grammar_search", {"word": "G2316", "book": "John"}),
         ("topic", {"subject": "a"}),
         ("gospel_parallels", {"query": "John 1:1"}),
@@ -419,6 +419,19 @@ def test_reading_plan_tool(store):
     assert "they follow it" in text
     agent_tools.READER.set({})
     assert "follows no reading plan" in agent_tools.run(store, "reading_plan", {"action": "today"})[0]
+
+
+def test_highlighting_a_whole_passage(store, client):
+    assert agent_tools.passage_osis(store, "John 1:1-18") == ["John.1.1", "John.1.18"]
+    nav = agent._navigation("notes", {"action": "highlight", "verse": "John 1:1-18", "color": "gold"}, False, None, store)
+    assert nav == {"type": "highlights", "osis": ["John.1.1", "John.1.18"], "highlight": "gold"}
+    one = agent._navigation("notes", {"action": "highlight", "verse": "John 1:1", "color": "gold"}, False, None, store)
+    assert one["type"] == "note"
+    r = client.post(
+        "/api/agent/tool",
+        json={"name": "notes", "input": {"action": "highlight", "verse": "John 1:1-18", "color": "blue"}, "notes": []},
+    ).json()
+    assert r["action"]["osis"] == ["John.1.1", "John.1.18"]
 
 
 def test_notes_over_http_returns_the_verse(client):

@@ -20,6 +20,7 @@ import { PassageLink } from "./PassageLink";
 import { Speak } from "./Speak";
 import { UnderRulers } from "./UnderRulers";
 import { WordStudy } from "./WordStudy";
+import { JewishReaders } from "./Online";
 import { covers, sortedStudies, useStudies } from "../studies";
 
 export type Tab = PanelTab;
@@ -193,6 +194,7 @@ function Panel({ g, books, tab, word, onTab, onWord, onCloseWord, onClose }: Pro
           classic={g.commentaries?.length ?? 0}
           earlyView={<FathersTab fathers={fathers} broad={(g.fathers_broad ?? []).filter((f) => inScope(f.year, f.era, scope))} commentary={commentary} onWord={onWord} />}
           classicView={<CommentaryTab notes={g.commentaries ?? []} verse={g.verse.verse} onWord={onWord} />}
+          jewishView={settings.sources.jewish && !nt ? <JewishReaders osis={g.verse.osis} /> : undefined}
         />
       )}
       {active === "links" && <LinksTab g={g} books={books} onWord={onWord} />}
@@ -230,19 +232,25 @@ function VerseText({ g }: { g: VerseGuide }) {
 }
 
 /** Commentary: the early church's words and the classic commentaries, one switch between them. */
-function WrittenAbout({ initial, early, classic, earlyView, classicView }: { initial?: "early" | "classic"; early: number; classic: number; earlyView: ReactNode; classicView: ReactNode }) {
-  const [view, setView] = useState<"early" | "classic">(initial ?? (early > 0 || classic === 0 ? "early" : "classic"));
+function WrittenAbout({ initial, early, classic, earlyView, classicView, jewishView }: { initial?: "early" | "classic"; early: number; classic: number; earlyView: ReactNode; classicView: ReactNode; jewishView?: ReactNode }) {
+  const [view, setView] = useState<"early" | "classic" | "jewish">(initial ?? (early > 0 || classic === 0 ? "early" : "classic"));
+  const shown = view === "jewish" && !jewishView ? "early" : view; // turned off in Settings while open
   return (
     <>
       <div className="seg seg-wide" role="tablist">
-        <button role="tab" aria-selected={view === "early"} className={view === "early" ? "on" : ""} onClick={() => setView("early")}>
+        <button role="tab" aria-selected={shown === "early"} className={shown === "early" ? "on" : ""} onClick={() => setView("early")}>
           Early church <span className="count">{early}</span>
         </button>
-        <button role="tab" aria-selected={view === "classic"} className={view === "classic" ? "on" : ""} onClick={() => setView("classic")}>
+        <button role="tab" aria-selected={shown === "classic"} className={shown === "classic" ? "on" : ""} onClick={() => setView("classic")}>
           Classic <span className="count">{classic}</span>
         </button>
+        {jewishView && (
+          <button role="tab" aria-selected={shown === "jewish"} className={shown === "jewish" ? "on" : ""} onClick={() => setView("jewish")}>
+            Jewish readers
+          </button>
+        )}
       </div>
-      {view === "early" ? earlyView : classicView}
+      {shown === "early" ? earlyView : shown === "classic" ? classicView : jewishView}
     </>
   );
 }

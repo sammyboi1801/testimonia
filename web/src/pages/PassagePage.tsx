@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useMeta } from "../api";
 import { CopyMenu } from "../components/CopyCitation";
 import { PassageReader } from "../components/Reader";
+import { ArtStrip, Scholarship } from "../components/Online";
 import { useVerseSheet } from "../components/VerseSheet";
 import { Html } from "../components/Html";
 import { StudyStart } from "../components/StudyStart";
@@ -100,6 +101,7 @@ function Guide({ g, books, editions, onEdition }: { g: PassageGuide; books: Book
         </div>
 
         <aside className="book-col side pg-side">
+          <ArtStrip query={g.headings[0]?.title ?? r.label} />
           {g.quotations.length > 0 && (
             <Block title="Old ↔ New Testament" note={g.quotations.length}>
               {g.quotations.map((q, i) => (
@@ -120,6 +122,7 @@ function Guide({ g, books, editions, onEdition }: { g: PassageGuide; books: Book
           )}
           <CrossRefs g={g} books={books} short={short} />
           <Notes g={g} short={short} />
+          <Scholarship query={`${g.headings[0]?.title ?? ""} ${r.label}`.trim()} />
           {g.topics.length > 0 && (
             <Block title="Topics" note={g.topics.length}>
               <div className="topic-list">

@@ -67,6 +67,11 @@ The reader's own work: their notes and highlights, their Bible studies (a passag
 each step) and their reading plans. When they ask about "my study" or "my reading today", read it with the study or
 reading_plan tool before answering, and build on what they wrote rather than repeating it.
 
+Beyond the library, looked up live: scholarship finds published modern scholarship (OpenAlex), art finds freely
+licensed paintings and manuscript images (Wikimedia Commons), and, when the reader has turned it on, jewish_sources
+gives the Targum, Talmud, Midrash and Jewish commentators on a Hebrew Bible verse (Sefaria). These are secondary to
+the primary sources: use them when asked, or when the library has nothing on a point, and cite them as what they are.
+
 You also act inside the app: show_in_app opens a page on the reader's screen beside this chat (a verse, a chapter of
 a father, the atlas at a place, a manuscript, the timeline). Use it when seeing helps: "where is Corinth?" opens the
 atlas there; "show me 1 Clement 5" opens that chapter. Open at most one page per answer.
@@ -117,6 +122,7 @@ class ReaderIn(BaseModel):
     studies: list[dict[str, Any]] = Field(default_factory=list, max_length=300)
     plans: dict[str, Any] = Field(default_factory=dict)
     today: str | None = Field(None, max_length=10)
+    jewish: bool = False  # the reader turned on Jewish readers (Sefaria) in Settings
 
 
 MAX_READER = 400_000  # characters of studies and plans per request
@@ -172,7 +178,12 @@ def tool(request: Request, call: ToolCall) -> dict[str, Any]:
         error = agent_tools.validate("notes", call.input)
         text, is_error = (f"Error: {error}", True) if error else agent_tools.notes_tool(call.notes or [], call.input)
         osis = agent_tools.note_osis(str(call.input.get("verse", ""))) if not is_error else ""
-        return {"content": text, "is_error": is_error, "osis": osis}
+        out: dict[str, Any] = {"content": text, "is_error": is_error, "osis": osis}
+        if not is_error and call.input.get("action") == "highlight":
+            verses = agent_tools.passage_osis(store(request), str(call.input.get("verse", "")))
+            if len(verses) > 1:
+                out["action"] = {"type": "highlights", "osis": verses, "highlight": call.input.get("color")}
+        return out
     agent_tools.PINS.set(call.pins or [])
     agent_tools.READER.set(_reader(call.reader))
     text, is_error = agent_tools.run(store(request), call.name, call.input)
@@ -358,7 +369,7 @@ async def _one_tool(s: Store, name: str, args: Any) -> tuple[str, bool, dict[str
         return f"Error: {name} took too long. Try a narrower request.", True, None
     except Exception as e:  # a tool's own failure is reported to the model, not to the reader
         return f"Error: {name} failed ({type(e).__name__}).", True, None
-    return text, failed, _navigation(name, args, failed, None if failed else action)
+    return text, failed, _navigation(name, args, failed, None if failed else action, s)
 
 
 async def _run_tools(s: Store, calls: list[tuple[str, Any]]) -> list[tuple[str, bool, dict[str, Any] | None]]:
@@ -424,7 +435,7 @@ async def _claude(
             "input_schema": t["parameters"],
             "eager_input_streaming": True,
         }
-        for t in agent_tools.TOOLS
+        for t in agent_tools.offered()
     ]
     # earlier turns are plain text (no thinking blocks are replayed); this question's turn is append-only
     messages: list[BetaMessageParam] = [{"role": t["role"], "content": t["content"]} for t in turns]
@@ -479,7 +490,9 @@ async def _claude(
     yield {"type": "error", "message": f"Stopped after {MAX_ROUNDS} tool rounds."}
 
 
-def _navigation(name: str, args: Any, failed: bool, action: dict[str, Any] | None = None) -> dict[str, Any] | None:
+def _navigation(
+    name: str, args: Any, failed: bool, action: dict[str, Any] | None = None, s: Store | None = None
+) -> dict[str, Any] | None:
     """Actions the browser carries out: show_in_app opens a page; notes changes are applied to the reader's notes."""
     if failed or not isinstance(args, dict):
         return None
@@ -487,6 +500,10 @@ def _navigation(name: str, args: Any, failed: bool, action: dict[str, Any] | Non
         return {"type": "navigate", "link": str(args.get("link", ""))}
     if name in ("map", "pins", "study"):
         return action  # what the tool resolved: a map to open, pins or a study to change
+    if name == "notes" and args.get("action") == "highlight" and s is not None:
+        verses = agent_tools.passage_osis(s, str(args.get("verse", "")))
+        if len(verses) > 1:  # a whole passage
+            return {"type": "highlights", "osis": verses, "highlight": args.get("color")}
     if name == "notes" and args.get("action") in ("add", "replace", "remove", "highlight"):
         osis = agent_tools.note_osis(str(args.get("verse", "")))
         return {
@@ -523,7 +540,7 @@ async def _openai(
             "type": "function",
             "function": {"name": t["name"], "description": t["description"], "parameters": t["parameters"]},
         }
-        for t in agent_tools.TOOLS
+        for t in agent_tools.offered()
     ]
     messages: list[dict[str, Any]] = [{"role": "system", "content": system}, *turns]
     use_tools = True

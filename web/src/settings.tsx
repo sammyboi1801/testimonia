@@ -124,6 +124,8 @@ export interface Settings {
   hover: { cards: boolean; delay: number };
   speech: { enabled: boolean; rate: number; grc: string | null; hbo: string | null; read: string | null; readRate: number };
   panel: { tab: PanelTab; glance: boolean; open: boolean };
+  /** Sources outside the library a reader can add. */
+  sources: { jewish: boolean };
   /** Widths (px) of resizable side panels. */
   layout: { study: number; toc: number; context: number };
 }
@@ -148,6 +150,7 @@ export const DEFAULTS: Settings = {
   hover: { cards: true, delay: 260 },
   speech: { enabled: true, rate: 0.8, grc: null, hbo: null, read: null, readRate: 1 },
   panel: { tab: "about", glance: true, open: true },
+  sources: { jewish: false },
   layout: { study: 440, toc: 260, context: 360 },
 };
 const KEY = "testimonia.settings.v1";

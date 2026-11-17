@@ -72,7 +72,7 @@ export function SettingsPane({ onClose }: { onClose: () => void }) {
     update({ colors: { ...settings.colors, [themeKey]: next } });
   };
   const setMark = (k: MarkKind, patch: Partial<MarkPref>) => update({ marks: { ...settings.marks, [k]: { ...settings.marks[k], ...patch } } });
-  const sub = <K extends "display" | "hover" | "speech" | "panel">(key: K, patch: Partial<Settings[K]>) =>
+  const sub = <K extends "display" | "hover" | "speech" | "panel" | "sources">(key: K, patch: Partial<Settings[K]>) =>
     update({ [key]: { ...settings[key], ...patch } } as Partial<Settings>);
   const jump = (id: string) => body.current?.querySelector(`#set-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -320,6 +320,12 @@ export function SettingsPane({ onClose }: { onClose: () => void }) {
                 ]}
                 onChange={(fathers) => update({ fathers })}
               />
+            </Row>
+          </Section>
+
+          <Section id="sources" title="More sources" note="Looked up when you open a verse. Only the verse is sent, never anything about you.">
+            <Row label="Jewish readers" hint="The Targum, Talmud, Midrash and commentators such as Rashi on Old Testament verses, from Sefaria">
+              <Toggle checked={settings.sources.jewish} onChange={(jewish) => sub("sources", { jewish })} />
             </Row>
           </Section>
 

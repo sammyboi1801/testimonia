@@ -4,7 +4,7 @@
 import { apiUrl } from "../api";
 import type { AiConfig } from "./providers";
 import { pins as pinStore } from "../pins";
-import { readerState } from "./reader";
+import { jewishOn, readerState } from "./reader";
 
 const pinIds = () => pinStore.get().pinned;
 
@@ -17,6 +17,7 @@ export type AgentEvent =
   | { type: "pins"; action: "add" | "remove" | "save_set"; places: string[]; name?: string }
   | { type: "note"; action: "add" | "replace" | "remove" | "highlight"; osis: string; text: string; highlight: string | null }
   | { type: "study"; id: string; questions?: string[]; step?: string; help?: string }
+  | { type: "highlights"; osis: string[]; highlight: string | null }
   | { type: "error"; message: string }
   | { type: "done"; model?: string; usage?: Record<string, number> };
 
@@ -96,7 +97,9 @@ interface ToolSpec {
 /** Local models: the browser calls the model directly and the Testimonia server only runs the study tools. */
 export async function runInBrowser(c: AiConfig, key: string, turns: Turn[], context: string | null, on: (e: AgentEvent) => void, signal: AbortSignal, notes: NoteBrief[] = []) {
   const spec = (await (await fetch(apiUrl("/api/agent/tools"), { signal })).json()) as { system: string; tools: ToolSpec[] };
-  const tools = spec.tools.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.parameters } }));
+  const tools = spec.tools
+    .filter((t) => t.name !== "jewish_sources" || jewishOn()) // an add-on the reader turns on in Settings
+    .map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.parameters } }));
   const system = spec.system + (context ? `\n\nThe reader currently has open: ${context}.` : "");
   const messages: Record<string, unknown>[] = [{ role: "system", content: system }, ...turns];
   const base = c.baseUrl.replace(/\/+$/, "");
@@ -195,7 +198,7 @@ export async function runInBrowser(c: AiConfig, key: string, turns: Turn[], cont
           if (typeof link === "string") on({ type: "navigate", link });
         }
         const a = args as { action?: string; text?: string; color?: string };
-        if (out?.osis && !content.startsWith("Error") && p.name === "notes" && a.action && a.action !== "list") {
+        if (out?.osis && !out.action && !content.startsWith("Error") && p.name === "notes" && a.action && a.action !== "list") {
           on({ type: "note", action: a.action as "add", osis: out.osis, text: a.text ?? "", highlight: a.color ?? null });
         }
       }

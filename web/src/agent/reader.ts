@@ -9,6 +9,16 @@ export interface ReaderState {
   studies: StudyBrief[];
   plans: Record<string, { start: string | null; done: number[] }>;
   today: string;
+  jewish: boolean; // Jewish readers (Sefaria) turned on in Settings: the assistant may use them too
+}
+
+/** Whether the reader has turned on Jewish readers (read from the saved settings, outside React). */
+export function jewishOn(): boolean {
+  try {
+    return !!(JSON.parse(localStorage.getItem("testimonia.settings.v1") ?? "{}") as { sources?: { jewish?: boolean } }).sources?.jewish;
+  } catch {
+    return false;
+  }
 }
 
 interface StudyBrief {
@@ -47,7 +57,7 @@ export function readerState(): ReaderState {
   }
   // the 40 most recent studies are plenty, and keep the request small
   const all = Object.values(studies.all()).sort((a, b) => b.updated.localeCompare(a.updated)).slice(0, 40);
-  return { studies: all.map(brief), plans, today: isoDate(new Date()) };
+  return { studies: all.map(brief), plans, today: isoDate(new Date()), jewish: jewishOn() };
 }
 
 /** A change the assistant made to a study, applied here (studies live in this browser). */

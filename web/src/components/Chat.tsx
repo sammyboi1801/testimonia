@@ -360,6 +360,14 @@ export function Chat({
         if (!done) return;
         e = { type: "tool", name: "study", summary: done };
       }
+      // a whole passage highlighted at once
+      if (e.type === "highlights") {
+        const want = e.highlight;
+        const color = (HIGHLIGHTS.find((h) => h.id === want)?.id ?? null) as Highlight | null;
+        for (const o of e.osis) notesApi.set(o, { highlight: color });
+        const first = e.osis[0]?.replace(/^([^.]+)\.(\d+)\.(\d+)$/, "$1 $2:$3") ?? "";
+        e = { type: "tool", name: "notes", summary: `${color ? "highlighted" : "cleared"} ${e.osis.length} verses from ${first}` };
+      }
       // changes to the reader's notes, asked for in the chat, applied here (notes live in this browser)
       if (e.type === "note") {
         if (!e.osis) return;
