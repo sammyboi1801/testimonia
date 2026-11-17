@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { chapterQuery, useChapter, useMeta } from "../api";
 import { markNav, reducedMotion, takeNav } from "../chapterNav";
 import { rememberReading } from "../lib";
-import { Reader } from "../components/Reader";
+import { Reader, readerEditions } from "../components/Reader";
 import { Mark } from "../components/Marks";
 import { Splitter } from "../components/Splitter";
 import { WikiCard } from "../components/Wiki";
@@ -23,10 +23,8 @@ export function ReadPage() {
   useEffect(() => {
     rememberReading(book, ch);
   }, [book, ch]);
-  const needsWords = settings.mode === "interlinear" || settings.mode === "original";
   // the reader's translations, then broad ones to fall back on (Psalm 151 is not in the KJV, Tobit not in the BSB)
-  const FALLBACK = ["web", "kjva", "brenton", "dra"];
-  const editions = [...new Set([...settings.editions, ...FALLBACK, ...(needsWords ? ["tagnt", "tahot", "lxx"] : [])])];
+  const editions = readerEditions(settings);
   const data = useChapter(book, ch, editions);
   const queryClient = useQueryClient();
   const navigate = useNavigate();

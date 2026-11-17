@@ -357,6 +357,70 @@ def test_notes_tool_lists_and_validates_changes():
     assert agent_tools.note_osis("Jn 3:16") == "John.3.16"
 
 
+def test_cross_references_and_commentary(store):
+    text, err = agent_tools.run(store, "cross_references", {"reference": "John 1:1"})
+    assert not err
+    assert "[Genesis 1:1](/read/Gen/1?v=Gen.1.1)" in text or "Gen 1:1" in text
+    assert "300 votes" in text
+    text, _ = agent_tools.run(store, "cross_references", {"reference": "John 1:1-5"})
+    assert "from v. 1" in text  # a passage says which verse each link comes from
+    text, err = agent_tools.run(store, "commentary", {"reference": "John 1:1", "who": "classic"})
+    assert not err
+    assert "No commentary" in text  # the fixture has none: said plainly, not invented
+
+
+READER = {
+    "studies": [
+        {
+            "id": "s1",
+            "label": "John 1:1–18",
+            "title": "The Word",
+            "method": "In depth",
+            "at": "Observe",
+            "finished": False,
+            "updated": "2026-11-17T10:00:00Z",
+            "steps": [
+                {"id": "read", "title": "Read", "prompt": "What is happening?", "answer": "The Word was God", "help": ""},
+                {"id": "observe", "title": "Observe", "prompt": "What do you notice?", "answer": "", "help": ""},
+            ],
+            "questions": ["Who is the Word?"],
+        }
+    ],
+    "plans": {"nt90": {"start": "2026-11-16", "done": []}},  # the fixture's plan is two days long
+    "today": "2026-11-17",
+}
+
+
+def test_study_tool_reads_and_changes_the_readers_study(store):
+    agent_tools.READER.set(READER)
+    text, err = agent_tools.run(store, "study", {"action": "list"})
+    assert not err
+    assert "John 1:1–18" in text
+    assert "/study/s1" in text
+    text, _ = agent_tools.run(store, "study", {"action": "read", "study": "John 1:14"})
+    assert "Their answer: The Word was God" in text
+    assert "Who is the Word?" in text
+    text, _ = agent_tools.run(store, "study", {"action": "add_questions", "questions": ["Why light?"]})
+    assert "Added 1 questions" in text
+    assert agent_tools.ACTION.get() == {"type": "study", "id": "s1", "questions": ["Why light?"]}
+    text, _ = agent_tools.run(store, "study", {"action": "keep", "step": "nowhere", "text": "x"})
+    assert text.startswith("Error")
+    agent_tools.READER.set({})
+    assert "no Bible studies" in agent_tools.run(store, "study", {"action": "list"})[0]
+
+
+def test_reading_plan_tool(store):
+    agent_tools.READER.set(READER)
+    text, err = agent_tools.run(store, "reading_plan", {"action": "today"})
+    assert not err
+    assert "day 2 of 2" in text
+    assert "Not yet read from earlier days: 1 (days 1)" in text
+    text, _ = agent_tools.run(store, "reading_plan", {"action": "list"})
+    assert "they follow it" in text
+    agent_tools.READER.set({})
+    assert "follows no reading plan" in agent_tools.run(store, "reading_plan", {"action": "today"})[0]
+
+
 def test_notes_over_http_returns_the_verse(client):
     r = client.post(
         "/api/agent/tool",

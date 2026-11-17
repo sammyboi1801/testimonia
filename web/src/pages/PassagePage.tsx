@@ -1,7 +1,9 @@
-import { Fragment, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMeta } from "../api";
 import { CopyMenu } from "../components/CopyCitation";
+import { PassageReader } from "../components/Reader";
+import { useVerseSheet } from "../components/VerseSheet";
 import { Html } from "../components/Html";
 import { StudyStart } from "../components/StudyStart";
 import { Variant } from "../components/StudyPanel";
@@ -32,6 +34,8 @@ export function PassagePage() {
 function Guide({ g, books, editions, onEdition }: { g: PassageGuide; books: Book[]; editions: { id: string; abbrev: string }[]; onEdition: (id: string) => void }) {
   const r = g.range;
   const [starting, setStarting] = useState(false);
+  const allEditions = useMeta().data?.editions ?? [];
+  const verse = useVerseSheet();
   const verseNo = (osis: string) => osis.split(".").slice(1).join(":");
   // within this book: "1:18"; elsewhere: "Genesis 1:1"
   const short = (osis: string) => (osis.startsWith(`${r.book}.`) ? verseNo(osis) : osisLabel(osis, books));
@@ -83,10 +87,12 @@ function Guide({ g, books, editions, onEdition }: { g: PassageGuide; books: Book
         <div className="book-col pg-main">
           <section className="pg-text">
             <div className="pg-text-head">
-              <span className="muted small">{g.edition.abbrev ?? g.edition.id}</span>
+              <span className="muted small">Tap a verse to study it, or a Greek or Hebrew word for its meaning</span>
               <CopyMenu passage={copyable.verses.length ? copyable : null} editions={editions} onEdition={onEdition} className="va-btn" />
             </div>
-            <PassageText g={g} />
+            {allEditions.length > 0 && (
+              <PassageReader osis={r.start} endOsis={r.end} editions={allEditions} selected={verse.selected} onSelect={verse.onSelect} onWord={verse.onWord} />
+            )}            {verse.sheet}
           </section>
 
           <Variants g={g} short={short} />
@@ -150,40 +156,6 @@ function Block({ title, note, children }: { title: string; note?: ReactNode; chi
   );
 }
 
-/** The passage itself, in paragraphs that break at the section headings. */
-function PassageText({ g }: { g: PassageGuide }) {
-  const starts = new Map(g.headings.map((h) => [h.osis, h.title]));
-  const paragraphs: { title?: string; verses: PassageGuide["verses"] }[] = [];
-  for (const v of g.verses) {
-    const title = starts.get(v.osis);
-    if (title || !paragraphs.length) paragraphs.push({ title: g.headings.length > 1 ? title : undefined, verses: [] });
-    paragraphs[paragraphs.length - 1]!.verses.push(v);
-  }
-  let chapter = g.range.chapter;
-  return (
-    <div className="pg-reading">
-      {paragraphs.map((p, i) => (
-        <Fragment key={i}>
-          {p.title && <h2 className="pericope">{p.title}</h2>}
-          <p>
-            {p.verses.map((v) => {
-              const newChapter = v.chapter !== chapter;
-              chapter = v.chapter;
-              return (
-                <span key={v.vkey}>
-                  <Link to={verseUrl(v.osis)} className="pg-vnum" title={`Study ${v.osis.replace(/\./, " ").replace(".", ":")} in the reader`}>
-                    {newChapter ? `${v.chapter}:${v.verse}` : v.verse}
-                  </Link>
-                  {v.text ?? "—"}{" "}
-                </span>
-              );
-            })}
-          </p>
-        </Fragment>
-      ))}
-    </div>
-  );
-}
 
 function Variants({ g, short }: { g: PassageGuide; short: (o: string) => string }) {
   const hebrew = g.range.testament !== "NT";

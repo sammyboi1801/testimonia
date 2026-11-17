@@ -1,6 +1,7 @@
 /* ----------------------------------------------------------------------------- Bible studies */
 
 .st-page { padding-top: 28px; padding-bottom: 96px; }
+@media (min-width: 761px) { .page.st-page { padding-left: max(24px, calc((100% - 1400px) / 2)); padding-right: max(24px, calc((100% - 1400px) / 2)); } }
 .st-head { margin-bottom: 22px; }
 .st-eyebrow { display: flex; gap: 8px; align-items: center; font-family: var(--font-ui); font-size: 12.5px; color: var(--muted); letter-spacing: 0.02em; }
 .st-eyebrow a { color: var(--accent); text-decoration: none; }
@@ -28,6 +29,8 @@
   position: sticky; top: 16px; max-height: calc(100vh - 120px); overflow: auto; padding: 22px 24px; border: 1px solid var(--rule);
   border-radius: 18px; background: var(--panel);
 }
+.st-tap { margin: -4px 0 12px; font-family: var(--font-ui); font-size: 13px; color: var(--muted); }
+.st-text .passage-reader .pr-modes { display: flex; flex-wrap: wrap; }
 .st-text-toggle {
   display: flex; width: 100%; justify-content: space-between; align-items: center; padding: 0 0 12px; border: 0; background: none;
   font-family: var(--font-ui); font-size: 12px; letter-spacing: 0.04em; color: var(--muted); text-transform: uppercase; cursor: default;
@@ -235,7 +238,7 @@
   .st-layout { grid-template-columns: minmax(0, 1fr); gap: 14px; }
   .st-text { position: static; max-height: none; padding: 14px 18px; }
   .st-text-toggle { padding: 2px 0; cursor: pointer; }
-  .st-text:not(.open) .st-reading { display: none; }
+  .st-text:not(.open) .st-reading, .st-text:not(.open) .passage-reader, .st-text:not(.open) .st-tap { display: none; }
   .st-text.open .st-text-toggle { padding-bottom: 12px; }
   .st-card { padding: 20px 18px; border-radius: 16px; }
   .st-card h2 { font-size: 26px; }

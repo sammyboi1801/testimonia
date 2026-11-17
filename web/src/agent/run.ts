@@ -4,6 +4,7 @@
 import { apiUrl } from "../api";
 import type { AiConfig } from "./providers";
 import { pins as pinStore } from "../pins";
+import { readerState } from "./reader";
 
 const pinIds = () => pinStore.get().pinned;
 
@@ -15,6 +16,7 @@ export type AgentEvent =
   | { type: "map"; ref?: string; person?: string; event?: string; places?: string[]; title?: string }
   | { type: "pins"; action: "add" | "remove" | "save_set"; places: string[]; name?: string }
   | { type: "note"; action: "add" | "replace" | "remove" | "highlight"; osis: string; text: string; highlight: string | null }
+  | { type: "study"; id: string; questions?: string[]; step?: string; help?: string }
   | { type: "error"; message: string }
   | { type: "done"; model?: string; usage?: Record<string, number> };
 
@@ -64,7 +66,7 @@ export async function runOnServer(c: AiConfig, key: string, turns: Turn[], conte
   const res = await fetch(apiUrl("/api/agent/chat"), {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(key ? { "X-Api-Key": key } : {}) },
-    body: JSON.stringify({ provider: c.protocol, model: c.model, base_url: c.protocol === "openai" ? c.baseUrl : null, messages: turns, context, notes, pins: pinIds() }),
+    body: JSON.stringify({ provider: c.protocol, model: c.model, base_url: c.protocol === "openai" ? c.baseUrl : null, messages: turns, context, notes, pins: pinIds(), reader: readerState() }),
     signal,
   });
   if (!res.ok) {
@@ -176,7 +178,13 @@ export async function runInBrowser(c: AiConfig, key: string, turns: Turn[], cont
         const r = await fetch(apiUrl("/api/agent/tool"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: p.name, input: args, ...(p.name === "notes" ? { notes } : {}), ...(p.name === "pins" ? { pins: pinIds() } : {}) }),
+          body: JSON.stringify({
+            name: p.name,
+            input: args,
+            ...(p.name === "notes" ? { notes } : {}),
+            ...(p.name === "pins" ? { pins: pinIds() } : {}),
+            ...(p.name === "study" || p.name === "reading_plan" ? { reader: readerState() } : {}),
+          }),
           signal,
         });
         const out = r.ok ? ((await r.json()) as { content: string; osis?: string; action?: AgentEvent | null }) : null;

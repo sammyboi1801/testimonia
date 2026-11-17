@@ -59,7 +59,13 @@ Septuagint; the Greek New Testament and Hebrew Old Testament word by word, with 
 semantic domain; where the printed editions differ, and what the early manuscripts themselves read (papyri, codices,
 Dead Sea Scrolls); the church fathers and Jewish and Roman writers, readable section by section, with every
 quotation of Scripture linked; a timeline of events, writers and rulers; biblical people, places and Paul's journeys;
-topics, Gospel parallels and book overviews. A wikipedia tool gives background from outside the library.
+topics, Gospel parallels and book overviews; commentary on each verse (the fathers' verse-by-verse comments and the
+classic commentaries) and cross references ranked by how often readers link them. A wikipedia tool gives
+background from outside the library.
+
+The reader's own work: their notes and highlights, their Bible studies (a passage in steps, with what they wrote at
+each step) and their reading plans. When they ask about "my study" or "my reading today", read it with the study or
+reading_plan tool before answering, and build on what they wrote rather than repeating it.
 
 You also act inside the app: show_in_app opens a page on the reader's screen beside this chat (a verse, a chapter of
 a father, the atlas at a place, a manuscript, the timeline). Use it when seeing helps: "where is Corinth?" opens the
@@ -105,6 +111,26 @@ class NoteIn(BaseModel):
 NOTES: ContextVar[list[NoteIn]] = ContextVar("notes")
 
 
+class ReaderIn(BaseModel):
+    """What else the reader keeps in their browser: Bible studies (with their answers) and reading plan progress."""
+
+    studies: list[dict[str, Any]] = Field(default_factory=list, max_length=300)
+    plans: dict[str, Any] = Field(default_factory=dict)
+    today: str | None = Field(None, max_length=10)
+
+
+MAX_READER = 400_000  # characters of studies and plans per request
+
+
+def _reader(r: ReaderIn | None) -> dict[str, Any]:
+    if r is None:
+        return {}
+    data = r.model_dump()
+    if len(json.dumps(data, ensure_ascii=False)) > MAX_READER:
+        raise HTTPException(413, "too much study data sent with the question")
+    return data
+
+
 class ChatRequest(BaseModel):
     provider: Literal["anthropic", "openai"] = "anthropic"
     model: str = Field(DEFAULT_CLAUDE, max_length=120)
@@ -115,6 +141,7 @@ class ChatRequest(BaseModel):
     )  # what is on the reader's screen (page, passage, verse, the open map)
     notes: list[NoteIn] | None = Field(None, max_length=5000)  # the reader's notes (they live in the browser)
     pins: list[str] | None = Field(None, max_length=2000)  # the reader's pinned place ids
+    reader: ReaderIn | None = None  # their Bible studies and reading plans
 
 
 class ToolCall(BaseModel):
@@ -122,6 +149,7 @@ class ToolCall(BaseModel):
     input: dict[str, Any]
     notes: list[NoteIn] | None = Field(default=None, max_length=5000)
     pins: list[str] | None = Field(default=None, max_length=2000)
+    reader: ReaderIn | None = None
 
 
 def store(request: Request) -> Store:
@@ -146,6 +174,7 @@ def tool(request: Request, call: ToolCall) -> dict[str, Any]:
         osis = agent_tools.note_osis(str(call.input.get("verse", ""))) if not is_error else ""
         return {"content": text, "is_error": is_error, "osis": osis}
     agent_tools.PINS.set(call.pins or [])
+    agent_tools.READER.set(_reader(call.reader))
     text, is_error = agent_tools.run(store(request), call.name, call.input)
     return {"content": text, "is_error": is_error, "action": None if is_error else agent_tools.ACTION.get()}
 
@@ -222,6 +251,9 @@ async def chat(request: Request, body: ChatRequest, x_api_key: str | None = Head
     system = SYSTEM + (f"\n\nOn the reader's screen now: {body.context}." if body.context else "")
     if body.notes is not None:
         system += f"\nThe reader has {len(body.notes)} notes and highlights; the notes tool reads and changes them."
+    reader = _reader(body.reader)
+    if reader.get("studies"):
+        system += f"\nThe reader has {len(reader['studies'])} Bible studies; the study tool reads them."
     turns = _trim([t.model_dump() for t in body.messages])
     if not turns or turns[-1]["role"] != "user":
         raise HTTPException(400, "the last message must be the user's question")
@@ -229,6 +261,7 @@ async def chat(request: Request, body: ChatRequest, x_api_key: str | None = Head
     async def events() -> AsyncIterator[str]:
         NOTES.set(body.notes or [])  # set inside the streaming task, where the tools run
         agent_tools.PINS.set(body.pins or [])
+        agent_tools.READER.set(reader)
         try:
             if body.provider == "anthropic":
                 gen = _claude(s, x_api_key or "", body.model or DEFAULT_CLAUDE, system, turns)
@@ -452,8 +485,8 @@ def _navigation(name: str, args: Any, failed: bool, action: dict[str, Any] | Non
         return None
     if name == "show_in_app":
         return {"type": "navigate", "link": str(args.get("link", ""))}
-    if name in ("map", "pins"):
-        return action  # what the tool resolved: a map to open, pins to change
+    if name in ("map", "pins", "study"):
+        return action  # what the tool resolved: a map to open, pins or a study to change
     if name == "notes" and args.get("action") in ("add", "replace", "remove", "highlight"):
         osis = agent_tools.note_osis(str(args.get("verse", "")))
         return {

@@ -448,6 +448,78 @@ TOOLS: list[dict[str, Any]] = [
             "additionalProperties": False,
         },
     },
+    {
+        "name": "commentary",
+        "description": (
+            "What commentators wrote on a verse, in full: the church fathers' verse-by-verse comments (the Catena "
+            "Aurea and the patristic commentaries, earliest first) and the classic commentaries (Matthew Henry, Gill, "
+            "Calvin and others, with the Tyndale study notes). `who` narrows it: 'early' for the fathers, 'classic' "
+            "for the later commentaries. Name the commentator and his date when you use one; these are "
+            "interpretations, kept apart from what the text says."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "reference": {"type": "string", "description": "One verse, e.g. 'John 3:5'"},
+                "who": {"type": "string", "enum": ["all", "early", "classic"]},
+            },
+            "required": ["reference"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "cross_references",
+        "description": (
+            "Other passages on the same subject or wording, ranked by how many readers linked them (OpenBible.info), "
+            "with each one's text. Give a verse, or a passage of up to a chapter for the strongest links of the whole."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"reference": {"type": "string", "description": "e.g. 'Romans 8:28' or 'John 3:1-21'"}},
+            "required": ["reference"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "study",
+        "description": (
+            "The reader's own Bible studies (kept in their browser): a passage taken in steps, with what they wrote "
+            "at each step, the assistant's help they kept, and questions for a group. 'list' shows the studies; "
+            "'read' gives one in full (by `study`: its id or its passage, else the one worked on last). 'add_questions' "
+            "adds `questions` to its group questions; 'keep' saves `text` as kept help at a `step` (a step id from "
+            "'read'). Change a study only when the reader asks."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "enum": ["list", "read", "add_questions", "keep"]},
+                "study": {"type": "string", "description": "A study's id or passage, e.g. 'John 3'"},
+                "questions": {"type": "array", "items": {"type": "string"}},
+                "step": {"type": "string", "description": "For keep: the step id, e.g. 'observe'"},
+                "text": {"type": "string", "description": "For keep: the help to save (markdown)"},
+            },
+            "required": ["action"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "reading_plan",
+        "description": (
+            "The reader's reading plans and progress (kept in their browser). 'today' gives what each plan they "
+            "follow sets for today, what is left from earlier days, and links; 'list' shows every plan the library "
+            "offers and which they follow; 'day' gives one day of a plan (`plan` id, `day` number)."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "enum": ["today", "list", "day"]},
+                "plan": {"type": "string", "description": "A plan id from 'list'"},
+                "day": {"type": "integer"},
+            },
+            "required": ["action"],
+            "additionalProperties": False,
+        },
+    },
 ]
 
 _TAGS = re.compile(r"<[^>]+>")
@@ -1525,7 +1597,220 @@ def fathers_on(store: Store, reference: str, before_year: int | None = None) -> 
     return "\n".join(out)
 
 
+def _span(start: int, end: int) -> str:
+    """'John 3:5' or 'John 3:5–8' for an entry covering verses start..end."""
+    a, b = api._osis(start), api._osis(end)
+    if a == b:
+        return _label(a)
+    return f"{_label(a)}–{b.split('.')[2]}" if a.split(".")[:2] == b.split(".")[:2] else f"{_label(a)}–{_label(b)}"
+
+
+def commentary(store: Store, reference: str, who: str = "all") -> str:
+    """The fathers' verse-by-verse comments and the classic commentaries on one verse, in full."""
+    refs = parse_refs(reference)
+    if not refs:
+        return f"Could not read {reference!r} as a Bible reference."
+    osis = api._osis(refs[0].start)
+    try:
+        g = api.verse(_req(store), osis=osis, preview="bsb", limit=60)
+    except HTTPException:
+        return f"No verse {reference}."
+    out = [f"# Commentary on {_label(osis)} — link: {_verse_link(osis)}"]
+    early = sorted(g.get("commentary") or [], key=lambda c: c.get("year") or 9999) if who != "classic" else []
+    classic = (g.get("commentaries") or []) if who != "early" else []
+    if early:
+        out.append("\n## The church fathers, verse by verse (earliest first)")
+        for c in early[:14]:
+            work = f", {c['work_title']}" if c.get("work_title") else ""
+            out.append(
+                f"- {c.get('author') or 'Anonymous'} (c. {c.get('year') or '?'}){work}, on "
+                f"{_span(c['start_vkey'], c['end_vkey'])}: {_plain(c.get('html'))[:1200]}"
+            )
+    if classic:
+        out.append("\n## Classic commentaries")
+        for c in classic:
+            out.append(
+                f"### {c.get('author')} ({c.get('year') or 'n.d.'}), on {_span(c['start_vkey'], c['end_vkey'])}\n"
+                + _plain(c.get("html"))[:2200]
+            )
+    if not early and not classic:
+        return f"No commentary in the library on {_label(osis)}" + (f" ({who})." if who != "all" else ".")
+    return "\n".join(out)
+
+
+def cross_references(store: Store, reference: str) -> str:
+    """The best-linked other passages for a verse, or for a passage taken as a whole."""
+    refs = parse_refs(reference)
+    if not refs:
+        return f"Could not read {reference!r} as a Bible reference."
+    r = refs[0]
+    lo, hi = r.start, min(r.end, r.start + 1000)  # at most about a chapter
+    rows = store.all(
+        "SELECT src_start, dst_start, dst_end, votes FROM crossref WHERE src_start BETWEEN ? AND ? "
+        "ORDER BY votes IS NULL, votes DESC LIMIT 1500",
+        (lo, hi),
+    )
+    if not rows:
+        return f"No cross references in the library for {reference}."
+    merged: dict[tuple[int, int], dict[str, Any]] = {}
+    for x in rows:
+        if lo <= x["dst_start"] <= hi:
+            continue  # a verse of the passage itself
+        m = merged.setdefault((x["dst_start"], x["dst_end"]), {"votes": 0, "from": set()})
+        m["votes"] += x["votes"] or 0
+        m["from"].add(x["src_start"])
+    top = sorted(merged.items(), key=lambda kv: -kv[1]["votes"])[:40]
+    many = lo != hi
+    out = [f"# Cross references for {reference} — the {len(top)} strongest of {len(merged)}"]
+    for (start, end), m in top:
+        osis = api._osis(start)
+        text = store.one(
+            "SELECT text FROM edition_verse WHERE vkey = ? AND edition_id IN ('bsb', 'web') ORDER BY edition_id = 'bsb' DESC",
+            (start,),
+        )
+        src = ", ".join(f"v. {api._osis(k).split('.')[2]}" for k in sorted(m["from"])[:4]) if many else ""
+        out.append(
+            f"- [{_span(start, end)}]({_verse_link(osis)}) ({m['votes']} votes{'; from ' + src if src else ''}): "
+            + ((text or {}).get("text") or "")[:220]
+        )
+    return "\n".join(out)
+
+
+#: what the reader keeps in their browser, sent with each question: Bible studies, reading plan progress, the date
+READER: ContextVar[dict[str, Any] | None] = ContextVar("agent_reader", default=None)
+
+
+def _studies() -> list[dict[str, Any]]:
+    return [s for s in (READER.get() or {}).get("studies") or [] if isinstance(s, dict) and s.get("id")]
+
+
+def _find_study(which: str | None) -> dict[str, Any] | None:
+    rows = sorted(_studies(), key=lambda s: str(s.get("updated") or ""), reverse=True)
+    if not rows:
+        return None
+    if not which:
+        return rows[0]
+    by_id = next((s for s in rows if s["id"] == which), None)
+    if by_id:
+        return by_id
+    refs = parse_refs(which)
+    if refs:
+        k = refs[0].start
+        for s in rows:
+            sr = parse_refs(str(s.get("label") or ""))
+            if sr and sr[0].start <= k <= sr[0].end:
+                return s
+    w = which.lower()
+    return next((s for s in rows if w in f"{s.get('label', '')} {s.get('title', '')}".lower()), None)
+
+
+def study_tool(store: Store, action: str, study: str | None = None, questions: list[str] | None = None,
+               step: str | None = None, text: str | None = None) -> str:
+    rows = _studies()
+    if action == "list":
+        if not rows:
+            return "The reader has no Bible studies yet. They start one from a passage guide or from Notes."
+        out = [f"# The reader's Bible studies ({len(rows)})"]
+        for s in sorted(rows, key=lambda s: str(s.get("updated") or ""), reverse=True):
+            state = "finished" if s.get("finished") else f"at step {s.get('at') or '?'}"
+            out.append(f"- {s.get('label')}{' · ' + s['title'] if s.get('title') else ''} ({s.get('method')}, {state}) id={s['id']} link: /study/{s['id']}")
+        return "\n".join(out)
+    s = _find_study(study)
+    if s is None:
+        return "No study matches that." if rows else "The reader has no Bible studies yet."
+    if action == "read":
+        out = [
+            f"# Study of {s.get('label')}{' · ' + s['title'] if s.get('title') else ''} ({s.get('method')}) "
+            f"id={s['id']} link: /study/{s['id']}",
+            f"Now at: {'finished' if s.get('finished') else s.get('at') or '?'}",
+        ]
+        for st in s.get("steps") or []:
+            out.append(f"\n## {st.get('title')} (step id: {st.get('id')})\nPrompt: {st.get('prompt')}")
+            out.append(f"Their answer: {st.get('answer') or '(not written yet)'}")
+            if st.get("help"):
+                out.append(f"Help they kept: {str(st['help'])[:1500]}")
+        if s.get("questions"):
+            out.append("\n## Their questions for a group\n" + "\n".join(f"- {q}" for q in s["questions"]))
+        return "\n".join(out)
+    if action == "add_questions":
+        qs = [q.strip()[:400] for q in questions or [] if q.strip()][:12]
+        if not qs:
+            return "Error: give the questions to add."
+        ACTION.set({"type": "study", "id": s["id"], "questions": qs})
+        return f"Added {len(qs)} questions to the study of {s.get('label')} (it updates in their browser)."
+    # keep
+    ids = [st.get("id") for st in s.get("steps") or []]
+    if step not in ids:
+        return f"Error: step must be one of {', '.join(str(i) for i in ids)}."
+    if not (text or "").strip():
+        return "Error: give the text to keep."
+    ACTION.set({"type": "study", "id": s["id"], "step": step, "help": text.strip()[:6000]})
+    return f"Kept that in the {step} step of the study of {s.get('label')} (it updates in their browser)."
+
+
+def _plan_day(start: str, today: str, days: int) -> int:
+    from datetime import date
+
+    try:
+        n = (date.fromisoformat(today) - date.fromisoformat(start)).days + 1
+    except ValueError:
+        return 1
+    return min(days, max(1, n))
+
+
+def _readings_line(readings: list[dict[str, Any]]) -> str:
+    return "; ".join(f"[{r['label']}]({_verse_link(r['osis'])})" + (f" ({r['title']})" if r.get("title") else "") for r in readings)
+
+
+def reading_plan(store: Store, action: str, plan: str | None = None, day: int | None = None) -> str:
+    reader = READER.get() or {}
+    progress: dict[str, Any] = reader.get("plans") or {}
+    today = str(reader.get("today") or "")
+    if action == "list":
+        out = ["# Reading plans in the library"]
+        for p in reading.plans():
+            mine = progress.get(p["id"]) or {}
+            following = f" (they follow it: {len(mine.get('done') or [])} of {p['days']} days read)" if mine.get("start") else ""
+            out.append(f"- {p['title']} (id {p['id']}, {p['days']} days){following}: {p['description']}")
+        return "\n".join(out) + "\nLink: /plans"
+    if action == "day":
+        if not plan or day is None:
+            return "Error: give the plan id and the day."
+        try:
+            full = reading.plan(_req(store), plan)
+        except HTTPException:
+            return f"Error: no plan {plan!r}; 'list' names them."
+        d = next((x for x in full["days"] if x["day"] == day), None)
+        return f"# {full['title']}, day {day}\n{_readings_line(d['readings'])}" if d else f"Day {day} is not in {full['title']}."
+    # today
+    started = {k: v for k, v in progress.items() if isinstance(v, dict) and v.get("start")}
+    if not started:
+        return "The reader follows no reading plan yet. 'list' shows the plans; they start one at /plans."
+    out = [f"# Today ({today or 'date unknown'})"]
+    for pid, p in started.items():
+        try:
+            full = reading.plan(_req(store), pid)
+        except HTTPException:
+            continue
+        if not full["days"]:
+            continue  # a plan this library cannot build (the early church plan needs the fathers' citations)
+        n = _plan_day(str(p["start"]), today, len(full["days"]))
+        done = {d for d in p.get("done") or [] if isinstance(d, int)}
+        behind = [d for d in range(1, n) if d not in done]
+        d = full["days"][n - 1]
+        out.append(f"\n## {full['title']}: day {n} of {len(full['days'])}" + (" (read)" if n in done else ""))
+        out.append(_readings_line(d["readings"]))
+        if behind:
+            out.append(f"Not yet read from earlier days: {len(behind)} (days {', '.join(map(str, behind[:10]))}{'…' if len(behind) > 10 else ''})")
+    out.append("\nLink: /plans")
+    return "\n".join(out)
+
+
 FUNCTIONS: dict[str, Callable[..., str]] = {
+    "commentary": commentary,
+    "cross_references": cross_references,
+    "study": study_tool,
+    "reading_plan": reading_plan,
     "search_texts": search_texts,
     "read_passage": read_passage,
     "study_verse": study_verse,
@@ -1563,6 +1848,8 @@ LIMITS = {
     "fathers_on": 30_000,
     "compare_translations": 20_000,
     "book_overview": 20_000,
+    "commentary": 24_000,
+    "study": 20_000,
 }
 
 

@@ -7,6 +7,7 @@ import { runInBrowser, runOnServer, type AgentEvent, type Turn } from "../agent/
 import { HIGHLIGHTS, useNotes, type Highlight } from "../notes";
 import { openMap, pins } from "../pins";
 import { onRemoteChange } from "../sync";
+import { applyStudyChange } from "../agent/reader";
 import { screenContext } from "./AskDrawer";
 import { copyText } from "../studyLib";
 import { useMeta } from "../api";
@@ -352,6 +353,12 @@ export function Chat({
         else if (e.action === "remove") pins.remove(e.places);
         else pins.saveSet(e.name ?? "My places", e.places);
         e = { type: "tool", name: "pins", summary: e.action === "save_set" ? `saved set “${e.name}”` : `${e.action === "add" ? "pinned" : "unpinned"} ${e.places.length} places` };
+      }
+      // a change to one of the reader's Bible studies (they live in this browser too)
+      if (e.type === "study") {
+        const done = applyStudyChange(e);
+        if (!done) return;
+        e = { type: "tool", name: "study", summary: done };
       }
       // changes to the reader's notes, asked for in the chat, applied here (notes live in this browser)
       if (e.type === "note") {

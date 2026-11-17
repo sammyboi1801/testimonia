@@ -5,8 +5,8 @@ import { Link, useLocation } from "react-router-dom";
 import { isRtl, langClass, nativeLabel } from "../lib";
 import { MODES, useSettings } from "../settings";
 import type { Book, Chapter, ChapterVerse, Edition, VerseMarks, Word } from "../types";
-import { useQuery } from "@tanstack/react-query";
-import { getJson, useAbsences } from "../api";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { chapterQuery, getJson, useAbsences } from "../api";
 import { AbsenceNotice, absenceRuns } from "./Absence";
 import { markNav } from "../chapterNav";
 import { TextWithNotes, type TextMark } from "./Footnotes";
@@ -39,24 +39,7 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
   const mode = settings.mode;
   const [viewOpen, setViewOpen] = useState(false); // phones: the View sheet
   useBackClose(viewOpen, () => setViewOpen(false));
-  const byId = useMemo(() => new Map(editions.map((e) => [e.id, e])), [editions]);
-  // the words under the text: Greek NT, Hebrew OT, or the Septuagint's Greek where there is no Hebrew (the deuterocanon)
-  const hasNT = data.verses.some((v) => v.words.tagnt?.length);
-  const hasHebrew = data.verses.some((v) => v.words.tahot?.length);
-  const wordEd = hasNT ? "tagnt" : hasHebrew ? "tahot" : "lxx";
-  const isNT = wordEd !== "tahot"; // i.e. the words are Greek
-  // the reader's own translations that have this chapter; if none does, the first fallback that does
-  const hasText = (e: string) => data.verses.some((v) => v.texts[e]?.text);
-  const chosen = settings.editions.filter((e) => e !== "tagnt" && e !== "tahot" && e !== "lxx");
-  const available = chosen.filter(hasText);
-  const fallback = available.length ? null : data.editions.find((e) => !chosen.includes(e) && e !== "tagnt" && e !== "tahot" && e !== "lxx" && hasText(e)) ?? null;
-  const textEds = available.length ? available : fallback ? [fallback] : [];
-  const primary = textEds[0];
-  const missing = chosen.filter((e) => !hasText(e));
-  const hasWords = data.verses.some((v) => v.words[wordEd]?.length);
-  // no word-by-word text for this book (2 Esdras, the Prayer of Manasseh): the word modes show the translations instead
-  const view = (mode === "interlinear" || mode === "original") && !hasWords ? "parallel" : mode;
-  const headings = useMemo(() => new Map(data.headings.map((h) => [h.vkey, h.title])), [data.headings]);
+  const { byId, wordEd, isNT, hasWords, textEds, primary, missing, fallback, view, headings } = useTextSetup(data, editions);
   const container = useRef<HTMLDivElement>(null);
   const [speaking, setSpeaking] = useState<string | null>(null);
   const verseLabel = useCallback((osis: string) => osis.replace(/^([1-4]?[A-Za-z]+)\.(\d+)\.(\d+)$/, `${data.name} $2:$3`), [data.name]);
@@ -178,24 +161,7 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
         </p>
       )}
 
-      {mode === "reading" ? (
-        <ReadingView data={data} edition={primary} headings={headings} ctx={ctx} noticeAt={noticeAt} />
-      ) : (
-        <div className="verses">
-          <ColumnHeads mode={view} textEds={textEds} primary={primary} ctx={ctx} />
-          {data.verses.map((v) => (
-            <Fragment key={v.vkey}>
-              {headings.get(v.vkey) && (
-                <h2 className="pericope">
-                  {headings.get(v.vkey)} <PassageLink osis={v.osis} title={headings.get(v.vkey)} variant="heading" />
-                </h2>
-              )}
-              {noticeAt(v.verse)}
-              <VerseRow v={v} mode={view} textEds={textEds} primary={primary} ctx={ctx} />
-            </Fragment>
-          ))}
-        </div>
-      )}
+      <ReaderText data={data} view={view} textEds={textEds} primary={primary} headings={headings} ctx={ctx} noticeAt={noticeAt} />
       <div className="chapter-foot">
         <NavArrow to={data.prev} dir="‹ Previous chapter" />
         <NavArrow to={data.next} dir="Next chapter ›" />
@@ -204,7 +170,150 @@ export function Reader({ data, books, editions, selected, through, onSelect, onW
   );
 }
 
+/** The reader's choices applied to some text: which translations show, which original-language words, which view. */
+function useTextSetup(data: Chapter, editions: Edition[]) {
+  const { settings } = useSettings();
+  const mode = settings.mode;
+  const byId = useMemo(() => new Map(editions.map((e) => [e.id, e])), [editions]);
+  // the words under the text: Greek NT, Hebrew OT, or the Septuagint's Greek where there is no Hebrew (the deuterocanon)
+  const hasNT = data.verses.some((v) => v.words.tagnt?.length);
+  const hasHebrew = data.verses.some((v) => v.words.tahot?.length);
+  const wordEd = hasNT ? "tagnt" : hasHebrew ? "tahot" : "lxx";
+  const isNT = wordEd !== "tahot"; // i.e. the words are Greek
+  // the reader's own translations that have this chapter; if none does, the first fallback that does
+  const hasText = (e: string) => data.verses.some((v) => v.texts[e]?.text);
+  const chosen = settings.editions.filter((e) => e !== "tagnt" && e !== "tahot" && e !== "lxx");
+  const available = chosen.filter(hasText);
+  const fallback = available.length ? null : data.editions.find((e) => !chosen.includes(e) && e !== "tagnt" && e !== "tahot" && e !== "lxx" && hasText(e)) ?? null;
+  const textEds = available.length ? available : fallback ? [fallback] : [];
+  const primary = textEds[0];
+  const missing = chosen.filter((e) => !hasText(e));
+  const hasWords = data.verses.some((v) => v.words[wordEd]?.length);
+  // no word-by-word text for this book (2 Esdras, the Prayer of Manasseh): the word modes show the translations instead
+  const view = (mode === "interlinear" || mode === "original") && !hasWords ? "parallel" : mode;
+  const headings = useMemo(() => new Map(data.headings.map((h) => [h.vkey, h.title])), [data.headings]);
+  return { byId, wordEd, isNT, hasWords, textEds, primary, missing, fallback, view, headings };
+}
+
+/** The text itself, in the reader's chosen view: book-like reading, or verse rows (parallel, interlinear, original). */
+function ReaderText({ data, view, textEds, primary, headings, ctx, noticeAt }: { data: Chapter; view: string; textEds: string[]; primary?: string; headings: Map<number, string>; ctx: RowCtx; noticeAt: (verse: number) => React.ReactNode }) {
+  if (view === "reading") return <ReadingView data={data} edition={primary} headings={headings} ctx={ctx} noticeAt={noticeAt} />;
+  return (
+    <div className="verses">
+      <ColumnHeads mode={view} textEds={textEds} primary={primary} ctx={ctx} />
+      {data.verses.map((v) => (
+        <Fragment key={v.vkey}>
+          {headings.get(v.vkey) && (
+            <h2 className="pericope">
+              {headings.get(v.vkey)} {!ctx.num && <PassageLink osis={v.osis} title={headings.get(v.vkey)} variant="heading" />}
+            </h2>
+          )}
+          {noticeAt(v.verse)}
+          <VerseRow v={v} mode={view} textEds={textEds} primary={primary} ctx={ctx} />
+        </Fragment>
+      ))}
+    </div>
+  );
+}
+
+const FALLBACK_EDITIONS = ["web", "kjva", "brenton", "dra"];
+
+/** The editions to load for the reader's settings: their translations, broad ones to fall back on, and the words. */
+export function readerEditions(settings: { editions: string[]; mode: string }): string[] {
+  const needsWords = settings.mode === "interlinear" || settings.mode === "original";
+  return [...new Set([...settings.editions, ...FALLBACK_EDITIONS, ...(needsWords ? ["tagnt", "tahot", "lxx"] : [])])];
+}
+
+/**
+ * A passage (within one book, across chapters) drawn exactly as the reader draws it: the reader's translations and
+ * view, highlights, the marks beside each verse, translators' notes, place names, the Greek or Hebrew with its word
+ * cards, and the selection toolbar. A verse is chosen by tapping it; a word, by tapping it in the original.
+ */
+export function PassageReader({ osis, endOsis, editions, selected, onSelect, onWord, modes = true, spot, className }: {
+  osis: string;
+  endOsis: string;
+  editions: Edition[];
+  selected: string | null;
+  onSelect: (osis: string) => void;
+  onWord: (strong: string, osis?: string) => void;
+  modes?: boolean;
+  spot?: string | null;
+  className?: string;
+}) {
+  const { settings, update } = useSettings();
+  const [book, c1s, v1s] = osis.split(".");
+  const [, c2s, v2s] = endOsis.split(".");
+  const c1 = Number(c1s), v1 = Number(v1s), c2 = Number(c2s), v2 = Number(v2s);
+  const eds = readerEditions(settings);
+  const chapters = useQueries({
+    queries: Array.from({ length: Math.max(1, Math.min(c2 - c1 + 1, 30)) }, (_, i) => chapterQuery(book!, c1 + i, eds)),
+  });
+  const loading = chapters.some((q) => q.isLoading);
+  const failed = chapters.find((q) => q.error)?.error;
+  // the chapters joined into one, cut to the passage
+  const data = useMemo<Chapter | null>(() => {
+    const got = chapters.map((q) => q.data);
+    if (got.some((c) => !c)) return null;
+    const first = got[0]!;
+    const inRange = (v: ChapterVerse) => {
+      const [, c, n] = v.osis.split(".").map(Number) as [number, number, number];
+      return (c > c1 || (c === c1 && n >= v1)) && (c < c2 || (c === c2 && n <= v2));
+    };
+    const verses = got.flatMap((c) => c!.verses.filter(inRange));
+    const keys = new Set(verses.map((v) => v.vkey));
+    return {
+      ...first,
+      verses,
+      headings: got.flatMap((c) => c!.headings).filter((h) => keys.has(h.vkey)),
+      places: Object.assign({}, ...got.map((c) => c!.places ?? {})),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chapters.map((q) => q.dataUpdatedAt).join(","), c1, v1, c2, v2]);
+  const empty: Chapter = { book: book!, chapter: c1, name: "", editions: [], verses: [], headings: [], prev: null, next: null };
+  const setup = useTextSetup(data ?? empty, editions);
+  const { notes } = useNotes();
+  const container = useRef<HTMLDivElement>(null);
+  const label = useCallback((o: string) => o.replace(/^([1-4]?[A-Za-z]+)\.(\d+)\.(\d+)$/, `${data?.name ?? book} $2:$3`), [data?.name, book]);
+  // in a passage across chapters, a chapter's first verse says which chapter it is
+  const num = useCallback((v: ChapterVerse) => (c2 > c1 && v.verse === 1 ? `${v.osis.split(".")[1]}:1` : v.verse), [c1, c2]);
+  if (loading) return <div className="st-skel" aria-label="Loading the passage" />;
+  if (failed || !data) return <p className="muted">Could not load the passage. {failed ? String(failed) : ""}</p>;
+  const ctx: RowCtx = {
+    byId: setup.byId,
+    wordEd: setup.wordEd,
+    isNT: setup.isNT,
+    hasWords: setup.hasWords,
+    onSelect,
+    onWord,
+    selected,
+    span: null,
+    footnotes: settings.display.footnotes,
+    speaking: null,
+    notes,
+    places: data.places ?? {},
+    num,
+    spot,
+  };
+  return (
+    <div className={`reader passage-reader${className ? ` ${className}` : ""}`} ref={container}>
+      <SelectionToolbar root={container} verseLabel={label} />
+      {modes && (
+        <div className="modes pr-modes" role="tablist" aria-label="Reading mode">
+          {MODES.map((m) => (
+            <button key={m.id} role="tab" aria-selected={settings.mode === m.id} className={settings.mode === m.id ? "on" : ""} title={m.hint} onClick={() => update({ mode: m.id })}>
+              {m.label}
+            </button>
+          ))}
+        </div>
+      )}
+      <ReaderText data={data} view={setup.view} textEds={setup.textEds} primary={setup.primary} headings={setup.headings} ctx={ctx} noticeAt={() => null} />
+    </div>
+  );
+}
+
 interface RowCtx {
+  num?: (v: ChapterVerse) => string | number; // a verse's number as shown (a passage across chapters adds the chapter)
+  spot?: string | null; // a word lit up wherever it occurs (a Bible study's repeated words)
   byId: Map<string, Edition>;
   wordEd: string;
   isNT: boolean;
@@ -222,7 +331,14 @@ interface RowCtx {
 /** Highlights for one verse in one edition, plus the place names it mentions (English texts). */
 function verseMarks(ctx: RowCtx, v: ChapterVerse, ed: string, text: string): TextMark[] {
   const marks: TextMark[] = ctx.notes[v.osis]?.marks?.filter((m) => m.ed === ed) ?? [];
-  return ctx.byId.get(ed)?.language === "eng" ? [...marks, ...placeMarks(text, ctx.places[v.vkey])] : marks;
+  if (ctx.byId.get(ed)?.language !== "eng") return marks;
+  return [...marks, ...(ctx.spot ? spotMarks(text, ctx.spot) : []), ...placeMarks(text, ctx.places[v.vkey])];
+}
+
+/** Every occurrence of a word (and its possessive), to light it up through a passage. */
+function spotMarks(text: string, word: string): TextMark[] {
+  const re = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:['’]s)?\\b`, "gi");
+  return [...text.matchAll(re)].map((m) => ({ start: m.index!, end: m.index! + m[0].length, color: "spot" }));
 }
 
 function NavArrow({ to, dir }: { to: Chapter["prev"]; dir: string }) {
@@ -264,7 +380,7 @@ function VerseRow({ v, mode, textEds, primary, ctx }: { v: ChapterVerse; mode: s
       style={{ ["--cols" as string]: String(Math.max(cols, 1)) }}
       onClick={() => window.getSelection()?.isCollapsed !== false && ctx.onSelect(v.osis)}
     >
-      <Gutter marks={v.marks} verse={v.verse} note={ctx.notes[v.osis]} />
+      <Gutter marks={v.marks} verse={ctx.num?.(v) ?? v.verse} note={ctx.notes[v.osis]} />
       {mode === "parallel" && textEds.map((id) => <TextCell key={id} v={v} id={id} ctx={ctx} />)}
       {mode === "original" && (
         <>
@@ -290,7 +406,7 @@ function VerseRow({ v, mode, textEds, primary, ctx }: { v: ChapterVerse; mode: s
   );
 }
 
-function Gutter({ marks, verse, note }: { marks?: VerseMarks; verse: number; note?: Note }) {
+function Gutter({ marks, verse, note }: { marks?: VerseMarks; verse: number | string; note?: Note }) {
   const m = marks ?? {};
   const tips: string[] = [];
   if (m.variants) tips.push(`${m.variants} textual variant${m.variants > 1 ? "s" : ""}${m.major_variants ? ` (${m.major_variants} significant)` : ""}`);
@@ -442,7 +558,7 @@ function ReadingView({ data, edition, headings, ctx, noticeAt }: { data: Chapter
         <section key={i}>
           {p.title && (
             <h2 className="pericope">
-              {p.title} <PassageLink osis={p.verses[0]!.osis} title={p.title} variant="heading" />
+              {p.title} {!ctx.num && <PassageLink osis={p.verses[0]!.osis} title={p.title} variant="heading" />}
             </h2>
           )}
           {p.notice}
@@ -458,7 +574,7 @@ function ReadingView({ data, edition, headings, ctx, noticeAt }: { data: Chapter
                   onClick={() => window.getSelection()?.isCollapsed !== false && ctx.onSelect(v.osis)}
                 >
                   <sup className="vnum">
-                    <span className="n">{v.verse === 0 ? "" : v.verse}</span>
+                    <span className="n">{v.verse === 0 ? "" : ctx.num?.(v) ?? v.verse}</span>
                     <Marks marks={v.marks} />
                   </sup>
                   <span className="vtext" data-osis={v.osis} data-ed={edition} data-text={t.text}>

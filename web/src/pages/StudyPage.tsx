@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { chapterQuery, getJson, useMeta } from "../api";
@@ -7,6 +7,8 @@ import { PRESETS, loadConfig } from "../agent/providers";
 import { Answer } from "../components/Chat";
 import { openAsk } from "../components/AskDrawer";
 import { Peek, peekable, type PeekTarget } from "../components/VersePeek";
+import { PassageReader } from "../components/Reader";
+import { useVerseSheet } from "../components/VerseSheet";
 import { VerseCard, type CardVerse } from "../components/VerseCard";
 import type { VerseEntities } from "../geoApi";
 import { formatYear, osisLabel, verseUrl } from "../lib";
@@ -19,6 +21,9 @@ import { METHODS, keyWords, listItems, repeatedWords, reviewQuestion, studyText,
 
 const SIGNIFICANT = new Set(["meaning", "omission", "ketiv-qere"]);
 
+/** Open a verse, or a word, in the verse panel over the study (the reader's own panel). */
+const VerseActions = createContext<{ onSelect: (osis: string) => void; onWord: (strong: string, osis?: string) => void }>({ onSelect: () => {}, onWord: () => {} });
+
 /** A Bible study, one step at a time, with the passage beside it. */
 export function StudyPage() {
   const { id = "" } = useParams();
@@ -30,6 +35,8 @@ export function StudyPage() {
   const guide = usePassage(study?.ref ?? "", edition);
   const [spot, setSpot] = useState<string | null>(null); // a word lit up in the passage
   const [textOpen, setTextOpen] = useState(false); // phones: the passage folds away after the first step
+  const verse = useVerseSheet(); // tap a verse or a word: the reader's verse panel opens over the study
+  const allEditions = meta.data?.editions ?? [];
 
   useEffect(() => {
     if (study) document.title = `${study.label} · Bible study | Testimonia`;
@@ -57,6 +64,7 @@ export function StudyPage() {
   const g = guide.data;
   // phones: the passage shows on the first step and when choosing a verse from it; elsewhere it folds
   const textShown = at === 0 || steps[at]?.id === "carry" || textOpen;
+  const carrying = study.method === "devotional" && steps[at]?.id === "carry"; // choosing the verse to take along
 
   return (
     <div className="page st-page">
@@ -92,17 +100,27 @@ export function StudyPage() {
             {g?.edition.abbrev ?? "Passage"} · {study.label}
             <span aria-hidden>{textShown ? "▴" : "▾"}</span>
           </button>
-          <PassageText g={g} loading={guide.isLoading} error={guide.error ? String(guide.error) : null} spot={spot} carry={study.method === "devotional" && steps[at]?.id === "carry" ? study : null} />
+          {carrying || !g || !allEditions.length ? (
+            <PassageText g={g} loading={guide.isLoading} error={guide.error ? String(guide.error) : null} spot={spot} carry={carrying ? study : null} />
+          ) : (
+            <>
+              <p className="st-tap">Tap a verse to study it, or a Greek or Hebrew word for its meaning.</p>
+              <PassageReader osis={g.range.start} endOsis={g.range.end} editions={allEditions} selected={verse.selected} onSelect={verse.onSelect} onWord={verse.onWord} spot={spot} />
+            </>
+          )}
         </aside>
 
         <main className="st-main">
-          {at < steps.length ? (
-            <StepView key={steps[at]!.id} study={study} step={steps[at]!} index={at} total={steps.length} g={g} spot={spot} onSpot={setSpot} go={go} />
-          ) : (
-            <Finished study={study} g={g} />
-          )}
+          <VerseActions.Provider value={verse}>
+            {at < steps.length ? (
+              <StepView key={steps[at]!.id} study={study} step={steps[at]!} index={at} total={steps.length} g={g} spot={spot} onSpot={setSpot} go={go} />
+            ) : (
+              <Finished study={study} g={g} />
+            )}
+          </VerseActions.Provider>
         </main>
       </div>
+      {verse.sheet}
     </div>
   );
 }
@@ -368,6 +386,7 @@ function PeoplePlaces({ g }: { g: PassageGuide }) {
 }
 
 function KeyWords({ g }: { g: PassageGuide }) {
+  const verse = useContext(VerseActions);
   const ed = g.range.testament === "NT" ? "tagnt" : "tahot";
   const chapters = [...new Set(g.verses.map((v) => v.chapter))].slice(0, 4);
   const results = useQueries({ queries: chapters.map((c) => chapterQuery(g.range.book, c, [ed])) });
@@ -384,11 +403,11 @@ function KeyWords({ g }: { g: PassageGuide }) {
     <Panel title={`Key words in the ${ed === "tagnt" ? "Greek" : "Hebrew"}`} note="Tap for a word study">
       <div className="st-words">
         {words.map((w) => (
-          <Link key={w.id} className="st-word" to={verseUrl(w.first, w.id)}>
+          <button key={w.id} className="st-word" onClick={() => verse.onWord(w.id, w.first)}>
             <span className={`st-orig ${ed === "tagnt" ? "grc" : "hbo"}`}>{w.lemma}</span>
             <span className="st-gloss">{w.gloss}</span>
             <span className="st-count">×{w.n}</span>
-          </Link>
+          </button>
         ))}
       </div>
     </Panel>

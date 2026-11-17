@@ -61,6 +61,10 @@ mark.cmp-diff {
 
 /* ----------------------------------------------------------------------------- passage guide */
 .passage-page { padding-bottom: 60px; }
+/* the text is drawn as the reader draws it (side by side, word by word): give it the room the reader has */
+@media (min-width: 761px) { .page.passage-page { padding-left: max(24px, calc((100% - 1440px) / 2)); padding-right: max(24px, calc((100% - 1440px) / 2)); } }
+.passage-page .pg-layout { grid-template-columns: minmax(0, 1.75fr) minmax(300px, 1fr); }
+@media (max-width: 900px) { .passage-page .pg-layout { grid-template-columns: minmax(0, 1fr); } }
 .pg-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
 .pg-nav { display: flex; gap: 18px; font-size: 13px; }
 .pg-nav a { color: var(--muted); }
@@ -258,3 +262,28 @@ mark.gr-mark { color: var(--ink); background: color-mix(in srgb, var(--accent) 1
 .vcard-themes button:hover { transform: scale(1.06); }
 .vcard-themes button.on { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent); }
 .vcard-preview.square .skel { aspect-ratio: 1 / 1; }
+
+/* ---- a passage drawn as the reader draws it (passage guide, Bible study), and the verse panel over it ---- */
+.passage-reader { overflow: visible; height: auto; padding: 0; }
+.passage-reader .pr-modes { margin: 0 0 14px; }
+.passage-reader .reading-view { padding: 0; max-width: none; }
+.passage-reader .verses { padding: 0; }
+.passage-reader .rv, .passage-reader .verse-row { cursor: pointer; }
+.passage-reader mark.hl-spot { background: var(--accent-soft); color: inherit; box-shadow: inset 0 -2px 0 var(--accent); border-radius: 3px; }
+
+.vs-scrim { position: fixed; inset: 0; z-index: 90; background: color-mix(in srgb, var(--ink) 14%, transparent); animation: scrim-in 0.18s ease-out; }
+/* .guide.vs-sheet: the panel's own styles come with .guide; its place on the page does not */
+.guide.vs-sheet {
+  position: fixed; inset: 0 0 0 auto; z-index: 91; width: min(480px, 92vw); max-height: none; overflow: auto; overscroll-behavior: contain;
+  background: var(--panel); border-left: 1px solid var(--rule); box-shadow: -12px 0 40px rgb(0 0 0 / 0.14);
+  animation: vs-in 0.28s var(--ease-out);
+}
+@keyframes vs-in { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (max-width: 760px) {
+  .guide.vs-sheet {
+    inset: auto 0 0 0; width: auto; height: 82dvh; border-left: 0; border-top: 1px solid var(--rule);
+    border-radius: 22px 22px 0 0; box-shadow: 0 -12px 40px rgb(0 0 0 / 0.22); animation: sheet-up 0.42s var(--ease-spring);
+  }
+  .guide.vs-sheet::before { content: ""; display: block; width: 44px; height: 5px; margin: 10px auto 2px; border-radius: 3px; background: var(--rule); }
+}
+@media (prefers-reduced-motion: reduce) { .vs-sheet, .vs-scrim { animation: none; } }
